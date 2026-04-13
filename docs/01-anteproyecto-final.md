@@ -26,7 +26,7 @@ El objetivo principal es lograr un control real del stock, mejorar la trazabilid
 
 - Frontend: React + TypeScript
 - Backend: Laravel (version actual)
-- Base de datos: MySQL en Insforge
+- Base de datos: PostgreSQL en Insforge
 - Despliegue: pendiente de validacion final (incluyendo opcion previa awardspace)
 
 ## Alcance inicial (MVP)

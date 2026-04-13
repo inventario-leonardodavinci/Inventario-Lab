@@ -7,20 +7,21 @@ CREATE TABLE IF NOT EXISTS roles (
   updated_at TIMESTAMPTZ DEFAULT NOW()
 );
 
-CREATE TABLE IF NOT EXISTS users (
+-- Insforge ya gestiona autenticacion.
+-- Esta tabla solo guarda perfil de aplicacion vinculado al usuario autenticado de Insforge.
+CREATE TABLE IF NOT EXISTS app_users (
   id BIGSERIAL PRIMARY KEY,
-  name VARCHAR(120) NOT NULL,
-  email VARCHAR(160) UNIQUE NOT NULL,
-  password_hash VARCHAR(255) NOT NULL,
+  auth_user_id TEXT UNIQUE NOT NULL,
+  display_name VARCHAR(120),
   is_active BOOLEAN NOT NULL DEFAULT TRUE,
   created_at TIMESTAMPTZ DEFAULT NOW(),
   updated_at TIMESTAMPTZ DEFAULT NOW()
 );
 
-CREATE TABLE IF NOT EXISTS user_roles (
-  user_id BIGINT NOT NULL REFERENCES users(id),
+CREATE TABLE IF NOT EXISTS app_user_roles (
+  app_user_id BIGINT NOT NULL REFERENCES app_users(id),
   role_id BIGINT NOT NULL REFERENCES roles(id),
-  PRIMARY KEY (user_id, role_id)
+  PRIMARY KEY (app_user_id, role_id)
 );
 
 CREATE TABLE IF NOT EXISTS categories (
@@ -86,12 +87,12 @@ CREATE TABLE IF NOT EXISTS movements (
   reason VARCHAR(255),
   source_location_id BIGINT REFERENCES locations(id),
   target_location_id BIGINT REFERENCES locations(id),
-  performed_by BIGINT NOT NULL REFERENCES users(id),
+  app_user_id BIGINT NOT NULL REFERENCES app_users(id),
   created_at TIMESTAMPTZ DEFAULT NOW()
 );
 
 CREATE INDEX IF NOT EXISTS idx_mov_type_date ON movements(movement_type, created_at);
-CREATE INDEX IF NOT EXISTS idx_mov_performed_by ON movements(performed_by);
+CREATE INDEX IF NOT EXISTS idx_mov_app_user ON movements(app_user_id);
 
 CREATE TABLE IF NOT EXISTS movement_lines (
   id BIGSERIAL PRIMARY KEY,
@@ -107,7 +108,7 @@ CREATE INDEX IF NOT EXISTS idx_movl_item ON movement_lines(item_id);
 
 CREATE TABLE IF NOT EXISTS audit_logs (
   id BIGSERIAL PRIMARY KEY,
-  actor_user_id BIGINT REFERENCES users(id),
+  actor_user_id BIGINT REFERENCES app_users(id),
   event_type VARCHAR(80) NOT NULL,
   entity_type VARCHAR(80) NOT NULL,
   entity_id BIGINT,

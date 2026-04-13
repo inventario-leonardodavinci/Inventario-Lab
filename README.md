@@ -6,7 +6,7 @@ Aplicacion web para la gestion de inventario del laboratorio de quimica.
 
 - Frontend: React + TypeScript
 - Backend: Laravel (version actual)
-- Base de datos: MySQL (gestionada en Insforge)
+- Base de datos: PostgreSQL gestionada en Insforge
 
 ## Objetivo del MVP
 

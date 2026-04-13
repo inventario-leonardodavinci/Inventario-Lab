@@ -4,7 +4,8 @@
 
 - Frontend SPA con React + TypeScript.
 - Backend API REST con Laravel.
-- Base de datos MySQL en Insforge.
+- Base de datos PostgreSQL en Insforge.
+- Autenticacion gestionada por Insforge (Auth nativa).
 
 ## Modulos MVP
 
@@ -46,3 +47,4 @@
 - Validaciones de stock en backend.
 - No se permite stock negativo por defecto.
 - Todo cambio sensible se registra en auditoria.
+- No duplicar autenticacion: usar `auth_user_id` de Insforge y perfiles en `app_users`.
