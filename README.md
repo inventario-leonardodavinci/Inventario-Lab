@@ -39,6 +39,7 @@ Aplicacion web para la gestion de inventario del laboratorio de quimica.
 - `docs/02-plan-tecnico.md`
 - `docs/03-politica-commits.md`
 - `docs/04-importacion-excel.md`
+- `docs/05-checklist-equipo.md`
 - `database/sql/001_base_schema.sql`
 
 ## Siguiente paso recomendado
