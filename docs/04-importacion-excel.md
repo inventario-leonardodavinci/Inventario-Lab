@@ -36,10 +36,10 @@
 
 ### Equivalencias iniciales de ubicacion (propuesta)
 
-- `Armario = 1` -> `Armario alto 1`
-- `Armario = 2` -> `Armario alto 2`
-- `Armario = 3` -> `Armario alto 3`
-- `Armario = 4` -> `Armario alto 4`
+- `Armario = 1` -> `Armario bajo 1`
+- `Armario = 2` -> `Armario bajo 2`
+- `Armario = 3` -> `Armario bajo 3`
+- `Armario = 4` -> `Armario bajo 4`
 
 ## Reglas de validacion minimas
 
