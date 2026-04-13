@@ -42,12 +42,15 @@ CREATE TABLE IF NOT EXISTS items (
   id BIGSERIAL PRIMARY KEY,
   code VARCHAR(100) UNIQUE,
   name VARCHAR(180) NOT NULL,
+  material_type VARCHAR(60),
+  capacity_ml NUMERIC(10,2),
   category_id BIGINT NOT NULL REFERENCES categories(id),
   unit VARCHAR(40),
   notes TEXT,
   is_active BOOLEAN NOT NULL DEFAULT TRUE,
   created_at TIMESTAMPTZ DEFAULT NOW(),
-  updated_at TIMESTAMPTZ DEFAULT NOW()
+  updated_at TIMESTAMPTZ DEFAULT NOW(),
+  UNIQUE(name, material_type, capacity_ml, category_id)
 );
 
 CREATE INDEX IF NOT EXISTS idx_items_category ON items(category_id);
