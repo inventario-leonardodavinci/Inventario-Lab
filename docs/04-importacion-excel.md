@@ -33,6 +33,8 @@
 - `Armario` -> `locations.name` mediante tabla de equivalencias
 - `Observaciones` -> `items.notes`
 - Categoria fija en este Excel -> `categories.name = 'Fungibles'`
+- (Opcional) `Numero de serie` -> `items.serial_number`
+- (Opcional) `Fecha de caducidad` -> `items.expiration_date`
 
 ### Equivalencias iniciales de ubicacion (propuesta)
 
@@ -48,6 +50,8 @@
 - `Capacidad (ml)` numerica cuando exista valor.
 - `Numero` numerica y mayor o igual a 0.
 - `Armario` debe poder mapearse a una ubicacion valida.
+- `Numero de serie`, si existe, debe ser unico.
+- `Fecha de caducidad`, si existe, debe ser fecha valida.
 
 ## Resultado esperado
 

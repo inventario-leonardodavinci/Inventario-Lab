@@ -48,3 +48,5 @@
 - No se permite stock negativo por defecto.
 - Todo cambio sensible se registra en auditoria.
 - No duplicar autenticacion: usar `auth_user_id` de Insforge y perfiles en `app_users`.
+- Soportar `expiration_date` en items que caduquen.
+- Soportar `serial_number` para equipos/aparatos (incluyendo fungibles cuando aplique).

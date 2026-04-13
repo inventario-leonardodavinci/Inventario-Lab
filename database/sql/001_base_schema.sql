@@ -41,9 +41,11 @@ CREATE TABLE IF NOT EXISTS locations (
 CREATE TABLE IF NOT EXISTS items (
   id BIGSERIAL PRIMARY KEY,
   code VARCHAR(100) UNIQUE,
+  serial_number VARCHAR(120) UNIQUE,
   name VARCHAR(180) NOT NULL,
   material_type VARCHAR(60),
   capacity_ml NUMERIC(10,2),
+  expiration_date DATE,
   category_id BIGINT NOT NULL REFERENCES categories(id),
   unit VARCHAR(40),
   notes TEXT,
