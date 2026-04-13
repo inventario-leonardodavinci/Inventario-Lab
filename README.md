@@ -44,9 +44,11 @@ Aplicacion web para la gestion de inventario del laboratorio de quimica.
 
 ## Siguiente paso recomendado
 
-1. Crear backend Laravel y frontend React.
-2. Aplicar el esquema SQL base en Insforge.
-3. Preparar importacion inicial de los dos Excel.
+1. Frontend listo en `FrontEnd/app` (React + TS + dependencias).
+2. Backend base en `BackEnd/api` (Laravel skeleton).
+3. Completar `composer install` en backend cuando se resuelva SSL local.
+4. Aplicar el esquema SQL base en Insforge.
+5. Preparar importacion inicial de los dos Excel.
 
 ## Estado de Insforge
 

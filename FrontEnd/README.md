@@ -1,13 +1,26 @@
 # FrontEnd (React + TypeScript)
 
-Estructura base para la aplicacion cliente.
+Aplicacion cliente creada con Vite en `FrontEnd/app`.
 
-## Carpetas
+## Arranque rapido
 
-- `src/components/` componentes reutilizables.
-- `src/pages/` pantallas principales.
-- `src/services/` cliente API e Insforge SDK.
-- `src/hooks/` hooks personalizados.
-- `src/types/` tipos TypeScript compartidos.
-- `src/styles/` estilos globales.
-- `public/` recursos estaticos.
+1. `cd FrontEnd/app`
+2. `npm install`
+3. `npm run dev`
+
+## Dependencias instaladas
+
+- `react`, `react-dom`
+- `react-router-dom`
+- `@insforge/sdk`
+- `axios`
+- `zod`
+
+## Estructura recomendada en `FrontEnd/app/src`
+
+- `components/` componentes reutilizables.
+- `pages/` pantallas principales.
+- `services/` cliente API e Insforge SDK.
+- `hooks/` hooks personalizados.
+- `types/` tipos TypeScript compartidos.
+- `styles/` estilos globales.

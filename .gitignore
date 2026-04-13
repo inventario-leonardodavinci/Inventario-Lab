@@ -25,12 +25,16 @@ Thumbs.db
 
 # Node / Frontend
 node_modules/
+**/node_modules/
 dist/
+**/dist/
 build/
+**/build/
 .next/
 .nuxt/
 .svelte-kit/
 coverage/
+**/coverage/
 *.tsbuildinfo
 npm-debug.log*
 yarn-debug.log*
@@ -38,18 +42,18 @@ yarn-error.log*
 pnpm-debug.log*
 
 # PHP / Laravel (BackEnd)
-BackEnd/vendor/
-BackEnd/node_modules/
-BackEnd/.phpunit.result.cache
-BackEnd/public/build/
-BackEnd/public/hot
-BackEnd/storage/*.key
-BackEnd/storage/logs/*.log
-BackEnd/storage/framework/cache/data/*
-BackEnd/storage/framework/sessions/*
-BackEnd/storage/framework/testing/*
-BackEnd/storage/framework/views/*
-BackEnd/bootstrap/cache/*.php
+vendor/
+**/vendor/
+.phpunit.result.cache
+public/build/
+public/hot
+storage/*.key
+storage/logs/*.log
+storage/framework/cache/data/*
+storage/framework/sessions/*
+storage/framework/testing/*
+storage/framework/views/*
+bootstrap/cache/*.php
 
 # IDE
 .vscode/
