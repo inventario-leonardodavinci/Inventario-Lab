@@ -11,8 +11,20 @@ CREATE TABLE IF NOT EXISTS app_users (
 );
 
 ALTER TABLE movements DROP CONSTRAINT IF EXISTS movements_performed_by_fkey;
-ALTER TABLE movements RENAME COLUMN performed_by TO app_user_id;
+DO $$
+BEGIN
+  IF EXISTS (
+    SELECT 1
+    FROM information_schema.columns
+    WHERE table_name = 'movements'
+      AND column_name = 'performed_by'
+  ) THEN
+    ALTER TABLE movements RENAME COLUMN performed_by TO app_user_id;
+  END IF;
+END $$;
 CREATE INDEX IF NOT EXISTS idx_mov_app_user ON movements(app_user_id);
+ALTER TABLE movements
+  DROP CONSTRAINT IF EXISTS movements_app_user_id_fkey;
 ALTER TABLE movements
   ADD CONSTRAINT movements_app_user_id_fkey
   FOREIGN KEY (app_user_id) REFERENCES app_users(id);
