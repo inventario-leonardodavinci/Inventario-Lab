@@ -1,16 +1,56 @@
+# Sistema
+.DS_Store
+Thumbs.db
 
-# InsForge & AI agent skills
-.insforge
-.agent
-.agents
-.augment
-.claude
-.cline
+# Entorno y secretos
+.env
+.env.*
+!.env.example
+
+# Insforge y herramientas de agentes (contienen datos sensibles/contexto local)
+.insforge/
+.agent/
+.agents/
+.augment/
+.claude/
+.cline/
+.kilocode/
+.kiro/
+.qoder/
+.qwen/
+.roo/
+.trae/
+.windsurf/
 .github/copilot*
-.kilocode
-.kiro
-.qoder
-.qwen
-.roo
-.trae
-.windsurf
+
+# Node / Frontend
+node_modules/
+dist/
+build/
+.next/
+.nuxt/
+.svelte-kit/
+coverage/
+*.tsbuildinfo
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+pnpm-debug.log*
+
+# PHP / Laravel (BackEnd)
+BackEnd/vendor/
+BackEnd/node_modules/
+BackEnd/.phpunit.result.cache
+BackEnd/public/build/
+BackEnd/public/hot
+BackEnd/storage/*.key
+BackEnd/storage/logs/*.log
+BackEnd/storage/framework/cache/data/*
+BackEnd/storage/framework/sessions/*
+BackEnd/storage/framework/testing/*
+BackEnd/storage/framework/views/*
+BackEnd/bootstrap/cache/*.php
+
+# IDE
+.vscode/
+.idea/
