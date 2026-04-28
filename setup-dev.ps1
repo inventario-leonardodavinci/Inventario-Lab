@@ -16,22 +16,21 @@ if (-not $OmitirBackend) {
     exit 1
   }
 
-  if (-not (Get-Command composer -ErrorAction SilentlyContinue)) {
-    $phpPath = (Get-Command php -ErrorAction SilentlyContinue).Source
-    $phpDir = Split-Path $phpPath
-    $composers = @("$env:APPDATA\Composer\vendor\bin\composer.phar", "C:\ProgramData\Composer\composer.phar", "$phpDir\composer.phar")
-    $found = $false
-    foreach ($c in $composers) {
-      if (Test-Path $c) {
-        Set-Alias -Name composer -Value $c -Scope Script
-        $found = $true
-        break
-      }
-    }
-    if (-not $found) {
-      Write-Host "Composer no esta disponible. Instalar desde https://getcomposer.org" -ForegroundColor Red
-      exit 1
-    }
+  $scriptDir = if ($PSScriptRoot) { $PSScriptRoot } else { "C:\Users\soudr\Desktop\Inventario-SaludAmbiental" }
+  $composerPhar = $null
+  $paths = @("$scriptDir\composer.phar", "$scriptDir\backend\api\composer.phar", "C:\ProgramData\Composer\composer.phar", "$env:APPDATA\Composer\vendor\bin\composer.phar")
+  foreach ($p in $paths) {
+    if (Test-Path $p) { $composerPhar = $p; break }
+  }
+  if (-not $composerPhar) {
+    Write-Host "Composer no encontrado. Descargar de https://getcomposer.org" -ForegroundColor Red
+    exit 1
+  }
+  Write-Host "Composer encontrado: $composerPhar" -ForegroundColor Green
+
+  if ($scriptDir -and (Test-Path "$scriptDir\cacert.pem")) {
+    $env:COMPOSER_CAFILE = "$scriptDir\cacert.pem"
+    Write-Host "Usando cacert.pem local" -ForegroundColor Green
   }
 
   if (-not (Test-Path ".env")) {
@@ -39,7 +38,7 @@ if (-not $OmitirBackend) {
     Write-Host "Archivo .env creado desde .env.example"
   }
 
-  composer install --no-interaction --prefer-dist
+  & php $composerPhar install --no-interaction --prefer-dist
   php artisan key:generate
   php artisan migrate --force
   php artisan db:seed --class=InventoryCatalogSeeder --force
@@ -51,7 +50,7 @@ if (-not $OmitirFrontend) {
 
   if (-not (Test-Path ".env")) {
     Copy-Item ".env.example" ".env"
-    Write-Host "Archivo FrontEnd/app/.env creado desde .env.example"
+    Write-Host "Archivo .env creado desde .env.example"
   }
 
   npm install
