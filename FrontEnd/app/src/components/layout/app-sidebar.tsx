@@ -1,4 +1,5 @@
-import { Factory, LayoutDashboard, Package, Beaker, FileText } from "lucide-react"
+import { NavLink } from "react-router-dom";
+import { Beaker, Factory, FileText, LayoutDashboard, Package } from "lucide-react";
 
 import {
   Sidebar,
@@ -10,35 +11,35 @@ import {
   SidebarMenu,
   SidebarMenuButton,
   SidebarMenuItem,
-} from "@/components/ui/sidebar"
+} from "@/components/ui/sidebar";
 
 const menuItems = [
   {
     title: "Dashboard",
-    url: "#",
+    url: "/",
     icon: LayoutDashboard,
   },
   {
-    title: "Material Fungible",
-    url: "#",
+    title: "Inventario",
+    url: "/inventory",
     icon: Package,
   },
   {
-    title: "Medios de Cultivo",
-    url: "#",
+    title: "Movimientos",
+    url: "/movements",
     icon: Beaker,
   },
   {
-    title: "Informes de Salida",
-    url: "#",
+    title: "Informes",
+    url: "/reports",
     icon: FileText,
   },
-]
+];
 
 export function AppSidebar() {
   return (
     <Sidebar>
-      <SidebarHeader className="h-16 flex justify-center border-b px-4">
+      <SidebarHeader className="flex h-16 justify-center border-b px-4">
         <div className="flex items-center gap-2 font-semibold">
           <div className="flex size-6 items-center justify-center rounded-md bg-primary text-primary-foreground">
             <Factory className="size-4" />
@@ -54,10 +55,18 @@ export function AppSidebar() {
               {menuItems.map((item) => (
                 <SidebarMenuItem key={item.title}>
                   <SidebarMenuButton asChild>
-                    <a href={item.url}>
+                    <NavLink
+                      to={item.url}
+                      end={item.url === "/"}
+                      className={({ isActive }) =>
+                        isActive
+                          ? "bg-sidebar-accent text-sidebar-accent-foreground"
+                          : undefined
+                      }
+                    >
                       <item.icon />
                       <span>{item.title}</span>
-                    </a>
+                    </NavLink>
                   </SidebarMenuButton>
                 </SidebarMenuItem>
               ))}
@@ -66,5 +75,5 @@ export function AppSidebar() {
         </SidebarGroup>
       </SidebarContent>
     </Sidebar>
-  )
+  );
 }
