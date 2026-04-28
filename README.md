@@ -40,6 +40,15 @@ Aplicacion web para la gestion de inventario del laboratorio de quimica.
 - `docs/03-politica-commits.md`
 - `docs/04-importacion-excel.md`
 - `docs/05-checklist-equipo.md`
+- `docs/06-matriz-cambios-bd.md`
+- `docs/07-bd-operacion-mcp-checklist.md`
+- `docs/08-openapi-v1.yaml`
+- `docs/09-release-hardening-checklist.md`
+- `docs/10-novu-integration.md`
+- `docs/11-matriz-endpoints-pantallas.md`
+- `docs/12-convencion-idioma-es.md`
+- `docs/13-inventario-espanolizacion.md`
+- `docs/14-reporte-cierre-espanolizacion.md`
 - `database/sql/001_base_schema.sql`
 
 ## Siguiente paso recomendado
@@ -47,8 +56,17 @@ Aplicacion web para la gestion de inventario del laboratorio de quimica.
 1. Frontend listo en `FrontEnd/app` (React + TS + dependencias).
 2. Backend base en `BackEnd/api` (Laravel skeleton).
 3. Completar `composer install` en backend cuando se resuelva SSL local.
-4. Aplicar el esquema SQL base en Insforge.
-5. Preparar importacion inicial de los dos Excel.
+4. Aplicar SQL versionado: `001`, `005`, `006`, `007`.
+5. Ejecutar migraciones Laravel y `InventoryCatalogSeeder`.
+6. Preparar importacion inicial de los dos Excel.
+
+## Preparacion local rapida
+
+- Ejecutar script de preparación:
+  - `.\setup-dev.ps1`
+- Opciones:
+  - `.\setup-dev.ps1 -OmitirFrontend`
+  - `.\setup-dev.ps1 -OmitirBackend`
 
 ## Estado de Insforge
 

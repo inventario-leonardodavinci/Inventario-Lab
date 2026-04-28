@@ -5,6 +5,23 @@
       "command": "C:\\Users\\soudr\\AppData\\Local\\Programs\\Pencil\\resources\\app.asar.unpacked\\out\\mcp-server-windows-x64.exe",
       "args": ["--app", "desktop"],
       "env": {}
+    },
+    "postgres": {
+      "transport": "stdio",
+      "command": "npx",
+      "args": [
+        "-y",
+        "@modelcontextprotocol/server-postgres",
+        "postgresql://${env:DB_USERNAME}:${env:DB_PASSWORD}@${env:DB_HOST}:${env:DB_PORT}/${env:DB_DATABASE}?sslmode=${env:DB_SSLMODE}"
+      ],
+      "env": {
+        "DB_HOST": "127.0.0.1",
+        "DB_PORT": "5432",
+        "DB_DATABASE": "inventario_saludambiental",
+        "DB_USERNAME": "postgres",
+        "DB_PASSWORD": "postgres",
+        "DB_SSLMODE": "prefer"
+      }
     }
   }
 }

@@ -50,3 +50,15 @@
 - No duplicar autenticacion: usar `auth_user_id` de Insforge y perfiles en `app_users`.
 - Soportar `expiration_date` en items que caduquen.
 - Soportar `serial_number` para equipos/aparatos (incluyendo fungibles cuando aplique).
+
+## Decisiones de arquitectura BD profesional (hibrido)
+
+- Se conserva el nucleo transaccional de inventario (`items`, `stock_levels`, `movements`, `movement_lines`) para evitar ruptura del MVP.
+- Se redisenan modulos criticos:
+  - Mantenimiento: `maintenance_assets`, `maintenance_plans`, `maintenance_events`.
+  - Alertas: `alert_rules`, `alert_events`, `alert_notifications`.
+- Se normaliza proveedores con `suppliers` y referencia en `batches`.
+- Se expande auditoria con `before_json` y `after_json` para trazabilidad de cambios.
+- Entrega dual obligatoria:
+  - Migraciones Laravel en backend.
+  - SQL espejo versionado en `database/sql`.

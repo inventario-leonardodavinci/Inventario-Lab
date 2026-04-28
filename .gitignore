@@ -54,6 +54,8 @@ storage/framework/sessions/*
 storage/framework/testing/*
 storage/framework/views/*
 bootstrap/cache/*.php
+composer.phar
+cacert.pem
 
 # IDE
 .vscode/

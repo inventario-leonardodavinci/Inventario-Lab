@@ -1,0 +1,115 @@
+openapi: 3.1.0
+info:
+  title: Inventario Salud Ambiental API
+  version: 1.0.0
+servers:
+  - url: /api/v1
+components:
+  securitySchemes:
+    AuthUserHeader:
+      type: apiKey
+      in: header
+      name: X-Auth-User-Id
+  schemas:
+    MovementLineInput:
+      type: object
+      required: [item_id, quantity]
+      properties:
+        item_id: { type: integer }
+        quantity: { type: number, minimum: 0.01 }
+security:
+  - AuthUserHeader: []
+paths:
+  /profile:
+    get:
+      summary: Obtener perfil actual de la aplicacion
+      responses:
+        '200':
+          description: Perfil actual del usuario
+  /inventory:
+    get:
+      summary: Listar elementos de inventario
+      parameters:
+        - in: query
+          name: search
+          schema: { type: string }
+      responses:
+        '200':
+          description: Lista paginada de inventario
+    post:
+      summary: Crear elemento de inventario
+      responses:
+        '201':
+          description: Elemento creado
+  /movements:
+    get:
+      summary: Listar movimientos de stock
+      responses:
+        '200':
+          description: Lista paginada de movimientos
+    post:
+      summary: Crear movimiento de stock
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [movement_type, lines]
+              properties:
+                movement_type:
+                  type: string
+                  enum: [entry, exit, transfer, adjustment]
+                source_location_id: { type: integer, nullable: true }
+                target_location_id: { type: integer, nullable: true }
+                reason: { type: string, nullable: true }
+                lines:
+                  type: array
+                  minItems: 1
+                  items:
+                    $ref: '#/components/schemas/MovementLineInput'
+      responses:
+        '201':
+          description: Movimiento creado
+        '409':
+          description: Conflicto de stock
+  /alerts:
+    get:
+      summary: Listar eventos de alerta
+      responses:
+        '200':
+          description: Lista paginada de alertas
+  /alerts/{alertEvent}/acknowledge:
+    post:
+      summary: Confirmar evento de alerta
+      parameters:
+        - in: path
+          name: alertEvent
+          required: true
+          schema: { type: integer }
+      responses:
+        '200':
+          description: Alerta confirmada
+  /maintenance/assets:
+    get:
+      summary: Listar activos de mantenimiento
+      responses:
+        '200':
+          description: Lista paginada de activos
+    post:
+      summary: Crear activo de mantenimiento
+      responses:
+        '201':
+          description: Activo creado
+  /notifications:
+    get:
+      summary: Listar notificaciones en la aplicacion
+      responses:
+        '200':
+          description: Notificaciones y contador no leido
+  /notifications/login-event:
+    post:
+      summary: Registrar evento de inicio de sesion para la canalizacion de notificaciones
+      responses:
+        '201':
+          description: Evento registrado
