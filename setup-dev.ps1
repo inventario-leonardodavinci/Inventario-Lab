@@ -38,7 +38,13 @@ if (-not $OmitirBackend) {
     Write-Host "Archivo .env creado desde .env.example"
   }
 
-  & php $composerPhar install --no-interaction --prefer-dist
+  Write-Host "Ejecutando composer install..." -ForegroundColor Cyan
+  & php $composerPhar install --no-interaction --prefer-dist --disable-tls=false 2>&1
+  if ($LASTEXITCODE -ne 0) {
+    Write-Host "Reintentando sin SSL..." -ForegroundColor Yellow
+    $env:COMPOSER_DISABLE_SSL = "1"
+    & php $composerPhar install --no-interaction --prefer-dist --repository-url=http://repo.packagist.org 2>&1
+  }
   php artisan key:generate
   php artisan migrate --force
   php artisan db:seed --class=InventoryCatalogSeeder --force

@@ -6,15 +6,8 @@ import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { useAuth } from "@/context/ContextoAutenticacion";
-import { getNotificaciones } from "@/services/notificacionesApi";
+import { getNotificaciones, RespuestaNotificaciones } from "@/services/notificacionesApi";
 import { useEffect, useState } from "react";
-
-interface Notificacion {
-  id: string;
-  title: string;
-  message: string;
-  created_at: string;
-}
 
 export default function Informes() {
   const { user } = useAuth();
@@ -28,8 +21,8 @@ export default function Informes() {
 
   useEffect(() => {
     if (!user) return;
-    getNotificaciones(user.authUserId).then((response: { data: Notificacion[] }) => {
-      const rows = response.data.map((item: Notificacion) => ({
+    getNotificaciones(user.authUserId).then((response: RespuestaNotificaciones) => {
+      const rows = response.data.map((item) => ({
         id: `ALERT-${item.id}`,
         event: item.title,
         user: user.displayName,
