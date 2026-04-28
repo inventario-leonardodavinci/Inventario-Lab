@@ -39,11 +39,21 @@ if (-not $OmitirBackend) {
   }
 
   Write-Host "Ejecutando composer install..." -ForegroundColor Cyan
-  & php $composerPhar install --no-interaction --prefer-dist --disable-tls=false 2>&1
-  if ($LASTEXITCODE -ne 0) {
-    Write-Host "Reintentando sin SSL..." -ForegroundColor Yellow
-    $env:COMPOSER_DISABLE_SSL = "1"
-    & php $composerPhar install --no-interaction --prefer-dist --repository-url=http://repo.packagist.org 2>&1
+  $hasCurl = (php -m | Out-String).ToLower().Contains("curl")
+  if (-not $hasCurl) {
+    Write-Host "ADVERTENCIA: Extension curl no disponible. Composer necesita curl para descargar paquetes." -ForegroundColor Yellow
+    Write-Host "Opciones:" -ForegroundColor Yellow
+    Write-Host "  1. Instalar XAMPP/WAMP (incluye curl)" -ForegroundColor Cyan
+    Write-Host "  2. Descargar PHP desde https://windows.php.net/downloads/php-8.3.0-Win32-vs16-x64.zip" -ForegroundColor Cyan
+    Write-Host "     Extraer solo php.exe y la carpeta ext en una carpeta, luego configurar extension=php_curl.dll en php.ini" -ForegroundColor Cyan
+    $continue = Read-Host "Continuar sin composer? (s/n)"
+    if ($continue -ne "s") { exit 1 }
+  } else {
+    & php $composerPhar install --no-interaction --prefer-dist 2>&1 | ForEach-Object { Write-Host $_ }
+    if ($LASTEXITCODE -ne 0 -or -not (Test-Path "vendor/autoload.php")) {
+      Write-Host "Fallo en composer, reintentando sin SSL..." -ForegroundColor Yellow
+      & php $composerPhar install --no-interaction --prefer-dist --repository-url=http://repo.packagist.org 2>&1 | ForEach-Object { Write-Host $_ }
+    }
   }
   php artisan key:generate
   php artisan migrate --force
