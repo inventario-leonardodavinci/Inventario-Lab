@@ -7,12 +7,25 @@ export type RespuestaMovimientos = {
     reason: string | null;
     user?: { display_name: string | null };
     created_at: string;
-    lines: Array<{ item_id: number; quantity: string }>;
+    lines: Array<{ item_id: number; quantity: number }>;
   }>;
 };
 
-export function getMovimientos(authUserId: string) {
-  return apiClient<RespuestaMovimientos>("/movimientos", {}, { authUserId });
+export type ResumenHoy = {
+  entradas_hoy: number;
+  salidas_hoy: number;
+};
+
+export function getMovimientos(
+  authUserId: string,
+  params: { per_page?: number } = {},
+) {
+  const qs = params.per_page ? `?per_page=${params.per_page}` : "";
+  return apiClient<RespuestaMovimientos>(`/movimientos${qs}`, {}, { authUserId });
+}
+
+export function getResumenHoy(authUserId: string) {
+  return apiClient<ResumenHoy>("/movimientos/resumen-hoy", {}, { authUserId });
 }
 
 export function crearMovimiento(

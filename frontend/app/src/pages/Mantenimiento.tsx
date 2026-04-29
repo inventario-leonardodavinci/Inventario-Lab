@@ -1,13 +1,13 @@
-import { useEffect, useState } from "react";
+import { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { useAuth } from "@/context/ContextoAutenticacion";
-import { apiClient } from "@/services/clienteApi";
+import { useMantenimiento, useCrearActivo } from "@/hooks/queries";
 import { toast } from "sonner";
 
-type ActivoMantenimiento = {
+export type ActivoMantenimiento = {
   id: number;
   asset_code: string;
   status: string;
@@ -16,45 +16,19 @@ type ActivoMantenimiento = {
 
 export default function Mantenimiento() {
   const { user } = useAuth();
-  const [assets, setAssets] = useState<ActivoMantenimiento[]>([]);
   const [assetCode, setAssetCode] = useState("");
 
-  const loadAssets = async () => {
-    if (!user) return;
-    try {
-      const response = await apiClient<{ data: ActivoMantenimiento[] }>(
-        "/mantenimiento/activos",
-        {},
-        { authUserId: user.authUserId },
-      );
-      setAssets(response.data ?? []);
-    } catch {
-      toast.error("No se pudieron cargar activos");
-    }
-  };
+  const { data, isFetching } = useMantenimiento(user?.authUserId);
+  const assets = data?.data ?? [];
 
-  useEffect(() => {
-    void loadAssets();
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [user]);
+  const crearMutation = useCrearActivo(user?.authUserId ?? "");
 
   const createAsset = async () => {
-    if (!user || !assetCode) return;
+    if (!assetCode.trim()) return;
     try {
-      await apiClient(
-        "/mantenimiento/activos",
-        {
-          method: "POST",
-          body: JSON.stringify({
-            asset_code: assetCode,
-            status: "operational",
-          }),
-        },
-        { authUserId: user.authUserId },
-      );
+      await crearMutation.mutateAsync({ asset_code: assetCode.trim(), status: "operational" });
       toast.success("Activo creado");
       setAssetCode("");
-      await loadAssets();
     } catch {
       toast.error("No se pudo crear activo");
     }
@@ -66,6 +40,7 @@ export default function Mantenimiento() {
         <h2 className="text-2xl font-semibold tracking-tight">Mantenimiento</h2>
         <p className="text-sm text-muted-foreground">Gestión de activos y estado operativo.</p>
       </div>
+
       <Card>
         <CardHeader>
           <CardTitle>Alta rápida de activo</CardTitle>
@@ -75,14 +50,19 @@ export default function Mantenimiento() {
           <Input
             placeholder="Código de activo (ej. EQ-001)"
             value={assetCode}
-            onChange={(event) => setAssetCode(event.target.value)}
+            onChange={(e) => setAssetCode(e.target.value)}
+            onKeyDown={(e) => { if (e.key === "Enter") void createAsset(); }}
           />
-          <Button onClick={createAsset}>Crear</Button>
+          <Button onClick={createAsset} disabled={crearMutation.isPending || !assetCode.trim()}>
+            {crearMutation.isPending ? "Creando..." : "Crear"}
+          </Button>
         </CardContent>
       </Card>
+
       <Card>
         <CardHeader>
           <CardTitle>Activos registrados</CardTitle>
+          {isFetching && <p className="text-xs text-muted-foreground animate-pulse">Actualizando...</p>}
         </CardHeader>
         <CardContent>
           <Table>
@@ -91,7 +71,7 @@ export default function Mantenimiento() {
                 <TableHead>ID</TableHead>
                 <TableHead>Código</TableHead>
                 <TableHead>Estado</TableHead>
-                <TableHead>Articulo relacionado</TableHead>
+                <TableHead>Artículo relacionado</TableHead>
               </TableRow>
             </TableHeader>
             <TableBody>

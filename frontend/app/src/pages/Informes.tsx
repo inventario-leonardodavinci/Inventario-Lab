@@ -6,32 +6,19 @@ import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { useAuth } from "@/context/ContextoAutenticacion";
-import { getNotificaciones, type RespuestaNotificaciones } from "@/services/notificacionesApi";
-import { useEffect, useState } from "react";
+import { useNotificaciones } from "@/hooks/queries";
 
 export default function Informes() {
   const { user } = useAuth();
-  const [reportRows, setReportRows] = useState<Array<{
-    id: string;
-    event: string;
-    user: string;
-    module: string;
-    timestamp: string;
-  }>>([]);
+  const { data } = useNotificaciones(user?.authUserId);
 
-  useEffect(() => {
-    if (!user) return;
-    getNotificaciones(user.authUserId).then((response: RespuestaNotificaciones) => {
-      const rows = response.data.map((item) => ({
-        id: `ALERT-${item.id}`,
-        event: item.title,
-        user: user.displayName,
-        module: "Alertas",
-        timestamp: new Date(item.created_at).toLocaleString(),
-      }));
-      setReportRows(rows);
-    });
-  }, [user]);
+  const reportRows = (data?.data ?? []).map((item) => ({
+    id: `ALERT-${item.id}`,
+    event: item.title,
+    user: user?.displayName ?? "-",
+    module: "Alertas",
+    timestamp: new Date(item.created_at).toLocaleString("es-ES"),
+  }));
 
   return (
     <main className="flex flex-1 flex-col gap-6 bg-muted/20 p-4 lg:p-6">

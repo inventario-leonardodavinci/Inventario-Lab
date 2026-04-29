@@ -1,0 +1,65 @@
+/**
+ * Hook de datos del panel principal.
+ * Usa TanStack Query para lanzar las 4 peticiones en paralelo con caché y
+ * estados de carga/error por sección, sin reducer manual.
+ */
+import { useInventario, useResumenHoy, useMovimientos, useNotificaciones } from "@/hooks/queries";
+import { extraerCriticos, mapearAlertas, mapearMovimientosRecientes } from "@/utils/panelUtils";
+
+export type PanelData = {
+  inventoryCount: number | null;
+  criticalCount: number | null;
+  entradasHoy: number | null;
+  salidasHoy: number | null;
+  unreadNotifications: number;
+  movimientosRecientes: Array<{
+    id: number;
+    tipo: string;
+    responsable: string;
+    fechaHora: string;
+  }> | null;
+  errorMovimientos: boolean;
+  lowStockItems: Array<{ item: string; stock: string; min: string; status: string }>;
+  cargando: boolean;
+};
+
+export function usePanelData(authUserId: string | undefined): PanelData {
+  const inv = useInventario(authUserId);
+  const resumen = useResumenHoy(authUserId);
+  const movimientos = useMovimientos(authUserId, 5);
+  const notificaciones = useNotificaciones(authUserId);
+
+  const cargando =
+    inv.isLoading || resumen.isLoading || movimientos.isLoading || notificaciones.isLoading;
+
+  // Inventario
+  const inventoryCount = inv.data?.meta.total ?? (inv.isError ? -1 : null);
+  const criticos = inv.data ? extraerCriticos(inv.data.data) : [];
+  const criticalCount = inv.data ? criticos.length : (inv.isError ? -1 : null);
+  const lowStockItems = mapearAlertas(criticos);
+
+  // Resumen hoy
+  const entradasHoy = resumen.data?.entradas_hoy ?? (resumen.isError ? -1 : null);
+  const salidasHoy = resumen.data?.salidas_hoy ?? (resumen.isError ? -1 : null);
+
+  // Movimientos recientes
+  const movimientosRecientes = movimientos.data
+    ? mapearMovimientosRecientes(movimientos.data.data)
+    : (movimientos.isError ? [] : null);
+  const errorMovimientos = movimientos.isError;
+
+  // Notificaciones
+  const unreadNotifications = notificaciones.data?.unread_count ?? 0;
+
+  return {
+    inventoryCount,
+    criticalCount,
+    entradasHoy,
+    salidasHoy,
+    unreadNotifications,
+    movimientosRecientes,
+    errorMovimientos,
+    lowStockItems,
+    cargando,
+  };
+}

@@ -2,7 +2,11 @@ export type ApiClientOptions = {
   authUserId?: string;
 };
 
-const API_BASE_URL = import.meta.env.VITE_API_BASE_URL ?? "http://127.0.0.1:8080/api/v1";
+const API_BASE_URL = import.meta.env.VITE_API_BASE_URL;
+
+if (!API_BASE_URL) {
+  throw new Error("Falta la variable de entorno VITE_API_BASE_URL");
+}
 
 export class ApiError extends Error {
   constructor(
@@ -30,9 +34,16 @@ export async function apiClient<T>(
     headers,
   });
 
-  const payload = await response.json().catch(() => ({}));
+  let payload: Record<string, unknown> = {};
+  try {
+    payload = await response.json();
+  } catch {
+    if (!response.ok) {
+      throw new ApiError(`Error ${response.status}: ${response.statusText}`, response.status);
+    }
+  }
   if (!response.ok) {
-    throw new ApiError(payload.message ?? "Error inesperado de API", response.status);
+    throw new ApiError((payload.message as string) ?? `Error ${response.status}: ${response.statusText}`, response.status);
   }
 
   return payload as T;
