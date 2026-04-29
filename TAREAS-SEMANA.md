@@ -7,10 +7,10 @@
 
 ## Día 1 — Lunes 29 abr · Panel principal real
 
-- [ ] Añadir endpoint `GET /v1/movimientos/resumen-hoy` que devuelva entradas y salidas del día actual
-- [ ] Conectar los KPIs "Entradas hoy" y "Salidas hoy" del `PanelPrincipal` a ese endpoint
-- [ ] Reemplazar el feed de actividad hardcodeado por los últimos 5 movimientos reales (`GET /v1/movimientos?per_page=5`)
-- [ ] Verificar que los KPIs de stock total y críticos ya usan datos reales (están parcialmente conectados)
+- [x] Añadir endpoint `GET /v1/movimientos/resumen-hoy` que devuelva entradas y salidas del día actual
+- [x] Conectar los KPIs "Entradas hoy" y "Salidas hoy" del `PanelPrincipal` a ese endpoint
+- [x] Reemplazar el feed de actividad hardcodeado por los últimos 5 movimientos reales (`GET /v1/movimientos?per_page=5`)
+- [x] Verificar que los KPIs de stock total y críticos ya usan datos reales (están parcialmente conectados)
 
 ---
 
@@ -90,3 +90,46 @@
 - Integración Novu workflow `user-login`
 - Apache + PHP 8.3 sirviendo la API en puerto 8000
 - BD PostgreSQL remota conectada
+
+---
+
+## Completado fuera del plan semanal
+
+### Calidad y arquitectura
+
+- [x] Corregir bug crítico: `MovimientoController::store` llamaba `createMovement()` (inexistente) en lugar de `crearMovimiento()`
+- [x] Corregir bug crítico: `MovimientoService::aplicarDeltaStock` casteaba `null` a `0` silenciosamente — ahora lanza excepción con mensaje claro
+- [x] Eliminar `source_location_id: 1` y `target_location_id: 1` hardcodeados en `Movimientos.tsx`
+- [x] Eliminar `category_id: 1` hardcodeado en `Inventario.tsx` (botón de creación rápida eliminado)
+- [x] Añadir `.catch()` en `Informes.tsx` para que un fallo de notificaciones no rompa la página
+- [x] Reusar `RespuestaMovimientos["data"]` en lugar de tipo inline en `Movimientos.tsx`
+- [x] Migrar todo el fetching de datos a **TanStack Query** (`@tanstack/react-query`):
+  - `usePanelData`: reducer manual de 60 líneas → 20 líneas con query hooks
+  - `Inventario.tsx`, `Movimientos.tsx`, `Mantenimiento.tsx`, `Informes.tsx`, `Perfil.tsx`
+  - Caché automático, invalidación tras mutaciones, estados de loading/error integrados
+
+### Autenticación
+
+- [x] Implementar flujo completo de registro con verificación de email por código OTP (6 dígitos)
+- [x] Implementar recuperación de contraseña por código OTP (2 pasos)
+- [x] Añadir OAuth Google y Apple (aparecen dinámicamente según config de Insforge)
+- [x] Consultar config real de Insforge (`/api/auth/public-config`) para adaptar la UI
+- [x] Crear `UsuarioApp` automáticamente en el primer login OAuth (middleware `ResolverUsuarioApp`)
+- [x] Sincronizar `display_name` real con el backend Laravel en cada login
+- [x] Corregir extracción del nombre para usuarios OAuth (filtra emails, usa `full_name`/`name` de metadatos)
+
+### Perfil de usuario
+
+- [x] Dropdown de usuario en el header con avatar de iniciales, badge de rol, acceso a perfil y cerrar sesión
+- [x] Footer de la barra lateral con nombre, rol y enlace a `/perfil`
+- [x] Página `/perfil` con dos tabs: Información (editar nombre, actividad reciente) y Seguridad (cambio de contraseña)
+- [x] Actualización de nombre en tiempo real sin recarga de página (`actualizarUsuario` en contexto)
+- [x] Añadir `PATCH /v1/perfil` en el backend para actualizar `display_name`
+- [x] Añadir `VITE_NOVU_APPLICATION_IDENTIFIER` al `.env` para corregir error 422 de Novu
+
+### Tests
+
+- [x] Tests PHPUnit para `resumen-hoy`: ejemplos + propiedad (50 iteraciones)
+- [x] Tests fast-check para `traducirTipoMovimiento` y `formatearKpi` (100 iteraciones)
+- [x] Tests de componente para `PanelPrincipal` con TanStack Query (18 tests en verde)
+- [x] Corregir bug en `traducirTipoMovimiento`: `??` vulnerable a `__proto__` → `Object.hasOwn`

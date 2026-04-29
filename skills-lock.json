@@ -41,6 +41,12 @@
       "sourceType": "github",
       "computedHash": "66c1bcb0b3f0ee31e97b34e52cac5481b1b7bce58f1235990aa3776138e2c9c0"
     },
+    "laravel-specialist": {
+      "source": "jeffallan/claude-skills",
+      "sourceType": "github",
+      "skillPath": "skills/laravel-specialist/SKILL.md",
+      "computedHash": "805be17bd59f759e2f2f2dcbd6bd205ca6678420a87b21da1c16e0793093615c"
+    },
     "seo": {
       "source": "addyosmani/web-quality-skills",
       "sourceType": "github",
