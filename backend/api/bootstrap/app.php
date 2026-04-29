@@ -13,10 +13,11 @@ return Application::configure(basePath: dirname(__DIR__))
     )
     ->withMiddleware(function (Middleware $middleware): void {
         $middleware->alias([
-            'app.user' => \App\Http\Middleware\ResolveAppUser::class,
-            'role' => \App\Http\Middleware\EnsureRole::class,
+            'app.user' => \App\Http\Middleware\ResolverUsuarioApp::class,
+            'role' => \App\Http\Middleware\AsegurarRol::class,
         ]);
     })
     ->withExceptions(function (Exceptions $exceptions): void {
         //
     })->create();
+

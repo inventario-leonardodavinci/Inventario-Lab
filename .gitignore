@@ -55,8 +55,10 @@ storage/framework/testing/*
 storage/framework/views/*
 bootstrap/cache/*.php
 composer.phar
+composer.lock
 cacert.pem
 packagist-chain.pem
+windows-*.pem
 windows-*-ca-*.pem
 
 # IDE
