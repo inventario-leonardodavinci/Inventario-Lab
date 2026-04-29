@@ -61,11 +61,17 @@ if (-not $OmitirBackend) {
     Write-Host "ADVERTENCIA: curl no disponible." -ForegroundColor Yellow
   }
   Write-Host "Instalando dependencias (esto puede tardar)..." -ForegroundColor Cyan
-  & php $composerPhar install --no-interaction --prefer-dist *> $null
+  
+  $ErrorActionPreferenceBak = $ErrorActionPreference
+  $ErrorActionPreference = "SilentlyContinue"
+  & php $composerPhar install --no-interaction --prefer-dist
+  $ErrorActionPreference = $ErrorActionPreferenceBak
+  
   if ($LASTEXITCODE -ne 0 -or -not (Test-Path "vendor/autoload.php")) {
     Write-Host "Reintentando sin SSL..." -ForegroundColor Yellow
-    & php $composerPhar install --no-interaction --prefer-dist --repository-url=http://repo.packagist.org *> $null
+    & php $composerPhar install --no-interaction --prefer-dist --repository-url=http://repo.packagist.org
   }
+  
   if (Test-Path "vendor/autoload.php") {
     Write-Host "dependencias instaladas" -ForegroundColor Green
     php artisan key:generate
