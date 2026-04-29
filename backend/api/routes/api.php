@@ -10,10 +10,12 @@ use Illuminate\Support\Facades\Route;
 
 Route::prefix('v1')->middleware(['throttle:api', 'app.user'])->group(function (): void {
     Route::get('/perfil', PerfilController::class);
+    Route::patch('/perfil', [PerfilController::class, 'actualizar']);
 
     Route::get('/inventario', [InventarioController::class, 'index']);
     Route::post('/inventario', [InventarioController::class, 'store'])->middleware('role:admin,tecnico');
 
+    Route::get('/movimientos/resumen-hoy', [MovimientoController::class, 'resumenHoy']);
     Route::get('/movimientos', [MovimientoController::class, 'index']);
     Route::post('/movimientos', [MovimientoController::class, 'store'])->middleware('role:admin,tecnico');
 

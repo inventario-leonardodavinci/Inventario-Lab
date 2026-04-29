@@ -21,7 +21,7 @@ class UsuarioApp extends Model
 
     public function roles(): BelongsToMany
     {
-        return $this->belongsToMany(Rol::class, 'app_user_roles');
+        return $this->belongsToMany(Rol::class, 'app_user_roles', 'app_user_id', 'role_id');
     }
 
     public function movements(): HasMany

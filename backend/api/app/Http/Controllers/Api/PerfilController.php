@@ -21,4 +21,21 @@ class PerfilController extends Controller
             'roles' => $usuarioApp->roles->pluck('name')->values(),
         ]);
     }
+
+    public function actualizar(Request $request): JsonResponse
+    {
+        /** @var UsuarioApp $usuarioApp */
+        $usuarioApp = $request->attributes->get('app_user');
+
+        $validados = $request->validate([
+            'display_name' => ['required', 'string', 'max:180'],
+        ]);
+
+        $usuarioApp->update($validados);
+
+        return response()->json([
+            'id' => $usuarioApp->id,
+            'display_name' => $usuarioApp->display_name,
+        ]);
+    }
 }

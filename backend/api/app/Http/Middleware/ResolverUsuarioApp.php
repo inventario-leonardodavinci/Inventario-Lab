@@ -27,9 +27,13 @@ class ResolverUsuarioApp
             ->first();
 
         if (! $usuarioApp) {
-            return new JsonResponse([
-                'message' => 'No autorizado: el usuario de aplicacion no esta activo o no existe.',
-            ], Response::HTTP_UNAUTHORIZED);
+            // Primer acceso: crear el usuario automáticamente (p.ej. login OAuth)
+            $usuarioApp = UsuarioApp::query()->create([
+                'auth_user_id' => $idUsuarioAutenticado,
+                'display_name' => 'Usuario',
+                'is_active'    => true,
+            ]);
+            $usuarioApp->load('roles');
         }
 
         $request->attributes->set('app_user', $usuarioApp);

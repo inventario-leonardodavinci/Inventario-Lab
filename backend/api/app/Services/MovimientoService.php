@@ -64,23 +64,35 @@ class MovimientoService
         ?int $ubicacionDestinoId
     ): void {
         if ($tipoMovimiento === 'entry') {
-            $this->incrementarStock($articuloId, (int) $ubicacionDestinoId, $cantidad);
+            if ($ubicacionDestinoId === null) {
+                throw new RuntimeException('Se requiere ubicación destino para una entrada.');
+            }
+            $this->incrementarStock($articuloId, $ubicacionDestinoId, $cantidad);
             return;
         }
 
         if ($tipoMovimiento === 'exit') {
-            $this->decrementarStock($articuloId, (int) $ubicacionOrigenId, $cantidad);
+            if ($ubicacionOrigenId === null) {
+                throw new RuntimeException('Se requiere ubicación origen para una salida.');
+            }
+            $this->decrementarStock($articuloId, $ubicacionOrigenId, $cantidad);
             return;
         }
 
         if ($tipoMovimiento === 'transfer') {
-            $this->decrementarStock($articuloId, (int) $ubicacionOrigenId, $cantidad);
-            $this->incrementarStock($articuloId, (int) $ubicacionDestinoId, $cantidad);
+            if ($ubicacionOrigenId === null || $ubicacionDestinoId === null) {
+                throw new RuntimeException('Se requieren ubicación origen y destino para un traslado.');
+            }
+            $this->decrementarStock($articuloId, $ubicacionOrigenId, $cantidad);
+            $this->incrementarStock($articuloId, $ubicacionDestinoId, $cantidad);
             return;
         }
 
         if ($tipoMovimiento === 'adjustment') {
-            $this->incrementarStock($articuloId, (int) $ubicacionDestinoId, $cantidad);
+            if ($ubicacionDestinoId === null) {
+                throw new RuntimeException('Se requiere ubicación destino para un ajuste.');
+            }
+            $this->incrementarStock($articuloId, $ubicacionDestinoId, $cantidad);
         }
     }
 

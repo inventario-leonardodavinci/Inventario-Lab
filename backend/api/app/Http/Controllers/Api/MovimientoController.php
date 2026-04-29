@@ -16,6 +16,26 @@ class MovimientoController extends Controller
     {
     }
 
+    public function resumenHoy(): JsonResponse
+    {
+        $hoy = now()->toDateString();
+
+        $entradasHoy = Movimiento::query()
+            ->where('movement_type', 'entry')
+            ->whereDate('created_at', $hoy)
+            ->count();
+
+        $salidasHoy = Movimiento::query()
+            ->where('movement_type', 'exit')
+            ->whereDate('created_at', $hoy)
+            ->count();
+
+        return response()->json([
+            'entradas_hoy' => $entradasHoy,
+            'salidas_hoy'  => $salidasHoy,
+        ]);
+    }
+
     public function index(Request $request): JsonResponse
     {
         $filas = Movimiento::query()
@@ -42,7 +62,7 @@ class MovimientoController extends Controller
         $usuarioApp = $request->attributes->get('app_user');
 
         try {
-            $movimiento = $this->movimientoService->createMovement($validados + [
+            $movimiento = $this->movimientoService->crearMovimiento($validados + [
                 'app_user_id' => $usuarioApp->id,
             ]);
         } catch (RuntimeException $excepcion) {
