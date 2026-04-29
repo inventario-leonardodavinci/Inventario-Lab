@@ -58,16 +58,22 @@ if (-not $OmitirBackend) {
   Write-Host "Ejecutando composer install..." -ForegroundColor Cyan
   $hasCurl = (php -m | Out-String).ToLower().Contains("curl")
   if (-not $hasCurl) {
-    Write-Host "ADVERTENCIA: curl no disponible. Composer necesitara internet por otro metodo." -ForegroundColor Yellow
+    Write-Host "ADVERTENCIA: curl no disponible." -ForegroundColor Yellow
   }
-  & php $composerPhar install --no-interaction --prefer-dist 2>&1 | ForEach-Object { Write-Host $_ }
+  Write-Host "Instalando dependencias (esto puede tardar)..." -ForegroundColor Cyan
+  & php $composerPhar install --no-interaction --prefer-dist *> $null
   if ($LASTEXITCODE -ne 0 -or -not (Test-Path "vendor/autoload.php")) {
     Write-Host "Reintentando sin SSL..." -ForegroundColor Yellow
-    & php $composerPhar install --no-interaction --prefer-dist --repository-url=http://repo.packagist.org 2>&1 | ForEach-Object { Write-Host $_ }
+    & php $composerPhar install --no-interaction --prefer-dist --repository-url=http://repo.packagist.org *> $null
   }
-  php artisan key:generate
-  php artisan migrate --force
-  php artisan db:seed --class=InventoryCatalogSeeder --force
+  if (Test-Path "vendor/autoload.php") {
+    Write-Host "dependencias instaladas" -ForegroundColor Green
+    php artisan key:generate
+    php artisan migrate --force
+    php artisan db:seed --class=InventoryCatalogSeeder --force
+  } else {
+    Write-Host "ERROR: composer install fallo. Verifica PHP/curl." -ForegroundColor Red
+  }
 }
 
 if (-not $OmitirFrontend) {
