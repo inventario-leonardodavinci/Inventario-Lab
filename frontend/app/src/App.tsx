@@ -9,6 +9,7 @@ const InicioSesion = lazy(() => import("./pages/InicioSesion"));
 const Mantenimiento = lazy(() => import("./pages/Mantenimiento"));
 const Movimientos = lazy(() => import("./pages/Movimientos"));
 const Informes = lazy(() => import("./pages/Informes"));
+const Perfil = lazy(() => import("./pages/Perfil"));
 
 function App() {
   return (
@@ -27,6 +28,7 @@ function App() {
                     <Route path="/movimientos" element={<Movimientos />} />
                     <Route path="/informes" element={<Informes />} />
                     <Route path="/mantenimiento" element={<Mantenimiento />} />
+                    <Route path="/perfil" element={<Perfil />} />
                     <Route path="*" element={<Navigate to="/" replace />} />
                   </Routes>
                 </ContenedorAplicacion>
