@@ -1,50 +1,33 @@
-import { useEffect, useState } from "react";
-import { Bell } from "lucide-react";
+import { Inbox } from "@novu/react";
 import { useAuth } from "@/context/ContextoAutenticacion";
-import { getNotificaciones, type NotificacionItem } from "@/services/notificacionesApi";
-import { Button } from "@/components/ui/button";
-import { Badge } from "@/components/ui/badge";
 
 export function CentroNotificaciones() {
   const { user } = useAuth();
-  const [notificaciones, setNotificaciones] = useState<NotificacionItem[]>([]);
-  const [open, setOpen] = useState(false);
-  const [noLeidas, setNoLeidas] = useState(0);
-
-  useEffect(() => {
-    if (!user) return;
-    getNotificaciones(user.authUserId)
-      .then((response) => {
-        setNotificaciones(response.data);
-        setNoLeidas(response.unread_count);
-      })
-      .catch(() => {
-        setNotificaciones([]);
-      });
-  }, [user]);
 
   if (!user) return null;
 
   return (
-    <div className="relative">
-      <Button variant="outline" size="sm" onClick={() => setOpen((current) => !current)}>
-        <Bell />
-        {noLeidas > 0 && <Badge variant="destructive">{noLeidas}</Badge>}
-      </Button>
-      {open && (
-        <div className="absolute right-0 top-10 z-50 w-96 rounded-md border bg-background p-3 shadow-md">
-          <p className="mb-2 text-sm font-semibold">Notificaciones</p>
-          {notificaciones.length === 0 && <p className="text-sm text-muted-foreground">Sin notificaciones.</p>}
-          <div className="space-y-2">
-            {notificaciones.map((notificacion) => (
-              <div key={notificacion.id} className="rounded border p-2">
-                <p className="text-sm font-medium">{notificacion.title}</p>
-                <p className="text-xs text-muted-foreground">{notificacion.body}</p>
-              </div>
-            ))}
-          </div>
-        </div>
-      )}
-    </div>
+    <Inbox
+      applicationIdentifier={import.meta.env.VITE_NOVU_APPLICATION_IDENTIFIER}
+      subscriberId={user.authUserId}
+      appearance={{
+        variables: {
+          colorBackground: "hsl(0 0% 100%)",
+          colorForeground: "hsl(222 47% 11%)",
+          colorPrimary: "hsl(212 85% 55%)",
+          colorPrimaryForeground: "hsl(0 0% 100%)",
+          colorSecondary: "hsl(214 30% 90%)",
+          colorSecondaryForeground: "hsl(212 85% 40%)",
+          colorNeutral: "hsl(214 30% 88%)",
+          colorShadow: "hsl(222 47% 11% / 0.08)",
+          fontSize: "14px",
+        },
+        elements: {
+          bellIcon: {
+            color: "hsl(215 16% 47%)",
+          },
+        },
+      }}
+    />
   );
 }

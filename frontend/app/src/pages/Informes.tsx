@@ -6,7 +6,7 @@ import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { useAuth } from "@/context/ContextoAutenticacion";
-import { getNotificaciones, RespuestaNotificaciones } from "@/services/notificacionesApi";
+import { getNotificaciones, type RespuestaNotificaciones } from "@/services/notificacionesApi";
 import { useEffect, useState } from "react";
 
 export default function Informes() {
