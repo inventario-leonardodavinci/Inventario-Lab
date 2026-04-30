@@ -36,6 +36,7 @@ import { useUbicaciones, useCrearUbicacion } from '@/hooks/queries'
 import { formatearTipoUbicacion } from '@/utils/formatters'
 import type { TipoUbicacion } from '@/types'
 import { toast } from 'sonner'
+import { SkeletonUbicaciones } from '@/components/ui/PageSkeleton'
 
 interface FormNuevaUbicacion {
   nombre: string
@@ -59,6 +60,8 @@ export default function ListaUbicaciones() {
   const crearMutation = useCrearUbicacion()
 
   const ubicaciones = data?.data ?? []
+
+  if (isLoading) return <SkeletonUbicaciones />
 
   const onGuardar = async () => {
     if (!form.nombre.trim()) {

@@ -12,6 +12,7 @@ import { formatearRol, formatearFecha } from '@/utils/formatters'
 import type { Rol } from '@/types'
 import { Shield } from 'lucide-react'
 import { toast } from 'sonner'
+import { SkeletonUsuarios } from '@/components/ui/PageSkeleton'
 
 const ROLES: Rol[] = ['administrador', 'profesor', 'consultor']
 
@@ -43,8 +44,9 @@ export default function Usuarios() {
   const usuarios = data?.data ?? []
   const perfilActual = perfilData?.data
 
-  // Verificar si el usuario es administrador
   const esAdmin = user?.role === 'admin' || (user?.role as string) === 'administrador'
+
+  if (isLoading) return <SkeletonUsuarios />
 
   if (!esAdmin) {
     return (

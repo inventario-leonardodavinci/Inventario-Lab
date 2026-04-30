@@ -12,13 +12,11 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@
 import { GuardRol } from '@/components/auth/GuardRol'
 import { useAlertas, useConfirmarAlerta, useResolverAlerta } from '@/hooks/queries'
 import {
-  formatearTipoAlerta,
-  formatearSeveridad,
-  formatearEstadoAlerta,
-  formatearFechaRelativa,
+  formatearTipoAlerta, formatearSeveridad, formatearEstadoAlerta, formatearFechaRelativa,
 } from '@/utils/formatters'
 import type { TipoAlerta, Severidad, EstadoAlerta } from '@/types'
 import { toast } from 'sonner'
+import { SkeletonAlertas } from '@/components/ui/PageSkeleton'
 
 type FiltroTipo = TipoAlerta | 'todos'
 type FiltroSeveridad = Severidad | 'todas'
@@ -49,6 +47,8 @@ export default function Alertas() {
   const resolverMutation = useResolverAlerta()
 
   const alertas = data?.data ?? []
+
+  if (isLoading) return <SkeletonAlertas />
 
   const onConfirmar = async (id: number) => {
     try {
