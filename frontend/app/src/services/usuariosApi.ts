@@ -1,0 +1,36 @@
+/**
+ * Servicio de usuarios (solo administrador).
+ */
+import { apiClient } from './clienteApi'
+import type { UsuarioApp, Rol } from '@/types'
+
+export function getUsuarios(authUserId: string) {
+  return apiClient<{ data: UsuarioApp[] }>('/usuarios', {}, { authUserId })
+}
+
+export function actualizarRolUsuario(
+  authUserId: string,
+  usuarioId: number,
+  rol: Rol,
+) {
+  return apiClient<{ data: UsuarioApp }>(
+    `/usuarios/${usuarioId}/rol`,
+    { method: 'PATCH', body: JSON.stringify({ rol }) },
+    { authUserId },
+  )
+}
+
+export function getPerfil(authUserId: string) {
+  return apiClient<{ data: UsuarioApp }>('/perfil', {}, { authUserId })
+}
+
+export function actualizarPerfil(
+  authUserId: string,
+  datos: { nombre_visible?: string },
+) {
+  return apiClient<{ data: UsuarioApp }>(
+    '/perfil',
+    { method: 'PATCH', body: JSON.stringify(datos) },
+    { authUserId },
+  )
+}

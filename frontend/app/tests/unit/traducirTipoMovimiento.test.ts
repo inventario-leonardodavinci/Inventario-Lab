@@ -8,7 +8,7 @@ import { traducirTipoMovimiento } from "../../src/utils/panelUtils";
 const TIPOS_CONOCIDOS: Record<string, string> = {
   entry: "Entrada",
   exit: "Salida",
-  transfer: "Transferencia",
+  transfer: "Traslado",
   adjustment: "Ajuste",
 };
 

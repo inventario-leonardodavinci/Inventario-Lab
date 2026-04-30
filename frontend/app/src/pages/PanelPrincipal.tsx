@@ -1,3 +1,4 @@
+import { useNavigate } from "react-router-dom";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
@@ -6,6 +7,7 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@
 import { useAuth } from "@/context/ContextoAutenticacion";
 import { usePanelData } from "@/hooks/usePanelData";
 import { formatearKpi } from "@/utils/panelUtils";
+import { formatearFechaRelativa } from "@/utils/formatters";
 import { ArrowDownToLine, ArrowUpFromLine, BellRing, PackageCheck, TriangleAlert } from "lucide-react";
 
 const kpiIconMap: Record<string, React.ElementType> = {
@@ -24,6 +26,7 @@ const kpiBadgeVariant: Record<string, "destructive" | "secondary"> = {
 
 export default function PanelPrincipal() {
   const { user } = useAuth();
+  const navigate = useNavigate();
   const {
     inventoryCount,
     criticalCount,
@@ -81,7 +84,7 @@ export default function PanelPrincipal() {
             <span className="text-xs text-muted-foreground animate-pulse">Cargando datos…</span>
           )}
           <Button variant="outline">Exportar resumen</Button>
-          <Button>Registrar movimiento</Button>
+          <Button onClick={() => navigate('/movimientos')}>Registrar movimiento</Button>
         </div>
       </div>
 
@@ -118,13 +121,20 @@ export default function PanelPrincipal() {
             <Table>
               <TableHeader>
                 <TableRow>
-                  <TableHead>Articulo</TableHead>
+                  <TableHead>Artículo</TableHead>
                   <TableHead>Stock actual</TableHead>
-                  <TableHead>Stock minimo</TableHead>
+                  <TableHead>Stock mínimo</TableHead>
                   <TableHead>Estado</TableHead>
                 </TableRow>
               </TableHeader>
               <TableBody>
+                {lowStockItems.length === 0 && (
+                  <TableRow>
+                    <TableCell colSpan={4} className="text-center text-muted-foreground py-6">
+                      Sin artículos en estado crítico.
+                    </TableCell>
+                  </TableRow>
+                )}
                 {lowStockItems.map((row) => (
                   <TableRow key={row.item}>
                     <TableCell className="font-medium">{row.item}</TableCell>
@@ -168,7 +178,7 @@ export default function PanelPrincipal() {
                     <div className="flex flex-col gap-1">
                       <p className="text-sm font-medium">{mov.tipo}</p>
                       <p className="text-xs text-muted-foreground">
-                        {mov.fechaHora} — Responsable: {mov.responsable}
+                        {formatearFechaRelativa(mov.fechaHora)} — Responsable: {mov.responsable}
                       </p>
                     </div>
                   </div>

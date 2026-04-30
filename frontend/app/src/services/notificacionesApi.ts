@@ -4,7 +4,7 @@ export type NotificacionItem = {
   id: number;
   title: string;
   body: string;
-  status: "open" | "acknowledged" | "resolved" | "ignored";
+  status: "abierta" | "confirmada" | "resuelta" | "ignorada";
   created_at: string;
 };
 

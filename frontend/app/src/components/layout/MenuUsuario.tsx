@@ -8,7 +8,7 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
-import { Avatar, AvatarFallback } from "@/components/ui/avatar";
+import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { LogOut, Settings, User } from "lucide-react";
 
 function iniciales(nombre: string): string {
@@ -48,6 +48,7 @@ export function MenuUsuario() {
           aria-label="Menú de usuario"
         >
           <Avatar className="size-7">
+            <AvatarImage src={user.avatarUrl} alt={user.displayName} />
             <AvatarFallback className="text-xs font-medium">
               {iniciales(user.displayName)}
             </AvatarFallback>

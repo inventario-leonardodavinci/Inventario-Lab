@@ -7,8 +7,13 @@ export type CredencialesLogin = {
 
 export type SesionUsuario = {
   authUserId: string;
+  email: string;
+  emailVerified: boolean;
   displayName: string;
-  role: "admin" | "tecnico" | "consulta";
+  avatarUrl?: string;
+  role: "administrador" | "profesor" | "consultor" | "admin" | "tecnico" | "consulta";
+  createdAt: string;
+  metadata: Record<string, unknown>;
 };
 
 export type ConfiguracionAuth = {
@@ -21,12 +26,27 @@ export type ConfiguracionAuth = {
 
 // ─── Configuración pública ────────────────────────────────────────────────────
 
+// Valores por defecto basados en la config real del proyecto
+const CONFIG_DEFECTO: ConfiguracionAuth = {
+  requireEmailVerification: true,
+  passwordMinLength: 6,
+  verifyEmailMethod: "code",
+  resetPasswordMethod: "code",
+  oAuthProviders: ["google", "apple"],
+};
+
 export async function obtenerConfigAuth(): Promise<ConfiguracionAuth> {
-  const res = await fetch(
-    `${import.meta.env.VITE_INSFORGE_URL}/api/auth/public-config`,
-  );
-  if (!res.ok) throw new Error("No se pudo obtener la configuración de auth");
-  return res.json() as Promise<ConfiguracionAuth>;
+  try {
+    const res = await fetch(
+      `${import.meta.env.VITE_INSFORGE_URL}/api/auth/public-config`,
+    );
+    if (!res.ok) return CONFIG_DEFECTO;
+    const data = await res.json() as Partial<ConfiguracionAuth>;
+    // Mezclar con defaults por si faltan campos
+    return { ...CONFIG_DEFECTO, ...data };
+  } catch {
+    return CONFIG_DEFECTO;
+  }
 }
 
 // ─── Helpers internos ─────────────────────────────────────────────────────────
@@ -36,29 +56,32 @@ function extraerSesion(user: {
   email?: string;
   name?: string;
   user_metadata?: Record<string, unknown>;
+  // Estructura real de Insforge
+  profile?: { name?: string; avatar_url?: string } | null;
+  metadata?: Record<string, unknown> | null;
+  emailVerified?: boolean;
+  createdAt?: string;
 }): SesionUsuario {
   const authUserId = user.id;
-  const meta = user.user_metadata ?? {};
+  const meta = user.metadata ?? user.user_metadata ?? {};
 
-  // Orden de prioridad para el nombre:
-  // 1. display_name guardado explícitamente (registro con email)
-  // 2. full_name de Google/Apple OAuth
-  // 3. name de Google/Apple OAuth
-  // 4. user.name del SDK (puede ser email en algunos proveedores — lo filtramos)
-  // 5. Parte local del email (antes del @)
-  // 6. Fallback "Usuario"
+  // Insforge pone el nombre en `profile.name`
+  const profileName = user.profile?.name;
+  const avatarUrl = user.profile?.avatar_url;
+
   const candidatos = [
     meta.display_name as string | undefined,
+    profileName,
     meta.full_name as string | undefined,
     meta.name as string | undefined,
   ].filter((v): v is string => typeof v === "string" && v.length > 0 && !v.includes("@"));
 
-  // user.name solo si no parece un email
+  // user.name del SDK como fallback
   if (typeof user.name === "string" && user.name.length > 0 && !user.name.includes("@")) {
     candidatos.push(user.name);
   }
 
-  // Parte local del email como último recurso legible
+  // Parte local del email como último recurso
   if (user.email) {
     const parteLocal = user.email.split("@")[0];
     if (parteLocal) candidatos.push(parteLocal);
@@ -67,9 +90,18 @@ function extraerSesion(user: {
   const displayName = candidatos[0] ?? "Usuario";
 
   const role =
-    (meta.role as "admin" | "tecnico" | "consulta") ?? "consulta";
+    (meta.role as SesionUsuario["role"]) ?? "consultor";
 
-  return { authUserId, displayName, role };
+  return {
+    authUserId,
+    email: user.email ?? "",
+    emailVerified: user.emailVerified ?? false,
+    displayName,
+    avatarUrl,
+    role,
+    createdAt: user.createdAt ?? "",
+    metadata: meta as Record<string, unknown>,
+  };
 }
 
 // ─── Login ────────────────────────────────────────────────────────────────────
@@ -88,10 +120,20 @@ export async function loginConInsforge(
         "Debes verificar tu correo antes de iniciar sesión. Revisa tu bandeja de entrada.",
       );
     }
-    throw new Error(error.message ?? "Credenciales incorrectas");
+    const mensaje = error.message ?? "";
+    if (mensaje.toLowerCase().includes("invalid") || mensaje.toLowerCase().includes("credentials")) {
+      throw new Error("Correo o contraseña incorrectos");
+    }
+    throw new Error(mensaje || "Credenciales incorrectas");
   }
 
-  if (!data?.user) throw new Error("No se recibió información del usuario");
+  if (!data?.user) {
+    // Insforge puede devolver el user directamente en data
+    if (data?.id) {
+      return extraerSesion(data);
+    }
+    throw new Error("No se recibió información del usuario");
+  }
   return extraerSesion(data.user);
 }
 
@@ -99,7 +141,8 @@ export async function loginConInsforge(
 
 export type ResultadoRegistro =
   | { tipo: "verificacion_requerida"; email: string }
-  | { tipo: "sesion_iniciada"; sesion: SesionUsuario };
+  | { tipo: "sesion_iniciada"; sesion: SesionUsuario }
+  | { tipo: "email_ya_existe"; email: string };
 
 export async function registrarUsuario(
   email: string,
@@ -113,14 +156,26 @@ export async function registrarUsuario(
     redirectTo: `${window.location.origin}/login`,
   });
 
-  if (error) throw new Error(error.message ?? "Error al crear la cuenta");
+  if (error) {
+    const mensaje = error.message?.toLowerCase() ?? "";
+    if (mensaje.includes("already") || mensaje.includes("existe") || mensaje.includes("exists")) {
+      return { tipo: "email_ya_existe", email };
+    }
+    const msg = error.message ?? "Error al crear la cuenta";
+    if (msg.toLowerCase().includes("password") && msg.toLowerCase().includes("length")) {
+      throw new Error(`La contraseña debe tener al menos ${import.meta.env.VITE_PASSWORD_MIN_LENGTH || 6} caracteres`);
+    }
+    throw new Error(msg);
+  }
 
+  // Insforge puede devolver el user directamente o dentro de { user, ... }
   if (data?.requireEmailVerification) {
     return { tipo: "verificacion_requerida", email };
   }
 
-  if (data?.accessToken && data.user) {
-    return { tipo: "sesion_iniciada", sesion: extraerSesion(data.user) };
+  const user = data?.user ?? data;
+  if (data?.accessToken && user?.id) {
+    return { tipo: "sesion_iniciada", sesion: extraerSesion(user) };
   }
 
   // Fallback: verificación requerida sin flag explícito
@@ -142,8 +197,9 @@ export async function verificarEmail(
     throw new Error(error.message ?? "Error al verificar el código");
   }
 
-  if (!data?.user) throw new Error("No se recibió información del usuario");
-  return extraerSesion(data.user);
+  const user = data?.user ?? data;
+  if (!user?.id) throw new Error("No se recibió información del usuario");
+  return extraerSesion(user);
 }
 
 export async function reenviarCodigoVerificacion(email: string): Promise<void> {
@@ -158,7 +214,7 @@ export async function reenviarCodigoVerificacion(email: string): Promise<void> {
 export async function enviarCodigoRecuperacion(email: string): Promise<void> {
   await insforge.auth.sendResetPasswordEmail({
     email,
-    redirectTo: `${window.location.origin}/restablecer-contrasena`,
+    redirectTo: `${window.location.origin}/login`,
   });
 }
 
@@ -200,27 +256,55 @@ export async function loginConOAuth(
 
 export async function obtenerSesionActual(): Promise<SesionUsuario | null> {
   const { data, error } = await insforge.auth.getCurrentUser();
-  if (error || !data?.user) return null;
-  return extraerSesion(data.user);
+  if (error) return null;
+
+  // Insforge puede devolver user directamente o dentro de { user, ... }
+  const user = data?.user ?? data;
+  if (!user?.id) return null;
+
+  return extraerSesion(user);
 }
 
 export async function logoutDeInsforge(): Promise<void> {
   await insforge.auth.signOut();
 }
 
-// Sincroniza el display_name del usuario con el backend Laravel
-// Se llama en cada login para que usuarios OAuth tengan su nombre real
+// Sincroniza el nombre visible del usuario con el backend Laravel
 export async function sincronizarPerfil(authUserId: string, displayName: string): Promise<void> {
   const baseUrl = import.meta.env.VITE_API_BASE_URL as string;
-  await fetch(`${baseUrl}/perfil`, {
-    method: "PATCH",
-    headers: {
-      "Content-Type": "application/json",
-      "X-Auth-User-Id": authUserId,
-    },
-    body: JSON.stringify({ display_name: displayName }),
-  });
-  // Ignoramos errores — si falla, el nombre queda como "Usuario" por defecto
+  const controller = new AbortController();
+  const timeout = setTimeout(() => controller.abort(), 5000);
+  try {
+    await fetch(`${baseUrl}/perfil`, {
+      method: "PATCH",
+      headers: {
+        "Content-Type": "application/json",
+        "X-Auth-User-Id": authUserId,
+      },
+      body: JSON.stringify({ nombre_visible: displayName }),
+      signal: controller.signal,
+    });
+  } catch {
+    // Silencioso
+  } finally {
+    clearTimeout(timeout);
+  }
+}
+
+// Obtiene el rol real del usuario desde el backend Laravel
+export async function obtenerRolDesdeBackend(authUserId: string): Promise<SesionUsuario["role"] | null> {
+  const baseUrl = import.meta.env.VITE_API_BASE_URL as string;
+  try {
+    const res = await fetch(`${baseUrl}/perfil`, {
+      headers: { "X-Auth-User-Id": authUserId },
+    });
+    if (!res.ok) return null;
+    const data = await res.json() as { roles?: { name: string }[] };
+    const primerRol = data.roles?.[0]?.name;
+    return (primerRol as SesionUsuario["role"]) ?? null;
+  } catch {
+    return null;
+  }
 }
 
 // Actualiza el nombre en Insforge y en el backend Laravel
@@ -240,4 +324,38 @@ export async function actualizarNombreUsuario(
 export async function obtenerEmailUsuario(): Promise<string | null> {
   const { data } = await insforge.auth.getCurrentUser();
   return data?.user?.email ?? null;
+}
+
+// Obtiene el usuario completo desde Insforge para la página de perfil
+export async function obtenerUsuarioCompleto(): Promise<{
+  id: string;
+  email: string;
+  emailVerified: boolean;
+  profile: { name?: string; avatar_url?: string } | null;
+  metadata: Record<string, unknown> | null;
+  createdAt: string;
+  updatedAt: string;
+} | null> {
+  const { data, error } = await insforge.auth.getCurrentUser();
+  if (error || !data?.user) return null;
+
+  const user = data.user;
+  return {
+    id: user.id,
+    email: user.email,
+    emailVerified: user.emailVerified,
+    profile: user.profile ?? null,
+    metadata: user.metadata ?? null,
+    createdAt: user.createdAt,
+    updatedAt: user.updatedAt,
+  };
+}
+
+// Actualiza un campo específico del perfil en Insforge
+export async function actualizarCampoPerfil(
+  campo: string,
+  valor: string | unknown,
+): Promise<void> {
+  const { error } = await insforge.auth.setProfile({ [campo]: valor });
+  if (error) throw new Error(error.message ?? `Error al actualizar ${campo}`);
 }

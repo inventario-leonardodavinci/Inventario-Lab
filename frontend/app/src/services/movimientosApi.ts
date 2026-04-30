@@ -1,49 +1,45 @@
-import { apiClient } from "./clienteApi";
+/**
+ * Servicio de movimientos de stock.
+ * Usa tipos en español coherentes con el esquema de la API.
+ */
+import { apiClient } from './clienteApi'
+import type { Movimiento, Paginado, TipoMovimiento, FiltrosMovimiento } from '@/types'
 
-export type RespuestaMovimientos = {
-  data: Array<{
-    id: number;
-    movement_type: string;
-    reason: string | null;
-    user?: { display_name: string | null };
-    created_at: string;
-    lines: Array<{ item_id: number; quantity: number }>;
-  }>;
-};
+export type EntradaCrearMovimiento = {
+  tipo: TipoMovimiento
+  motivo?: string
+  ubicacion_origen_id?: number
+  ubicacion_destino_id?: number
+  lineas: Array<{ articulo_id: number; cantidad: number }>
+}
 
 export type ResumenHoy = {
-  entradas_hoy: number;
-  salidas_hoy: number;
-};
+  entradas_hoy: number
+  salidas_hoy: number
+}
 
 export function getMovimientos(
   authUserId: string,
-  params: { per_page?: number } = {},
+  filtros: FiltrosMovimiento = {},
 ) {
-  const qs = params.per_page ? `?per_page=${params.per_page}` : "";
-  return apiClient<RespuestaMovimientos>(`/movimientos${qs}`, {}, { authUserId });
+  const params = new URLSearchParams()
+  if (filtros.tipo) params.set('tipo', filtros.tipo)
+  if (filtros.usuario_id) params.set('usuario_id', String(filtros.usuario_id))
+  if (filtros.desde) params.set('desde', filtros.desde)
+  if (filtros.hasta) params.set('hasta', filtros.hasta)
+  if (filtros.per_page) params.set('per_page', String(filtros.per_page))
+  const qs = params.toString() ? `?${params.toString()}` : ''
+  return apiClient<Paginado<Movimiento>>(`/movimientos${qs}`, {}, { authUserId })
 }
 
 export function getResumenHoy(authUserId: string) {
-  return apiClient<ResumenHoy>("/movimientos/resumen-hoy", {}, { authUserId });
+  return apiClient<ResumenHoy>('/movimientos/resumen-hoy', {}, { authUserId })
 }
 
-export function crearMovimiento(
-  authUserId: string,
-  entrada: {
-    movement_type: "entry" | "exit" | "transfer" | "adjustment";
-    reason?: string;
-    source_location_id?: number;
-    target_location_id?: number;
-    lines: Array<{ item_id: number; quantity: number }>;
-  },
-) {
-  return apiClient<{ data: { id: number } }>(
-    "/movimientos",
-    {
-      method: "POST",
-      body: JSON.stringify(entrada),
-    },
+export function crearMovimiento(authUserId: string, entrada: EntradaCrearMovimiento) {
+  return apiClient<{ data: Movimiento }>(
+    '/movimientos',
+    { method: 'POST', body: JSON.stringify(entrada) },
     { authUserId },
-  );
+  )
 }

@@ -9,11 +9,15 @@ import "@testing-library/jest-dom/vitest";
 import { describe, it, expect, vi, beforeEach } from "vitest";
 import { render, screen, waitFor } from "@testing-library/react";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
+import { MemoryRouter } from "react-router-dom";
 import * as fc from "fast-check";
 import React from "react";
 
 // Mocks de servicios — rutas relativas para que Vitest las resuelva correctamente
-vi.mock("../../src/services/inventarioApi", () => ({ getInventario: vi.fn() }));
+vi.mock("../../src/services/inventarioApi", () => ({
+  getInventario: vi.fn(),
+  getArticulos: vi.fn(),
+}));
 vi.mock("../../src/services/movimientosApi", () => ({ getResumenHoy: vi.fn(), getMovimientos: vi.fn() }));
 vi.mock("../../src/services/notificacionesApi", () => ({ getNotificaciones: vi.fn() }));
 vi.mock("../../src/context/ContextoAutenticacion", () => ({
@@ -31,6 +35,7 @@ import * as movimientosApi from "../../src/services/movimientosApi";
 import * as notificacionesApi from "../../src/services/notificacionesApi";
 
 const mockGetInventario = vi.mocked(inventarioApi.getInventario);
+const mockGetArticulos = vi.mocked(inventarioApi.getArticulos);
 const mockGetResumenHoy = vi.mocked(movimientosApi.getResumenHoy);
 const mockGetMovimientos = vi.mocked(movimientosApi.getMovimientos);
 const mockGetNotificaciones = vi.mocked(notificacionesApi.getNotificaciones);
@@ -67,13 +72,16 @@ function renderConQuery(ui: React.ReactElement) {
     defaultOptions: { queries: { retry: false, gcTime: 0 } },
   });
   return render(
-    <QueryClientProvider client={queryClient}>{ui}</QueryClientProvider>,
+    <MemoryRouter>
+      <QueryClientProvider client={queryClient}>{ui}</QueryClientProvider>
+    </MemoryRouter>,
   );
 }
 
 beforeEach(() => {
   vi.clearAllMocks();
   mockGetInventario.mockReturnValue(inventarioOk());
+  mockGetArticulos.mockReturnValue(inventarioOk());
   mockGetResumenHoy.mockReturnValue(resumenOk());
   mockGetMovimientos.mockReturnValue(movimientosOk());
   mockGetNotificaciones.mockReturnValue(notificacionesOk());
@@ -84,6 +92,7 @@ beforeEach(() => {
 describe("PanelPrincipal — estado de carga", () => {
   it("9.5 muestra indicador de carga mientras las peticiones están pendientes", () => {
     mockGetInventario.mockReturnValue(new Promise(() => {}));
+    mockGetArticulos.mockReturnValue(new Promise(() => {}));
     renderConQuery(<PanelPrincipal />);
     expect(screen.getByText(/cargando datos/i)).toBeInTheDocument();
   });
@@ -125,6 +134,7 @@ describe("PanelPrincipal — Propiedad 2: KPIs muestran valores exactos del back
         async (entradas, salidas) => {
           vi.clearAllMocks();
           mockGetInventario.mockReturnValue(inventarioOk());
+          mockGetArticulos.mockReturnValue(inventarioOk());
           mockGetResumenHoy.mockReturnValue(resumenOk(entradas, salidas));
           mockGetMovimientos.mockReturnValue(movimientosOk());
           mockGetNotificaciones.mockReturnValue(notificacionesOk(0));
@@ -166,6 +176,9 @@ describe("PanelPrincipal — Propiedad 3: conteo de stock crítico es correcto",
           mockGetInventario.mockReturnValue(
             Promise.resolve({ data, meta: { current_page: 1, last_page: 1, total } })
           );
+          mockGetArticulos.mockReturnValue(
+            Promise.resolve({ data, meta: { current_page: 1, last_page: 1, total } })
+          );
           mockGetResumenHoy.mockReturnValue(resumenOk(0, 0));
           mockGetMovimientos.mockReturnValue(movimientosOk());
           mockGetNotificaciones.mockReturnValue(notificacionesOk(0));
@@ -203,7 +216,11 @@ describe("PanelPrincipal — Propiedad 5: resiliencia ante fallos individuales",
   });
 
   it("fallo de inventario muestra '—' en esos KPIs pero entradas/salidas funcionan", async () => {
-    mockGetInventario.mockReturnValue(Promise.reject(new Error("500")));
+    const rejectedPromise = Promise.reject(new Error("500"));
+    // Evitar unhandled rejection añadiendo un catch vacío
+    rejectedPromise.catch(() => {});
+    mockGetInventario.mockReturnValue(rejectedPromise);
+    mockGetArticulos.mockReturnValue(Promise.reject(Object.assign(new Error("500"), { _handled: true })));
     renderConQuery(<PanelPrincipal />);
 
     await waitFor(() => {

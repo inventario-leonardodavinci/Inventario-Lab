@@ -1,22 +1,20 @@
-import { useState } from "react";
-import { Badge } from "@/components/ui/badge";
-import { Button } from "@/components/ui/button";
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import { Input } from "@/components/ui/input";
-import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
-import { useAuth } from "@/context/ContextoAutenticacion";
-import { useInventario } from "@/hooks/queries";
-import { Search } from "lucide-react";
+import { useState } from 'react'
+import { Badge } from '@/components/ui/badge'
+import { Button } from '@/components/ui/button'
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
+import { Input } from '@/components/ui/input'
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table'
+import { useArticulos } from '@/hooks/queries'
+import { Search } from 'lucide-react'
 
 export default function Inventario() {
-  const { user } = useAuth();
-  const [search, setSearch] = useState("");
-  const [searchActivo, setSearchActivo] = useState("");
+  const [search, setSearch] = useState('')
+  const [searchActivo, setSearchActivo] = useState('')
 
-  const { data, isFetching, refetch } = useInventario(user?.authUserId, searchActivo);
-  const rows = data?.data ?? [];
+  const { data, isFetching, refetch } = useArticulos({ search: searchActivo })
+  const rows = data?.data ?? []
 
-  const onBuscar = () => setSearchActivo(search);
+  const onBuscar = () => setSearchActivo(search)
 
   return (
     <main className="flex flex-1 flex-col gap-6 bg-muted/20 p-4 lg:p-6">
@@ -29,7 +27,7 @@ export default function Inventario() {
 
       <Card>
         <CardHeader>
-          <CardTitle>Busqueda y filtros</CardTitle>
+          <CardTitle>Búsqueda y filtros</CardTitle>
           <CardDescription>Consulta rápida por código, nombre o categoría.</CardDescription>
         </CardHeader>
         <CardContent className="flex flex-col gap-3 md:flex-row">
@@ -40,12 +38,12 @@ export default function Inventario() {
               placeholder="Buscar por código o nombre..."
               value={search}
               onChange={(e) => setSearch(e.target.value)}
-              onKeyDown={(e) => { if (e.key === "Enter") onBuscar(); }}
+              onKeyDown={(e) => { if (e.key === 'Enter') onBuscar() }}
             />
           </div>
           <Button variant="outline" onClick={onBuscar}>Buscar</Button>
           <Button variant="outline" onClick={() => void refetch()}>
-            {isFetching ? "Cargando..." : "Refrescar"}
+            {isFetching ? 'Cargando...' : 'Refrescar'}
           </Button>
         </CardContent>
       </Card>
@@ -60,25 +58,33 @@ export default function Inventario() {
             <TableHeader>
               <TableRow>
                 <TableHead>Código</TableHead>
-                <TableHead>Item</TableHead>
+                <TableHead>Artículo</TableHead>
                 <TableHead>Categoría</TableHead>
-                <TableHead>Ubicación</TableHead>
-                <TableHead>Stock</TableHead>
+                <TableHead>Stock total</TableHead>
                 <TableHead>Estado</TableHead>
+                <TableHead>Activo</TableHead>
               </TableRow>
             </TableHeader>
             <TableBody>
               {rows.map((row) => (
-                <TableRow key={row.id}>
-                  <TableCell className="font-medium">{row.code ?? "-"}</TableCell>
-                  <TableCell>{row.name}</TableCell>
-                  <TableCell>{row.category ?? "-"}</TableCell>
-                  <TableCell>-</TableCell>
-                  <TableCell>{row.stock}</TableCell>
+                <TableRow
+                  key={row.id}
+                  className={!row.activo ? 'opacity-50' : undefined}
+                >
+                  <TableCell className="font-medium">{row.codigo ?? '-'}</TableCell>
+                  <TableCell>{row.nombre}</TableCell>
+                  <TableCell>{row.categoria ?? '-'}</TableCell>
+                  <TableCell>{row.stock_total}</TableCell>
                   <TableCell>
-                    <Badge variant={row.status === "critical" ? "destructive" : "secondary"}>
-                      {row.status === "critical" ? "Crítico" : "Estable"}
+                    <Badge variant={row.estado_stock === 'critico' ? 'destructive' : 'secondary'}>
+                      {row.estado_stock === 'critico' ? 'Crítico' : 'Estable'}
                     </Badge>
+                  </TableCell>
+                  <TableCell>
+                    {row.activo
+                      ? <Badge variant="secondary">Activo</Badge>
+                      : <Badge variant="outline">Inactivo</Badge>
+                    }
                   </TableCell>
                 </TableRow>
               ))}
@@ -87,5 +93,5 @@ export default function Inventario() {
         </CardContent>
       </Card>
     </main>
-  );
+  )
 }
