@@ -21,7 +21,10 @@ class AsegurarRol
 
         $tieneRol = $usuarioApp->roles->pluck('name')->intersect($roles)->isNotEmpty();
         if (! $tieneRol) {
-            return new JsonResponse(['message' => 'Prohibido'], Response::HTTP_FORBIDDEN);
+            return new JsonResponse(
+                ['message' => 'No tienes permiso para realizar esta acción.'],
+                Response::HTTP_FORBIDDEN
+            );
         }
 
         return $next($request);

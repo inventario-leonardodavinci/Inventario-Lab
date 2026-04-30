@@ -7,26 +7,27 @@ use Illuminate\Database\Eloquent\Relations\BelongsTo;
 
 class NivelStock extends Model
 {
-    protected $table = 'stock_levels';
+    protected $table = 'niveles_stock';
+
     protected $fillable = [
-        'item_id',
-        'location_id',
-        'quantity',
-        'min_quantity',
+        'articulo_id',
+        'ubicacion_id',
+        'cantidad',
+        'cantidad_minima',
     ];
 
     protected $casts = [
-        'quantity' => 'decimal:2',
-        'min_quantity' => 'decimal:2',
+        'cantidad' => 'decimal:2',
+        'cantidad_minima' => 'decimal:2',
     ];
 
-    public function item(): BelongsTo
+    public function articulo(): BelongsTo
     {
-        return $this->belongsTo(Articulo::class);
+        return $this->belongsTo(Articulo::class, 'articulo_id');
     }
 
-    public function location(): BelongsTo
+    public function ubicacion(): BelongsTo
     {
-        return $this->belongsTo(Ubicacion::class);
+        return $this->belongsTo(Ubicacion::class, 'ubicacion_id');
     }
 }

@@ -3,6 +3,7 @@
 namespace App\Http\Controllers\Api;
 
 use App\Http\Controllers\Controller;
+use App\Models\HistorialSesion;
 use App\Models\UsuarioApp;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
@@ -17,8 +18,8 @@ class PerfilController extends Controller
         return response()->json([
             'id' => $usuarioApp->id,
             'auth_user_id' => $usuarioApp->auth_user_id,
-            'display_name' => $usuarioApp->display_name,
-            'roles' => $usuarioApp->roles->pluck('name')->values(),
+            'nombre_visible' => $usuarioApp->nombre_visible,
+            'roles' => $usuarioApp->roles->map(fn ($r) => ['id' => $r->id, 'name' => $r->name])->values(),
         ]);
     }
 
@@ -28,14 +29,42 @@ class PerfilController extends Controller
         $usuarioApp = $request->attributes->get('app_user');
 
         $validados = $request->validate([
-            'display_name' => ['required', 'string', 'max:180'],
+            'nombre_visible' => ['required', 'string', 'max:180'],
+        ], [
+            'nombre_visible.required' => 'El nombre visible es obligatorio.',
+            'nombre_visible.string' => 'El nombre visible debe ser una cadena de texto.',
+            'nombre_visible.max' => 'El nombre visible no puede superar los 180 caracteres.',
         ]);
 
         $usuarioApp->update($validados);
 
         return response()->json([
             'id' => $usuarioApp->id,
-            'display_name' => $usuarioApp->display_name,
+            'nombre_visible' => $usuarioApp->nombre_visible,
         ]);
+    }
+
+    public function historialSesiones(Request $request): JsonResponse
+    {
+        /** @var UsuarioApp $usuarioApp */
+        $usuarioApp = $request->attributes->get('app_user');
+
+        $historial = HistorialSesion::query()
+            ->where('usuario_id', $usuarioApp->id)
+            ->orderByDesc('iniciada_en')
+            ->limit(20)
+            ->get()
+            ->map(fn (HistorialSesion $s): array => [
+                'id'               => $s->id,
+                'ip_address'       => $s->ip_address,
+                'dispositivo'      => $s->dispositivo,
+                'navegador'        => $s->navegador,
+                'sistema_operativo' => $s->sistema_operativo,
+                'pais'             => $s->pais,
+                'ciudad'           => $s->ciudad,
+                'iniciada_en'      => $s->iniciada_en?->toISOString(),
+            ]);
+
+        return response()->json(['data' => $historial]);
     }
 }

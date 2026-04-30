@@ -7,11 +7,16 @@ use Illuminate\Database\Eloquent\Relations\HasMany;
 
 class Ubicacion extends Model
 {
-    protected $table = 'locations';
-    protected $fillable = ['name'];
+    protected $table = 'ubicaciones';
 
-    public function stockLevels(): HasMany
+    protected $fillable = [
+        'nombre',
+        'descripcion',
+        'tipo',
+    ];
+
+    public function nivelesStock(): HasMany
     {
-        return $this->hasMany(NivelStock::class);
+        return $this->hasMany(NivelStock::class, 'ubicacion_id');
     }
 }

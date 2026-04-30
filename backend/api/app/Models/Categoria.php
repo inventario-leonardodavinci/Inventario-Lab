@@ -7,11 +7,14 @@ use Illuminate\Database\Eloquent\Relations\HasMany;
 
 class Categoria extends Model
 {
-    protected $table = 'categories';
-    protected $fillable = ['name'];
+    protected $table = 'categorias';
 
-    public function items(): HasMany
+    protected $fillable = [
+        'nombre',
+    ];
+
+    public function articulos(): HasMany
     {
-        return $this->hasMany(Articulo::class);
+        return $this->hasMany(Articulo::class, 'categoria_id');
     }
 }

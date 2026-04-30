@@ -8,33 +8,34 @@ use Illuminate\Database\Eloquent\Relations\HasMany;
 
 class Articulo extends Model
 {
-    protected $table = 'items';
+    protected $table = 'articulos';
+
     protected $fillable = [
-        'code',
-        'serial_number',
-        'name',
-        'material_type',
-        'capacity_ml',
-        'expiration_date',
-        'category_id',
-        'unit',
-        'notes',
-        'is_active',
+        'codigo',
+        'nombre',
+        'descripcion',
+        'categoria_id',
+        'unidad',
+        'notas',
+        'activo',
     ];
 
     protected $casts = [
-        'capacity_ml' => 'decimal:2',
-        'expiration_date' => 'date',
-        'is_active' => 'boolean',
+        'activo' => 'boolean',
     ];
 
-    public function category(): BelongsTo
+    public function categoria(): BelongsTo
     {
-        return $this->belongsTo(Categoria::class);
+        return $this->belongsTo(Categoria::class, 'categoria_id');
     }
 
-    public function stockLevels(): HasMany
+    public function nivelesStock(): HasMany
     {
-        return $this->hasMany(NivelStock::class);
+        return $this->hasMany(NivelStock::class, 'articulo_id');
+    }
+
+    public function lineasMovimiento(): HasMany
+    {
+        return $this->hasMany(LineaMovimiento::class, 'articulo_id');
     }
 }

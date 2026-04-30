@@ -2,6 +2,7 @@
 
 namespace App\Http\Middleware;
 
+use App\Models\Rol;
 use App\Models\UsuarioApp;
 use Closure;
 use Illuminate\Http\JsonResponse;
@@ -23,17 +24,27 @@ class ResolverUsuarioApp
         $usuarioApp = UsuarioApp::query()
             ->with('roles')
             ->where('auth_user_id', $idUsuarioAutenticado)
-            ->where('is_active', true)
+            ->where('activo', true)
             ->first();
 
         if (! $usuarioApp) {
-            // Primer acceso: crear el usuario automáticamente (p.ej. login OAuth)
+            // Primer acceso: crear el usuario automáticamente
             $usuarioApp = UsuarioApp::query()->create([
-                'auth_user_id' => $idUsuarioAutenticado,
-                'display_name' => 'Usuario',
-                'is_active'    => true,
+                'auth_user_id'   => $idUsuarioAutenticado,
+                'nombre_visible' => 'Usuario',
+                'activo'         => true,
             ]);
+
             $usuarioApp->load('roles');
+        }
+
+        // Asignar rol 'consultor' si el usuario no tiene ninguno
+        if ($usuarioApp->roles->isEmpty()) {
+            $rolConsultor = Rol::where('name', 'consultor')->first();
+            if ($rolConsultor) {
+                $usuarioApp->roles()->attach($rolConsultor->id);
+                $usuarioApp->load('roles');
+            }
         }
 
         $request->attributes->set('app_user', $usuarioApp);

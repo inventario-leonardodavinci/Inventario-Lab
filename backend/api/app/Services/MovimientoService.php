@@ -2,124 +2,164 @@
 
 namespace App\Services;
 
-use App\Models\Movimiento;
 use App\Models\LineaMovimiento;
+use App\Models\Movimiento;
 use App\Models\NivelStock;
 use Illuminate\Support\Facades\DB;
 use RuntimeException;
 
 class MovimientoService
 {
+    public function __construct(private readonly AlertaService $alertaService)
+    {
+    }
+
     /**
+     * Crea un movimiento completo dentro de una transacción atómica.
+     *
      * @param array{
-     *   movement_type:string,
-     *   app_user_id:int,
-     *   reason:?string,
-     *   source_location_id:?int,
-     *   target_location_id:?int,
-     *   lines:array<int,array{item_id:int,quantity:float}>
+     *   tipo: string,
+     *   motivo: ?string,
+     *   ubicacion_origen_id: ?int,
+     *   ubicacion_destino_id: ?int,
+     *   usuario_id: int,
+     *   lineas: array<int, array{articulo_id: int, cantidad: float}>
      * } $datos
      */
     public function crearMovimiento(array $datos): Movimiento
     {
         return DB::transaction(function () use ($datos): Movimiento {
             $movimiento = Movimiento::query()->create([
-                'movement_type' => $datos['movement_type'],
-                'reason' => $datos['reason'] ?? null,
-                'source_location_id' => $datos['source_location_id'] ?? null,
-                'target_location_id' => $datos['target_location_id'] ?? null,
-                'app_user_id' => $datos['app_user_id'],
+                'tipo'                  => $datos['tipo'],
+                'motivo'                => $datos['motivo'] ?? null,
+                'ubicacion_origen_id'   => $datos['ubicacion_origen_id'] ?? null,
+                'ubicacion_destino_id'  => $datos['ubicacion_destino_id'] ?? null,
+                'usuario_id'            => $datos['usuario_id'],
             ]);
 
-            foreach ($datos['lines'] as $linea) {
-                $cantidad = (float) $linea['quantity'];
+            foreach ($datos['lineas'] as $linea) {
+                $cantidad = (float) $linea['cantidad'];
+
                 if ($cantidad <= 0) {
-                    throw new RuntimeException('Cantidad invalida en la linea de movimiento.');
+                    throw new RuntimeException('La cantidad de la línea debe ser mayor que cero.');
                 }
 
                 LineaMovimiento::query()->create([
-                    'movement_id' => $movimiento->id,
-                    'item_id' => $linea['item_id'],
-                    'quantity' => $cantidad,
+                    'movimiento_id' => $movimiento->id,
+                    'articulo_id'   => $linea['articulo_id'],
+                    'cantidad'      => $cantidad,
                 ]);
 
                 $this->aplicarDeltaStock(
-                    tipoMovimiento: $datos['movement_type'],
-                    articuloId: (int) $linea['item_id'],
+                    tipo: $datos['tipo'],
+                    articuloId: (int) $linea['articulo_id'],
                     cantidad: $cantidad,
-                    ubicacionOrigenId: $datos['source_location_id'] ?? null,
-                    ubicacionDestinoId: $datos['target_location_id'] ?? null
+                    origenId: $datos['ubicacion_origen_id'] ?? null,
+                    destinoId: $datos['ubicacion_destino_id'] ?? null,
                 );
+
+                $this->alertaService->evaluarStockBajo((int) $linea['articulo_id']);
             }
 
-            return $movimiento->load('lines');
+            return $movimiento->load(['lineas.articulo', 'usuario']);
         });
     }
 
-    private function aplicarDeltaStock(
-        string $tipoMovimiento,
+    /**
+     * Despacha la actualización de stock según el tipo de movimiento.
+     */
+    public function aplicarDeltaStock(
+        string $tipo,
         int $articuloId,
         float $cantidad,
-        ?int $ubicacionOrigenId,
-        ?int $ubicacionDestinoId
+        ?int $origenId,
+        ?int $destinoId
     ): void {
-        if ($tipoMovimiento === 'entry') {
-            if ($ubicacionDestinoId === null) {
-                throw new RuntimeException('Se requiere ubicación destino para una entrada.');
-            }
-            $this->incrementarStock($articuloId, $ubicacionDestinoId, $cantidad);
-            return;
-        }
-
-        if ($tipoMovimiento === 'exit') {
-            if ($ubicacionOrigenId === null) {
-                throw new RuntimeException('Se requiere ubicación origen para una salida.');
-            }
-            $this->decrementarStock($articuloId, $ubicacionOrigenId, $cantidad);
-            return;
-        }
-
-        if ($tipoMovimiento === 'transfer') {
-            if ($ubicacionOrigenId === null || $ubicacionDestinoId === null) {
-                throw new RuntimeException('Se requieren ubicación origen y destino para un traslado.');
-            }
-            $this->decrementarStock($articuloId, $ubicacionOrigenId, $cantidad);
-            $this->incrementarStock($articuloId, $ubicacionDestinoId, $cantidad);
-            return;
-        }
-
-        if ($tipoMovimiento === 'adjustment') {
-            if ($ubicacionDestinoId === null) {
-                throw new RuntimeException('Se requiere ubicación destino para un ajuste.');
-            }
-            $this->incrementarStock($articuloId, $ubicacionDestinoId, $cantidad);
-        }
+        match ($tipo) {
+            'entrada' => $this->manejarEntrada($articuloId, $cantidad, $destinoId),
+            'salida'  => $this->manejarSalida($articuloId, $cantidad, $origenId),
+            'traslado' => $this->manejarTraslado($articuloId, $cantidad, $origenId, $destinoId),
+            'ajuste'  => $this->manejarAjuste($articuloId, $cantidad, $destinoId),
+            default   => throw new RuntimeException("Tipo de movimiento desconocido: {$tipo}."),
+        };
     }
 
-    private function incrementarStock(int $articuloId, int $ubicacionId, float $cantidad): void
+    private function manejarEntrada(int $articuloId, float $cantidad, ?int $destinoId): void
+    {
+        if ($destinoId === null) {
+            throw new RuntimeException('Se requiere ubicación destino para una entrada.');
+        }
+        $this->incrementarStock($articuloId, $destinoId, $cantidad);
+    }
+
+    private function manejarSalida(int $articuloId, float $cantidad, ?int $origenId): void
+    {
+        if ($origenId === null) {
+            throw new RuntimeException('Se requiere ubicación origen para una salida.');
+        }
+        $this->decrementarStock($articuloId, $origenId, $cantidad);
+    }
+
+    private function manejarTraslado(int $articuloId, float $cantidad, ?int $origenId, ?int $destinoId): void
+    {
+        if ($origenId === null || $destinoId === null) {
+            throw new RuntimeException('Se requieren ubicación origen y destino para un traslado.');
+        }
+        $this->decrementarStock($articuloId, $origenId, $cantidad);
+        $this->incrementarStock($articuloId, $destinoId, $cantidad);
+    }
+
+    private function manejarAjuste(int $articuloId, float $cantidad, ?int $destinoId): void
+    {
+        if ($destinoId === null) {
+            throw new RuntimeException('Se requiere ubicación destino para un ajuste.');
+        }
+        $this->establecerStock($articuloId, $destinoId, $cantidad);
+    }
+
+    /**
+     * Incrementa el stock de un artículo en una ubicación.
+     * Crea el registro si no existe.
+     */
+    public function incrementarStock(int $articuloId, int $ubicacionId, float $cantidad): void
     {
         $stock = NivelStock::query()->firstOrCreate(
-            ['item_id' => $articuloId, 'location_id' => $ubicacionId],
-            ['quantity' => 0, 'min_quantity' => 0]
+            ['articulo_id' => $articuloId, 'ubicacion_id' => $ubicacionId],
+            ['cantidad' => 0, 'cantidad_minima' => 0]
         );
 
-        $stock->quantity = (float) $stock->quantity + $cantidad;
+        $stock->cantidad = (float) $stock->cantidad + $cantidad;
         $stock->save();
     }
 
-    private function decrementarStock(int $articuloId, int $ubicacionId, float $cantidad): void
+    /**
+     * Decrementa el stock de un artículo en una ubicación.
+     * Lanza RuntimeException si el stock es insuficiente.
+     */
+    public function decrementarStock(int $articuloId, int $ubicacionId, float $cantidad): void
     {
         $stock = NivelStock::query()
             ->lockForUpdate()
-            ->where('item_id', $articuloId)
-            ->where('location_id', $ubicacionId)
+            ->where('articulo_id', $articuloId)
+            ->where('ubicacion_id', $ubicacionId)
             ->first();
 
-        if (! $stock || (float) $stock->quantity < $cantidad) {
+        if (! $stock || (float) $stock->cantidad < $cantidad) {
             throw new RuntimeException('Stock insuficiente para este movimiento.');
         }
 
-        $stock->quantity = (float) $stock->quantity - $cantidad;
+        $stock->cantidad = (float) $stock->cantidad - $cantidad;
         $stock->save();
+    }
+
+    /**
+     * Establece el stock de un artículo en una ubicación al valor indicado.
+     */
+    public function establecerStock(int $articuloId, int $ubicacionId, float $cantidad): void
+    {
+        NivelStock::query()->updateOrCreate(
+            ['articulo_id' => $articuloId, 'ubicacion_id' => $ubicacionId],
+            ['cantidad' => $cantidad]
+        );
     }
 }

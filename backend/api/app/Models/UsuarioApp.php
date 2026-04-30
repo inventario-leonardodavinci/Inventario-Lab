@@ -8,24 +8,30 @@ use Illuminate\Database\Eloquent\Relations\HasMany;
 
 class UsuarioApp extends Model
 {
-    protected $table = 'app_users';
+    protected $table = 'usuarios_app';
+
     protected $fillable = [
         'auth_user_id',
-        'display_name',
-        'is_active',
+        'nombre_visible',
+        'activo',
     ];
 
     protected $casts = [
-        'is_active' => 'boolean',
+        'activo' => 'boolean',
     ];
 
     public function roles(): BelongsToMany
     {
-        return $this->belongsToMany(Rol::class, 'app_user_roles', 'app_user_id', 'role_id');
+        return $this->belongsToMany(Rol::class, 'usuario_roles', 'usuario_id', 'rol_id');
     }
 
-    public function movements(): HasMany
+    public function movimientos(): HasMany
     {
-        return $this->hasMany(Movimiento::class);
+        return $this->hasMany(Movimiento::class, 'usuario_id');
+    }
+
+    public function tieneRol(string $nombreRol): bool
+    {
+        return $this->roles()->where('name', $nombreRol)->exists();
     }
 }

@@ -22,9 +22,9 @@ class ResumenHoyTest extends TestCase
         parent::setUp();
 
         $this->usuario = UsuarioApp::create([
-            'auth_user_id' => 'test-resumen-hoy-' . uniqid(),
-            'display_name' => 'Tester ResumenHoy',
-            'is_active'    => true,
+            'auth_user_id'   => 'test-resumen-hoy-' . uniqid(),
+            'nombre_visible' => 'Tester ResumenHoy',
+            'activo'         => true,
         ]);
     }
 
@@ -55,30 +55,30 @@ class ResumenHoyTest extends TestCase
         // 3 entradas de hoy
         for ($i = 0; $i < 3; $i++) {
             Movimiento::create([
-                'movement_type' => 'entry',
-                'app_user_id'   => $this->usuario->id,
+                'tipo'       => 'entrada',
+                'usuario_id' => $this->usuario->id,
             ]);
         }
 
         // 2 salidas de hoy
         for ($i = 0; $i < 2; $i++) {
             Movimiento::create([
-                'movement_type' => 'exit',
-                'app_user_id'   => $this->usuario->id,
+                'tipo'       => 'salida',
+                'usuario_id' => $this->usuario->id,
             ]);
         }
 
-        // 1 transferencia de hoy (no debe contarse)
+        // 1 traslado de hoy (no debe contarse)
         Movimiento::create([
-            'movement_type' => 'transfer',
-            'app_user_id'   => $this->usuario->id,
+            'tipo'       => 'traslado',
+            'usuario_id' => $this->usuario->id,
         ]);
 
         // 1 entrada de ayer (no debe contarse)
         $ayer = now()->subDay()->toDateTimeString();
         $movimientoAyer = Movimiento::create([
-            'movement_type' => 'entry',
-            'app_user_id'   => $this->usuario->id,
+            'tipo'       => 'entrada',
+            'usuario_id' => $this->usuario->id,
         ]);
         $movimientoAyer->forceFill(['created_at' => $ayer])->save();
 

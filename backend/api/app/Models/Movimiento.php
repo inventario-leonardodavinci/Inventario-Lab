@@ -8,24 +8,35 @@ use Illuminate\Database\Eloquent\Relations\HasMany;
 
 class Movimiento extends Model
 {
-    protected $table = 'movements';
+    protected $table = 'movimientos';
+
     public const UPDATED_AT = null;
 
     protected $fillable = [
-        'movement_type',
-        'reason',
-        'source_location_id',
-        'target_location_id',
-        'app_user_id',
+        'tipo',
+        'motivo',
+        'ubicacion_origen_id',
+        'ubicacion_destino_id',
+        'usuario_id',
     ];
 
-    public function lines(): HasMany
+    public function lineas(): HasMany
     {
-        return $this->hasMany(LineaMovimiento::class);
+        return $this->hasMany(LineaMovimiento::class, 'movimiento_id');
     }
 
-    public function user(): BelongsTo
+    public function usuario(): BelongsTo
     {
-        return $this->belongsTo(UsuarioApp::class, 'app_user_id');
+        return $this->belongsTo(UsuarioApp::class, 'usuario_id');
+    }
+
+    public function ubicacionOrigen(): BelongsTo
+    {
+        return $this->belongsTo(Ubicacion::class, 'ubicacion_origen_id');
+    }
+
+    public function ubicacionDestino(): BelongsTo
+    {
+        return $this->belongsTo(Ubicacion::class, 'ubicacion_destino_id');
     }
 }

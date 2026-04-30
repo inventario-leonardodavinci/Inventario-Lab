@@ -28,9 +28,9 @@ class ResumenHoyPropertyTest extends TestCase
         parent::setUp();
 
         $this->usuario = UsuarioApp::create([
-            'auth_user_id' => 'test-prop-' . uniqid(),
-            'display_name' => 'Tester Propiedad',
-            'is_active'    => true,
+            'auth_user_id'   => 'test-prop-' . uniqid(),
+            'nombre_visible' => 'Tester Propiedad',
+            'activo'         => true,
         ]);
     }
 
@@ -40,7 +40,7 @@ class ResumenHoyPropertyTest extends TestCase
     public function test_propiedad_filtrado_correcto_por_tipo_y_fecha(): void
     {
         $iteraciones = 50;
-        $tiposRuido  = ['transfer', 'adjustment'];
+        $tiposRuido  = ['traslado', 'ajuste'];
 
         for ($iter = 0; $iter < $iteraciones; $iter++) {
             // Limpiar movimientos de iteraciones anteriores
@@ -54,24 +54,24 @@ class ResumenHoyPropertyTest extends TestCase
             // Crear N entradas de hoy
             for ($i = 0; $i < $n; $i++) {
                 Movimiento::create([
-                    'movement_type' => 'entry',
-                    'app_user_id'   => $this->usuario->id,
+                    'tipo'       => 'entrada',
+                    'usuario_id' => $this->usuario->id,
                 ]);
             }
 
             // Crear M salidas de hoy
             for ($i = 0; $i < $m; $i++) {
                 Movimiento::create([
-                    'movement_type' => 'exit',
-                    'app_user_id'   => $this->usuario->id,
+                    'tipo'       => 'salida',
+                    'usuario_id' => $this->usuario->id,
                 ]);
             }
 
             // Crear K movimientos de otros tipos hoy (no deben contarse)
             for ($i = 0; $i < $k; $i++) {
                 Movimiento::create([
-                    'movement_type' => $tiposRuido[array_rand($tiposRuido)],
-                    'app_user_id'   => $this->usuario->id,
+                    'tipo'       => $tiposRuido[array_rand($tiposRuido)],
+                    'usuario_id' => $this->usuario->id,
                 ]);
             }
 
@@ -79,11 +79,11 @@ class ResumenHoyPropertyTest extends TestCase
             for ($i = 0; $i < $j; $i++) {
                 $diasAtras = random_int(1, 30);
                 $fechaAnterior = now()->subDays($diasAtras)->toDateTimeString();
-                $tipo = random_int(0, 1) === 0 ? 'entry' : 'exit';
+                $tipo = random_int(0, 1) === 0 ? 'entrada' : 'salida';
 
                 $mov = Movimiento::create([
-                    'movement_type' => $tipo,
-                    'app_user_id'   => $this->usuario->id,
+                    'tipo'       => $tipo,
+                    'usuario_id' => $this->usuario->id,
                 ]);
                 $mov->forceFill(['created_at' => $fechaAnterior])->save();
             }

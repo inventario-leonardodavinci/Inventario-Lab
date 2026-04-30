@@ -7,22 +7,27 @@ use Illuminate\Database\Eloquent\Relations\BelongsTo;
 
 class LineaMovimiento extends Model
 {
-    protected $table = 'movement_lines';
+    protected $table = 'lineas_movimiento';
+
     public const UPDATED_AT = null;
 
     protected $fillable = [
-        'movement_id',
-        'item_id',
-        'batch_id',
-        'quantity',
+        'movimiento_id',
+        'articulo_id',
+        'cantidad',
     ];
 
     protected $casts = [
-        'quantity' => 'decimal:2',
+        'cantidad' => 'decimal:2',
     ];
 
-    public function movement(): BelongsTo
+    public function movimiento(): BelongsTo
     {
-        return $this->belongsTo(Movimiento::class);
+        return $this->belongsTo(Movimiento::class, 'movimiento_id');
+    }
+
+    public function articulo(): BelongsTo
+    {
+        return $this->belongsTo(Articulo::class, 'articulo_id');
     }
 }

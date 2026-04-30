@@ -3,29 +3,28 @@
 namespace App\Models;
 
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Database\Eloquent\Relations\BelongsTo;
 
 class ActivoMantenimiento extends Model
 {
-    protected $table = 'maintenance_assets';
+    protected $table = 'activos_mantenimiento';
+
     protected $fillable = [
-        'item_id',
-        'asset_code',
-        'serial_number',
-        'status',
-        'manufacturer',
-        'model',
-        'purchase_date',
-        'warranty_end_date',
-        'last_service_date',
-        'next_service_due_date',
-        'current_location_id',
-        'notes',
+        'articulo_id',
+        'codigo_activo',
+        'numero_serie',
+        'estado',
+        'ubicacion_actual_id',
+        'notas',
     ];
 
-    protected $casts = [
-        'purchase_date' => 'date',
-        'warranty_end_date' => 'date',
-        'last_service_date' => 'date',
-        'next_service_due_date' => 'date',
-    ];
+    public function articulo(): BelongsTo
+    {
+        return $this->belongsTo(Articulo::class, 'articulo_id');
+    }
+
+    public function ubicacionActual(): BelongsTo
+    {
+        return $this->belongsTo(Ubicacion::class, 'ubicacion_actual_id');
+    }
 }

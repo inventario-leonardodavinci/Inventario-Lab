@@ -16,37 +16,37 @@ class InventarioController extends Controller
         $busqueda = trim((string) $request->query('search', ''));
 
         $articulos = Articulo::query()
-            ->with('category:id,name')
+            ->with('categoria:id,nombre')
             ->when($busqueda !== '', function ($query) use ($busqueda): void {
                 $query->where(function ($q) use ($busqueda): void {
-                    $q->where('name', 'ILIKE', "%{$busqueda}%")
-                        ->orWhere('code', 'ILIKE', "%{$busqueda}%");
+                    $q->where('nombre', 'ILIKE', "%{$busqueda}%")
+                        ->orWhere('codigo', 'ILIKE', "%{$busqueda}%");
                 });
             })
-            ->orderBy('name')
+            ->orderBy('nombre')
             ->paginate((int) $request->query('per_page', 20));
 
         $articuloIds = $articulos->getCollection()->pluck('id');
         $stockPorArticulo = NivelStock::query()
-            ->selectRaw('item_id, SUM(quantity) as total_quantity, MIN(min_quantity) as min_quantity')
-            ->whereIn('item_id', $articuloIds)
-            ->groupBy('item_id')
+            ->selectRaw('articulo_id, SUM(cantidad) as total_cantidad, MIN(cantidad_minima) as cantidad_minima')
+            ->whereIn('articulo_id', $articuloIds)
+            ->groupBy('articulo_id')
             ->get()
-            ->keyBy('item_id');
+            ->keyBy('articulo_id');
 
         $filas = $articulos->getCollection()->map(function (Articulo $articulo) use ($stockPorArticulo): array {
             $stock = $stockPorArticulo->get($articulo->id);
-            $cantidad = (float) ($stock->total_quantity ?? 0);
-            $cantidadMinima = (float) ($stock->min_quantity ?? 0);
+            $cantidad = (float) ($stock->total_cantidad ?? 0);
+            $cantidadMinima = (float) ($stock->cantidad_minima ?? 0);
 
             return [
                 'id' => $articulo->id,
-                'code' => $articulo->code,
-                'name' => $articulo->name,
-                'category' => $articulo->category?->name,
+                'codigo' => $articulo->codigo,
+                'nombre' => $articulo->nombre,
+                'categoria' => $articulo->categoria?->nombre,
                 'stock' => $cantidad,
-                'min_stock' => $cantidadMinima,
-                'status' => $cantidad <= $cantidadMinima ? 'critical' : 'ok',
+                'stock_minimo' => $cantidadMinima,
+                'estado_stock' => $cantidad <= $cantidadMinima ? 'critico' : 'ok',
             ];
         });
 
@@ -63,16 +63,20 @@ class InventarioController extends Controller
     public function store(Request $request): JsonResponse
     {
         $validados = $request->validate([
-            'code' => ['nullable', 'string', 'max:100', Rule::unique('items', 'code')],
-            'name' => ['required', 'string', 'max:180'],
-            'category_id' => ['required', 'integer', 'exists:categories,id'],
-            'unit' => ['nullable', 'string', 'max:40'],
-            'material_type' => ['nullable', 'string', 'max:60'],
-            'capacity_ml' => ['nullable', 'numeric', 'min:0'],
-            'notes' => ['nullable', 'string'],
+            'codigo' => ['nullable', 'string', 'max:100', Rule::unique('articulos', 'codigo')],
+            'nombre' => ['required', 'string', 'max:180'],
+            'categoria_id' => ['required', 'integer', 'exists:categorias,id'],
+            'unidad' => ['nullable', 'string', 'max:40'],
+            'notas' => ['nullable', 'string'],
+        ], [
+            'codigo.unique' => 'Ya existe un artículo con ese código.',
+            'nombre.required' => 'El nombre del artículo es obligatorio.',
+            'nombre.max' => 'El nombre no puede superar los 180 caracteres.',
+            'categoria_id.required' => 'La categoría es obligatoria.',
+            'categoria_id.exists' => 'La categoría seleccionada no existe.',
         ]);
 
-        $articulo = Articulo::query()->create($validados + ['is_active' => true]);
+        $articulo = Articulo::query()->create($validados + ['activo' => true]);
 
         return response()->json(['data' => $articulo], 201);
     }

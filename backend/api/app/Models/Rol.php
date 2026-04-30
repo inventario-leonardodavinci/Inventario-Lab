@@ -8,10 +8,13 @@ use Illuminate\Database\Eloquent\Relations\BelongsToMany;
 class Rol extends Model
 {
     protected $table = 'roles';
-    protected $fillable = ['name'];
 
-    public function users(): BelongsToMany
+    protected $fillable = [
+        'name',
+    ];
+
+    public function usuarios(): BelongsToMany
     {
-        return $this->belongsToMany(UsuarioApp::class, 'app_user_roles', 'role_id', 'app_user_id');
+        return $this->belongsToMany(UsuarioApp::class, 'usuario_roles', 'rol_id', 'usuario_id');
     }
 }

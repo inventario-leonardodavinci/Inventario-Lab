@@ -3,6 +3,7 @@
 namespace App\Http\Controllers\Api;
 
 use App\Http\Controllers\Controller;
+use App\Http\Requests\MovimientoRequest;
 use App\Models\UsuarioApp;
 use App\Models\Movimiento;
 use App\Services\MovimientoService;
@@ -21,12 +22,12 @@ class MovimientoController extends Controller
         $hoy = now()->toDateString();
 
         $entradasHoy = Movimiento::query()
-            ->where('movement_type', 'entry')
+            ->where('tipo', 'entrada')
             ->whereDate('created_at', $hoy)
             ->count();
 
         $salidasHoy = Movimiento::query()
-            ->where('movement_type', 'exit')
+            ->where('tipo', 'salida')
             ->whereDate('created_at', $hoy)
             ->count();
 
@@ -38,37 +39,55 @@ class MovimientoController extends Controller
 
     public function index(Request $request): JsonResponse
     {
-        $filas = Movimiento::query()
-            ->with(['user:id,display_name', 'lines:id,movement_id,item_id,quantity'])
+        $paginacion = Movimiento::query()
+            ->with([
+                'usuario:id,nombre_visible',
+                'lineas:id,movimiento_id,articulo_id,cantidad',
+                'lineas.articulo:id,nombre',
+            ])
             ->latest('id')
             ->paginate((int) $request->query('per_page', 20));
 
-        return response()->json($filas);
+        $filas = $paginacion->getCollection()->map(function (Movimiento $movimiento): array {
+            return [
+                'id'                   => $movimiento->id,
+                'tipo'                 => $movimiento->tipo,
+                'motivo'               => $movimiento->motivo,
+                'ubicacion_origen_id'  => $movimiento->ubicacion_origen_id,
+                'ubicacion_destino_id' => $movimiento->ubicacion_destino_id,
+                'usuario_id'           => $movimiento->usuario_id,
+                'usuario'              => $movimiento->usuario?->nombre_visible,
+                'lineas'               => $movimiento->lineas->map(fn ($linea) => [
+                    'id'          => $linea->id,
+                    'articulo_id' => $linea->articulo_id,
+                    'articulo'    => $linea->articulo?->nombre,
+                    'cantidad'    => (float) $linea->cantidad,
+                ])->values(),
+                'created_at' => $movimiento->created_at,
+            ];
+        });
+
+        return response()->json([
+            'data' => $filas,
+            'meta' => [
+                'current_page' => $paginacion->currentPage(),
+                'last_page'    => $paginacion->lastPage(),
+                'total'        => $paginacion->total(),
+            ],
+        ]);
     }
 
-    public function store(Request $request): JsonResponse
+    public function store(MovimientoRequest $request): JsonResponse
     {
-        $validados = $request->validate([
-            'movement_type' => ['required', 'in:entry,exit,transfer,adjustment'],
-            'reason' => ['nullable', 'string', 'max:255'],
-            'source_location_id' => ['nullable', 'integer', 'exists:locations,id'],
-            'target_location_id' => ['nullable', 'integer', 'exists:locations,id'],
-            'lines' => ['required', 'array', 'min:1'],
-            'lines.*.item_id' => ['required', 'integer', 'exists:items,id'],
-            'lines.*.quantity' => ['required', 'numeric', 'gt:0'],
-        ]);
-
         /** @var UsuarioApp $usuarioApp */
         $usuarioApp = $request->attributes->get('app_user');
 
         try {
-            $movimiento = $this->movimientoService->crearMovimiento($validados + [
-                'app_user_id' => $usuarioApp->id,
-            ]);
+            $movimiento = $this->movimientoService->crearMovimiento(
+                $request->validated() + ['usuario_id' => $usuarioApp->id]
+            );
         } catch (RuntimeException $excepcion) {
-            return response()->json([
-                'message' => $excepcion->getMessage(),
-            ], 409);
+            return response()->json(['message' => $excepcion->getMessage()], 422);
         }
 
         return response()->json(['data' => $movimiento], 201);
