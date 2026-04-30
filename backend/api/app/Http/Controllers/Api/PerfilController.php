@@ -55,14 +55,16 @@ class PerfilController extends Controller
             ->limit(20)
             ->get()
             ->map(fn (HistorialSesion $s): array => [
-                'id'               => $s->id,
-                'ip_address'       => $s->ip_address,
-                'dispositivo'      => $s->dispositivo,
-                'navegador'        => $s->navegador,
+                'id'                => $s->id,
+                'ip_address'        => $s->ip_address,
+                'dispositivo'       => $s->dispositivo,
+                'navegador'         => $s->navegador,
                 'sistema_operativo' => $s->sistema_operativo,
-                'pais'             => $s->pais,
-                'ciudad'           => $s->ciudad,
-                'iniciada_en'      => $s->iniciada_en?->toISOString(),
+                'pais'              => $s->pais,
+                'ciudad'            => $s->ciudad,
+                'tipo_evento'       => $s->tipo_evento ?? 'login',
+                'exitoso'           => $s->exitoso ?? true,
+                'iniciada_en'       => $s->iniciada_en?->toISOString(),
             ]);
 
         return response()->json(['data' => $historial]);

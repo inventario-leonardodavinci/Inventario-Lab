@@ -120,6 +120,8 @@ class ArticuloController extends Controller
 
     /**
      * Crear un nuevo artículo (HTTP 201).
+     * Acepta opcionalmente stock_inicial, stock_minimo y ubicacion_id
+     * para crear el nivel de stock en el mismo paso.
      */
     public function store(ArticuloRequest $request): JsonResponse
     {
@@ -127,10 +129,23 @@ class ArticuloController extends Controller
             $request->validated() + ['activo' => true]
         );
 
+        $stockInicial = (float) $request->input('stock_inicial', 0);
+        $stockMinimo  = (float) $request->input('stock_minimo', 0);
+        $ubicacionId  = $request->input('ubicacion_id');
+
+        if ($ubicacionId && ($stockInicial > 0 || $stockMinimo > 0)) {
+            NivelStock::query()->create([
+                'articulo_id'     => $articulo->id,
+                'ubicacion_id'    => $ubicacionId,
+                'cantidad'        => $stockInicial,
+                'cantidad_minima' => $stockMinimo,
+            ]);
+        }
+
         $articulo->load('categoria:id,nombre');
 
         return response()->json([
-            'data' => $this->serializar($articulo, 0.0, 0.0),
+            'data' => $this->serializar($articulo, $stockInicial, $stockMinimo),
         ], 201);
     }
 
