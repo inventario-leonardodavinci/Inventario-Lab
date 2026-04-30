@@ -116,7 +116,7 @@ export default function Perfil() {
   // ─── Estado avatar ────────────────────────────────────────────────────────
   const [subiendoAvatar, setSubiendoAvatar] = useState(false);
   const inputArchivoRef = useRef<HTMLInputElement>(null);
-  const avatarLocal = user.avatarUrl;
+  const avatarLocal = user?.avatarUrl;
   const [imagenSinRecortar, setImagenSinRecortar] = useState<string | null>(null);
   const [imagenOriginal, setImagenOriginal] = useState<string | null>(null);
   const editorAbierto = imagenSinRecortar !== null;

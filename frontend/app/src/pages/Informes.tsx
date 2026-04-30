@@ -10,7 +10,7 @@ import { useNotificaciones } from "@/hooks/queries";
 
 export default function Informes() {
   const { user } = useAuth();
-  const { data } = useNotificaciones(user?.authUserId);
+  const { data } = useNotificaciones();
 
   const reportRows = (data?.data ?? []).map((item) => ({
     id: `ALERT-${item.id}`,

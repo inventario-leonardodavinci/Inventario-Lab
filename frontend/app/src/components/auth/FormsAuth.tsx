@@ -6,7 +6,7 @@ import { Label } from "@/components/ui/label";
 import { useAuth } from "@/context/ContextoAutenticacion";
 import { toast } from "sonner";
 import { useState, useRef, useEffect } from "react";
-import { AlertCircle, CheckCircle2 } from "lucide-react";
+import { AlertCircle } from "lucide-react";
 
 // ─── Componente de alerta inline ─────────────────────────────────────────────
 
@@ -28,15 +28,6 @@ function AlertaError({ mensaje }: { mensaje: string }) {
   return (
     <div className="flex items-start gap-2.5 rounded-lg border border-destructive/20 bg-destructive/8 px-3.5 py-2.5 text-sm text-destructive animate-in fade-in slide-in-from-top-1 duration-200">
       <AlertCircle className="mt-0.5 size-4 shrink-0" />
-      <span>{mensaje}</span>
-    </div>
-  );
-}
-
-function AlertaExito({ mensaje }: { mensaje: string }) {
-  return (
-    <div className="flex items-start gap-2.5 rounded-lg border border-green-500/20 bg-green-500/8 px-3.5 py-2.5 text-sm text-green-700 dark:text-green-400">
-      <CheckCircle2 className="mt-0.5 size-4 shrink-0" />
       <span>{mensaje}</span>
     </div>
   );

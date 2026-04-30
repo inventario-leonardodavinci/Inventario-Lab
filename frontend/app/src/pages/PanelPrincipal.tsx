@@ -28,6 +28,12 @@ const kpiBadgeVariant: Record<string, "destructive" | "secondary"> = {
 export default function PanelPrincipal() {
   const { user } = useAuth();
   const navigate = useNavigate();
+
+  if (!user) {
+    navigate("/login");
+    return null;
+  }
+
   const {
     inventoryCount,
     criticalCount,
@@ -38,7 +44,7 @@ export default function PanelPrincipal() {
     errorMovimientos,
     lowStockItems,
     cargando,
-  } = usePanelData(user?.authUserId);
+  } = usePanelData();
 
   if (cargando) return <SkeletonPanel />;
 
