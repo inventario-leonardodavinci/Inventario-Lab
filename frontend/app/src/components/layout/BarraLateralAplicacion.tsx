@@ -22,7 +22,6 @@ import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar'
 
 const menuItems = [
   { title: 'Panel', url: '/', icon: LayoutDashboard },
-  { title: 'Inventario', url: '/inventario', icon: Package },
   { title: 'Artículos', url: '/articulos', icon: Package },
   { title: 'Movimientos', url: '/movimientos', icon: Beaker },
   { title: 'Alertas', url: '/alertas', icon: Bell },

@@ -42,6 +42,7 @@ Route::prefix('v1')->middleware(['throttle:api', 'app.user'])->group(function ()
     Route::post('/categorias', [CategoriaController::class, 'store'])->middleware('role:administrador');
     Route::get('/categorias/{categoria}', [CategoriaController::class, 'show']);
     Route::patch('/categorias/{categoria}', [CategoriaController::class, 'update'])->middleware('role:administrador');
+    Route::delete('/categorias/{categoria}', [CategoriaController::class, 'destroy'])->middleware('role:administrador');
 
     // ── Movimientos ───────────────────────────────────────────────────────────
     Route::get('/movimientos/resumen-hoy', [MovimientoController::class, 'resumenHoy']);

@@ -6,6 +6,50 @@ import { Label } from "@/components/ui/label";
 import { useAuth } from "@/context/ContextoAutenticacion";
 import { toast } from "sonner";
 import { useState, useRef, useEffect } from "react";
+import { AlertCircle } from "lucide-react";
+
+// ─── Componente de alerta inline ─────────────────────────────────────────────
+
+// ─── Componentes de feedback ──────────────────────────────────────────────────
+
+/** Error de campo individual — aparece debajo del input */
+function ErrorCampo({ mensaje }: { mensaje: string }) {
+  if (!mensaje) return null;
+  return (
+    <p className="flex items-center gap-1.5 text-xs text-destructive animate-in fade-in slide-in-from-top-1 duration-200">
+      <AlertCircle className="size-3 shrink-0" />
+      {mensaje}
+    </p>
+  );
+}
+
+/** Error general del formulario — caja con fondo */
+function AlertaError({ mensaje }: { mensaje: string }) {
+  return (
+    <div className="flex items-start gap-2.5 rounded-lg border border-destructive/20 bg-destructive/8 px-3.5 py-2.5 text-sm text-destructive animate-in fade-in slide-in-from-top-1 duration-200">
+      <AlertCircle className="mt-0.5 size-4 shrink-0" />
+      <span>{mensaje}</span>
+    </div>
+  );
+}
+
+function inputCls(tieneError: boolean) {
+  return `h-11 rounded-xl transition-colors ${tieneError ? 'border-destructive focus-visible:ring-destructive/30' : ''}`;
+}
+
+function TogglePassword({ show, onToggle }: { show: boolean; onToggle: () => void }) {
+  return (
+    <button type="button" tabIndex={-1}
+      className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground transition-colors"
+      onClick={onToggle}
+    >
+      {show
+        ? <svg viewBox="0 0 24 24" fill="none" className="w-4 h-4" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M17.94 17.94A10.07 10.07 0 0 1 12 20c-7 0-11-8-11-8a18.45 18.45 0 0 1 5.06-5.94" /><path d="M9.9 4.24A9.12 9.12 0 0 1 12 4c7 0 11 8 11 8a18.5 18.5 0 0 1-2.16 3.19" /><line x1="1" y1="1" x2="23" y2="23" /></svg>
+        : <svg viewBox="0 0 24 24" fill="none" className="w-4 h-4" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z" /><circle cx="12" cy="12" r="3" /></svg>
+      }
+    </button>
+  );
+}
 
 const ICONO_GOOGLE = (
   <svg viewBox="0 0 24 24" className="w-5 h-5" aria-hidden="true">
@@ -133,12 +177,9 @@ export function VistaLogin({ onNavegar, oAuthProviders }: { onNavegar: (ruta: st
   const { login, loginConOAuth } = useAuth();
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
-  const [error, setError] = useState("");
+  const [errores, setErrores] = useState<{ email?: string; password?: string; general?: string }>({});
   const [showPassword, setShowPassword] = useState(false);
   const [submitting, setSubmitting] = useState(false);
-  const passwordRef = useRef<HTMLInputElement>(null);
-
-  // Último usuario guardado al cerrar sesión
   const [ultimoUsuario, setUltimoUsuario] = useState<{ nombre: string; email: string; avatarUrl: string } | null>(null);
   const [usandoUltimoUsuario, setUsandoUltimoUsuario] = useState(false);
 
@@ -147,11 +188,7 @@ export function VistaLogin({ onNavegar, oAuthProviders }: { onNavegar: (ruta: st
       const raw = localStorage.getItem("ultimo_usuario");
       if (raw) {
         const datos = JSON.parse(raw) as { nombre: string; email: string; avatarUrl: string };
-        if (datos.email) {
-          setUltimoUsuario(datos);
-          setUsandoUltimoUsuario(true);
-          setEmail(datos.email);
-        }
+        if (datos.email) { setUltimoUsuario(datos); setUsandoUltimoUsuario(true); setEmail(datos.email); }
       }
     } catch { /* ignorar */ }
   }, []);
@@ -160,10 +197,18 @@ export function VistaLogin({ onNavegar, oAuthProviders }: { onNavegar: (ruta: st
     return nombre.split(" ").slice(0, 2).map((p) => p[0]?.toUpperCase() ?? "").join("");
   }
 
+  const validar = () => {
+    const e: typeof errores = {};
+    if (!email.trim()) e.email = "El correo es obligatorio";
+    else if (!validarEmail(email)) e.email = "Introduce un correo válido";
+    if (!password) e.password = "La contraseña es obligatoria";
+    setErrores(e);
+    return Object.keys(e).length === 0;
+  };
+
   const onSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    setError("");
-    if (!validarEmail(email)) { setError("Ingresa un correo electrónico válido"); return; }
+    if (!validar()) return;
     setSubmitting(true);
     try {
       await login(email.trim(), password);
@@ -174,7 +219,7 @@ export function VistaLogin({ onNavegar, oAuthProviders }: { onNavegar: (ruta: st
         navigate(`/login/verificar?email=${encodeURIComponent(email.trim())}`);
         toast.info("Tu cuenta no está verificada. Revisa tu correo e introduce el código.");
       } else {
-        setError(message);
+        setErrores({ general: message });
       }
     } finally {
       setSubmitting(false);
@@ -186,35 +231,19 @@ export function VistaLogin({ onNavegar, oAuthProviders }: { onNavegar: (ruta: st
     catch (err) { toast.error(err instanceof Error ? err.message : "Error con el proveedor"); }
   };
 
-  const onUsarOtraCuenta = () => {
-    setUsandoUltimoUsuario(false);
-    setEmail("");
-    setPassword("");
-  };
+  const onUsarOtraCuenta = () => { setUsandoUltimoUsuario(false); setEmail(""); setPassword(""); setErrores({}); };
 
-  // Vista con último usuario
   if (usandoUltimoUsuario && ultimoUsuario) {
     return (
-      <AuthCard
-        titulo="Bienvenido de nuevo"
-        descripcion={`Última sesión iniciada con esta cuenta.`}
-        icono={
-          <svg viewBox="0 0 24 24" fill="none" className="w-7 h-7" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
-            <rect x="3" y="11" width="18" height="11" rx="2" />
-            <path d="M7 11V7a5 5 0 0 1 10 0v4" />
-          </svg>
-        }
+      <AuthCard titulo="Bienvenido de nuevo" descripcion="Última sesión iniciada con esta cuenta."
+        icono={<svg viewBox="0 0 24 24" fill="none" className="w-7 h-7" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"><rect x="3" y="11" width="18" height="11" rx="2" /><path d="M7 11V7a5 5 0 0 1 10 0v4" /></svg>}
       >
-        {/* Tarjeta del último usuario */}
         <div className="mb-5 flex flex-col items-center gap-3 rounded-2xl border bg-muted/30 px-6 py-5">
           <div className="relative">
-            {ultimoUsuario.avatarUrl ? (
-              <img src={ultimoUsuario.avatarUrl} alt={ultimoUsuario.nombre} className="size-16 rounded-full object-cover ring-4 ring-background shadow-md" />
-            ) : (
-              <div className="size-16 rounded-full bg-primary/15 ring-4 ring-background shadow-md flex items-center justify-center text-xl font-bold text-primary">
-                {iniciales(ultimoUsuario.nombre)}
-              </div>
-            )}
+            {ultimoUsuario.avatarUrl
+              ? <img src={ultimoUsuario.avatarUrl} alt={ultimoUsuario.nombre} className="size-16 rounded-full object-cover ring-4 ring-background shadow-md" />
+              : <div className="size-16 rounded-full bg-primary/15 ring-4 ring-background shadow-md flex items-center justify-center text-xl font-bold text-primary">{iniciales(ultimoUsuario.nombre)}</div>
+            }
             <div className="absolute -bottom-1 -right-1 size-5 rounded-full bg-green-500 ring-2 ring-background" />
           </div>
           <div className="text-center">
@@ -222,102 +251,84 @@ export function VistaLogin({ onNavegar, oAuthProviders }: { onNavegar: (ruta: st
             <p className="text-sm text-muted-foreground">{ultimoUsuario.email}</p>
           </div>
         </div>
-
         <form className="space-y-4" onSubmit={onSubmit}>
-          <div className="space-y-2">
+          <div className="space-y-1.5">
             <div className="flex items-center justify-between">
               <Label htmlFor="password-rapido" className="text-sm font-medium">Contraseña</Label>
               <button type="button" className="text-xs text-muted-foreground underline-offset-4 hover:underline" onClick={() => onNavegar("/login/recuperar")}>¿Olvidaste tu contraseña?</button>
             </div>
             <div className="relative">
-              <Input
-                id="password-rapido"
-                ref={passwordRef}
-                type={showPassword ? "text" : "password"}
-                value={password}
-                onChange={(e) => { setPassword(e.target.value); setError(""); }}
-                required
-                autoComplete="current-password"
-                className="h-11 rounded-xl pr-10"
-                autoFocus
-              />
-              <button type="button" className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground transition-colors" onClick={() => setShowPassword(!showPassword)} tabIndex={-1}>
-                {showPassword ? (
-                  <svg viewBox="0 0 24 24" fill="none" className="w-4 h-4" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M17.94 17.94A10.07 10.07 0 0 1 12 20c-7 0-11-8-11-8a18.45 18.45 0 0 1 5.06-5.94" /><path d="M9.9 4.24A9.12 9.12 0 0 1 12 4c7 0 11 8 11 8a18.5 18.5 0 0 1-2.16 3.19" /><line x1="1" y1="1" x2="23" y2="23" /></svg>
-                ) : (
-                  <svg viewBox="0 0 24 24" fill="none" className="w-4 h-4" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z" /><circle cx="12" cy="12" r="3" /></svg>
-                )}
-              </button>
+              <Input id="password-rapido" type={showPassword ? "text" : "password"} value={password}
+                onChange={(e) => { setPassword(e.target.value); setErrores({}); }}
+                autoComplete="current-password" className={inputCls(!!errores.password)} autoFocus />
+              <TogglePassword show={showPassword} onToggle={() => setShowPassword(!showPassword)} />
             </div>
+            <ErrorCampo mensaje={errores.password ?? ""} />
           </div>
-          {error && <p className="text-sm text-destructive">{error}</p>}
-          <Button type="submit" className="w-full h-11 rounded-xl font-normal" disabled={submitting}>
-            {submitting ? "Entrando..." : "Entrar"}
-          </Button>
-          <Button type="button" variant="ghost" className="w-full h-10 text-sm font-normal rounded-xl text-muted-foreground" onClick={onUsarOtraCuenta}>
-            Usar otra cuenta
-          </Button>
+          {errores.general && <AlertaError mensaje={errores.general} />}
+          <Button type="submit" className="w-full h-11 rounded-xl font-normal" disabled={submitting}>{submitting ? "Entrando..." : "Entrar"}</Button>
+          <Button type="button" variant="ghost" className="w-full h-10 text-sm font-normal rounded-xl text-muted-foreground" onClick={onUsarOtraCuenta}>Usar otra cuenta</Button>
         </form>
       </AuthCard>
     );
   }
 
   return (
-    <AuthCard
-      titulo="Acceso al sistema"
-      descripcion="Inicia sesión para ver inventario y notificaciones."
-      icono={
-        <svg viewBox="0 0 24 24" fill="none" className="w-7 h-7" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
-          <rect x="3" y="11" width="18" height="11" rx="2" />
-          <path d="M7 11V7a5 5 0 0 1 10 0v4" />
-        </svg>
-      }
+    <AuthCard titulo="Acceso al sistema" descripcion="Inicia sesión para ver inventario y notificaciones."
+      icono={<svg viewBox="0 0 24 24" fill="none" className="w-7 h-7" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"><rect x="3" y="11" width="18" height="11" rx="2" /><path d="M7 11V7a5 5 0 0 1 10 0v4" /></svg>}
     >
       <BotonesOAuth onOAuth={onOAuth} oAuthProviders={oAuthProviders} />
       <form className="space-y-4" onSubmit={onSubmit}>
-        <div className="space-y-2">
+        <div className="space-y-1.5">
           <Label htmlFor="email" className="text-sm font-medium">Correo electrónico</Label>
-          <Input id="email" type="email" value={email} onChange={(e) => { setEmail(e.target.value); setError(""); }} placeholder="tu@correo.com" required autoComplete="email" className="h-11 rounded-xl" />
+          <Input id="email" type="email" value={email}
+            onChange={(e) => { setEmail(e.target.value); setErrores((p) => ({ ...p, email: undefined, general: undefined })); }}
+            placeholder="tu@correo.com" autoComplete="email" className={inputCls(!!errores.email)} />
+          <ErrorCampo mensaje={errores.email ?? ""} />
         </div>
-        <div className="space-y-2">
+        <div className="space-y-1.5">
           <div className="flex items-center justify-between">
             <Label htmlFor="password" className="text-sm font-medium">Contraseña</Label>
-            <button type="button" className="text-xs text-muted-foreground underline-offset-4 hover:underline transition-opacity" onClick={() => onNavegar("/login/recuperar")}>¿Olvidaste tu contraseña?</button>
+            <button type="button" className="text-xs text-muted-foreground underline-offset-4 hover:underline" onClick={() => onNavegar("/login/recuperar")}>¿Olvidaste tu contraseña?</button>
           </div>
           <div className="relative">
-            <Input id="password" type={showPassword ? "text" : "password"} value={password} onChange={(e) => { setPassword(e.target.value); setError(""); }} required autoComplete="current-password" className="h-11 rounded-xl pr-10" />
-            <button type="button" className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground transition-colors" onClick={() => setShowPassword(!showPassword)} tabIndex={-1}>
-              {showPassword ? (
-                <svg viewBox="0 0 24 24" fill="none" className="w-4 h-4" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M17.94 17.94A10.07 10.07 0 0 1 12 20c-7 0-11-8-11-8a18.45 18.45 0 0 1 5.06-5.94" /><path d="M9.9 4.24A9.12 9.12 0 0 1 12 4c7 0 11 8 11 8a18.5 18.5 0 0 1-2.16 3.19" /><line x1="1" y1="1" x2="23" y2="23" /></svg>
-              ) : (
-                <svg viewBox="0 0 24 24" fill="none" className="w-4 h-4" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z" /><circle cx="12" cy="12" r="3" /></svg>
-              )}
-            </button>
+            <Input id="password" type={showPassword ? "text" : "password"} value={password}
+              onChange={(e) => { setPassword(e.target.value); setErrores((p) => ({ ...p, password: undefined, general: undefined })); }}
+              autoComplete="current-password" className={`${inputCls(!!errores.password)} pr-10`} />
+            <TogglePassword show={showPassword} onToggle={() => setShowPassword(!showPassword)} />
           </div>
+          <ErrorCampo mensaje={errores.password ?? ""} />
         </div>
-        {error && <p className="text-sm text-destructive">{error}</p>}
+        {errores.general && <AlertaError mensaje={errores.general} />}
         <Button type="submit" className="w-full h-11 rounded-xl font-normal" disabled={submitting}>{submitting ? "Entrando..." : "Entrar"}</Button>
         <Button type="button" variant="ghost" className="w-full h-10 text-sm font-normal rounded-xl" onClick={() => onNavegar("/login/registro")}>Crear una cuenta nueva</Button>
       </form>
     </AuthCard>
   );
 }
-
 export function VistaRegistro({ onNavegar, oAuthProviders }: { onNavegar: (ruta: string) => void; oAuthProviders: string[] }) {
   const navigate = useNavigate();
   const { registro, loginConOAuth } = useAuth();
   const [nombre, setNombre] = useState("");
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
-  const [error, setError] = useState("");
+  const [errores, setErrores] = useState<{ nombre?: string; email?: string; password?: string; general?: string }>({});
   const [submitting, setSubmitting] = useState(false);
+
+  const validar = () => {
+    const e: typeof errores = {};
+    if (!nombre.trim()) e.nombre = "El nombre es obligatorio";
+    if (!email.trim()) e.email = "El correo es obligatorio";
+    else if (!validarEmail(email)) e.email = "Introduce un correo válido";
+    if (!password) e.password = "La contraseña es obligatoria";
+    else if (password.length < 6) e.password = "Mínimo 6 caracteres";
+    setErrores(e);
+    return Object.keys(e).length === 0;
+  };
 
   const onSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    setError("");
-    if (!validarEmail(email)) { setError("Ingresa un correo electrónico válido"); return; }
-    const minLen = 6;
-    if (password.length < minLen) { setError(`La contraseña debe tener al menos ${minLen} caracteres`); return; }
+    if (!validar()) return;
     setSubmitting(true);
     try {
       const resultado = await registro(email.trim(), password, nombre.trim());
@@ -328,7 +339,7 @@ export function VistaRegistro({ onNavegar, oAuthProviders }: { onNavegar: (ruta:
         navigate("/");
       }
     } catch (err) {
-      setError(err instanceof Error ? err.message : "Error al crear la cuenta");
+      setErrores({ general: err instanceof Error ? err.message : "Error al crear la cuenta" });
     } finally {
       setSubmitting(false);
     }
@@ -340,30 +351,33 @@ export function VistaRegistro({ onNavegar, oAuthProviders }: { onNavegar: (ruta:
   };
 
   return (
-    <AuthCard
-      titulo="Crear cuenta"
-      descripcion="Regístrate para acceder al sistema de inventario."
-      icono={
-        <svg viewBox="0 0 24 24" fill="none" className="w-7 h-7" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
-          <path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2" /><circle cx="9" cy="7" r="4" /><line x1="19" y1="8" x2="19" y2="14" /><line x1="22" y1="11" x2="16" y2="11" />
-        </svg>
-      }
+    <AuthCard titulo="Crear cuenta" descripcion="Regístrate para acceder al sistema de inventario."
+      icono={<svg viewBox="0 0 24 24" fill="none" className="w-7 h-7" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"><path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2" /><circle cx="9" cy="7" r="4" /><line x1="19" y1="8" x2="19" y2="14" /><line x1="22" y1="11" x2="16" y2="11" /></svg>}
     >
       <BotonesOAuth onOAuth={onOAuth} oAuthProviders={oAuthProviders} />
       <form className="space-y-4" onSubmit={onSubmit}>
-        <div className="space-y-2">
+        <div className="space-y-1.5">
           <Label htmlFor="nombre" className="text-sm font-medium">Nombre completo</Label>
-          <Input id="nombre" type="text" value={nombre} onChange={(e) => setNombre(e.target.value)} placeholder="María García" required autoComplete="name" className="h-11 rounded-xl" />
+          <Input id="nombre" type="text" value={nombre}
+            onChange={(e) => { setNombre(e.target.value); setErrores((p) => ({ ...p, nombre: undefined })); }}
+            placeholder="María García" autoComplete="name" className={inputCls(!!errores.nombre)} />
+          <ErrorCampo mensaje={errores.nombre ?? ""} />
         </div>
-        <div className="space-y-2">
+        <div className="space-y-1.5">
           <Label htmlFor="email-reg" className="text-sm font-medium">Correo electrónico</Label>
-          <Input id="email-reg" type="email" value={email} onChange={(e) => { setEmail(e.target.value); setError(""); }} placeholder="tu@correo.com" required autoComplete="email" className="h-11 rounded-xl" />
+          <Input id="email-reg" type="email" value={email}
+            onChange={(e) => { setEmail(e.target.value); setErrores((p) => ({ ...p, email: undefined, general: undefined })); }}
+            placeholder="tu@correo.com" autoComplete="email" className={inputCls(!!errores.email)} />
+          <ErrorCampo mensaje={errores.email ?? ""} />
         </div>
-        <div className="space-y-2">
+        <div className="space-y-1.5">
           <Label htmlFor="password-reg" className="text-sm font-medium">Contraseña</Label>
-          <Input id="password-reg" type="password" value={password} onChange={(e) => { setPassword(e.target.value); setError(""); }} required autoComplete="new-password" minLength={6} placeholder="Mínimo 6 caracteres" className="h-11 rounded-xl" />
+          <Input id="password-reg" type="password" value={password}
+            onChange={(e) => { setPassword(e.target.value); setErrores((p) => ({ ...p, password: undefined })); }}
+            autoComplete="new-password" placeholder="Mínimo 6 caracteres" className={inputCls(!!errores.password)} />
+          <ErrorCampo mensaje={errores.password ?? ""} />
         </div>
-        {error && <p className="text-sm text-destructive">{error}</p>}
+        {errores.general && <AlertaError mensaje={errores.general} />}
         <Button type="submit" className="w-full h-11 rounded-xl font-normal" disabled={submitting}>{submitting ? "Creando cuenta..." : "Crear cuenta"}</Button>
         <Button type="button" variant="ghost" className="w-full h-10 text-sm font-normal rounded-xl" onClick={() => onNavegar("/login")}>Ya tengo cuenta</Button>
       </form>
@@ -470,7 +484,7 @@ export function VistaRecuperar({ onNavegar }: { onNavegar: (ruta: string) => voi
         <div className="space-y-2">
           <Label htmlFor="email-recuperar" className="text-sm font-medium">Correo electrónico</Label>
           <Input id="email-recuperar" type="email" value={email} onChange={(e) => { setEmail(e.target.value); setError(""); }} placeholder="tu@correo.com" required autoComplete="email" className="h-11 rounded-xl" />
-          {error && <p className="text-sm text-destructive">{error}</p>}
+          {error && <AlertaError mensaje={error} />}
         </div>
         <Button type="submit" className="w-full h-11 rounded-xl font-normal" disabled={submitting}>{submitting ? "Enviando..." : "Enviar código"}</Button>
         <Button type="button" variant="ghost" className="w-full h-10 text-sm font-normal rounded-xl" onClick={() => onNavegar("/login")}>Volver al inicio de sesión</Button>

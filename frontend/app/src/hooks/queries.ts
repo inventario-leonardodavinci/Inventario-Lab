@@ -11,7 +11,7 @@ import { useAuth } from '@/context/ContextoAutenticacion'
 import { getArticulos, getArticulo, crearArticulo, actualizarArticulo, desactivarArticulo } from '@/services/inventarioApi'
 import { getMovimientos, getResumenHoy, crearMovimiento } from '@/services/movimientosApi'
 import { getUbicaciones, crearUbicacion, actualizarUbicacion } from '@/services/ubicacionesApi'
-import { getCategorias, crearCategoria, actualizarCategoria } from '@/services/categoriasApi'
+import { getCategorias, crearCategoria, actualizarCategoria, eliminarCategoria } from '@/services/categoriasApi'
 import { getAlertas, confirmarAlerta, resolverAlerta } from '@/services/alertasApi'
 import { getUsuarios, actualizarRolUsuario, getPerfil, actualizarPerfil } from '@/services/usuariosApi'
 import { getAuditoria } from '@/services/auditoriaApi'
@@ -182,6 +182,18 @@ export function useActualizarCategoria() {
       actualizarCategoria(user!.authUserId, id, datos),
     onSuccess: () => {
       void queryClient.invalidateQueries({ queryKey: queryKeys.categorias() })
+    },
+  })
+}
+
+export function useEliminarCategoria() {
+  const { user } = useAuth()
+  const queryClient = useQueryClient()
+  return useMutation({
+    mutationFn: (id: number) => eliminarCategoria(user!.authUserId, id),
+    onSuccess: () => {
+      void queryClient.invalidateQueries({ queryKey: queryKeys.categorias() })
+      void queryClient.invalidateQueries({ queryKey: ['articulos'] })
     },
   })
 }
@@ -364,6 +376,8 @@ export type RegistroSesion = {
   sistema_operativo: string | null
   pais: string | null
   ciudad: string | null
+  tipo_evento: 'login' | 'logout' | 'refresh'
+  exitoso: boolean
   iniciada_en: string
 }
 

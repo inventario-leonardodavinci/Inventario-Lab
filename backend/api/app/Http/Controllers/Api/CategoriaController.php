@@ -60,4 +60,20 @@ class CategoriaController extends Controller
 
         return response()->json(['data' => $categoria]);
     }
+
+    /**
+     * Eliminar una categoría (solo si no tiene artículos asociados).
+     */
+    public function destroy(Categoria $categoria): JsonResponse
+    {
+        if ($categoria->articulos()->exists()) {
+            return response()->json([
+                'message' => 'No se puede eliminar una categoría que tiene artículos asociados.',
+            ], 422);
+        }
+
+        $categoria->delete();
+
+        return response()->json(null, 204);
+    }
 }

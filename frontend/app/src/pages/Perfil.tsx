@@ -43,6 +43,7 @@ import {
   Info,
 } from "lucide-react";
 import { toast } from "sonner";
+import { SkeletonPerfil } from "@/components/ui/PageSkeleton";
 
 const COLOR_ROL: Record<string, string> = {
   admin: "destructive",
@@ -115,7 +116,7 @@ export default function Perfil() {
   // ─── Estado avatar ────────────────────────────────────────────────────────
   const [subiendoAvatar, setSubiendoAvatar] = useState(false);
   const inputArchivoRef = useRef<HTMLInputElement>(null);
-  const avatarLocal = user.avatarUrl;
+  const avatarLocal = user?.avatarUrl;
   const [imagenSinRecortar, setImagenSinRecortar] = useState<string | null>(null);
   const [imagenOriginal, setImagenOriginal] = useState<string | null>(null);
   const editorAbierto = imagenSinRecortar !== null;
@@ -164,7 +165,7 @@ export default function Perfil() {
     if (user?.displayName) setNombre(user.displayName);
   }, [user?.displayName]);
 
-  if (!user) return null;
+  if (!user) return <SkeletonPerfil />;
 
   // ─── Guardar nombre ───────────────────────────────────────────────────────
   const onGuardarNombre = async (e: React.FormEvent) => {
@@ -292,11 +293,26 @@ export default function Perfil() {
   const onCerrarSesion = async () => {
     setCerrarandoSesion(true);
     try {
-      // Guardar datos del último usuario para mostrarlos en el login
+      // Convertir avatar a base64 para que funcione sin sesión activa
+      let avatarParaGuardar = "";
+      if (user.avatarUrl) {
+        try {
+          const res = await fetch(user.avatarUrl);
+          const blob = await res.blob();
+          avatarParaGuardar = await new Promise<string>((resolve) => {
+            const reader = new FileReader();
+            reader.onload = () => resolve(reader.result as string);
+            reader.readAsDataURL(blob);
+          });
+        } catch {
+          // Si falla (CORS, etc.) guardar la URL original como fallback
+          avatarParaGuardar = user.avatarUrl;
+        }
+      }
       localStorage.setItem("ultimo_usuario", JSON.stringify({
         nombre: user.displayName,
         email: email ?? "",
-        avatarUrl: user.avatarUrl ?? "",
+        avatarUrl: avatarParaGuardar,
       }));
       await logoutDeInsforge();
       window.location.href = "/login";
@@ -705,9 +721,9 @@ export default function Perfil() {
                 <div className="flex size-7 items-center justify-center rounded-lg bg-primary/10">
                   <LogIn className="size-4 text-primary" />
                 </div>
-                Historial de inicios de sesión
+                Historial de accesos
               </CardTitle>
-              <CardDescription>Últimos 20 accesos a tu cuenta con dispositivo, navegador e IP.</CardDescription>
+              <CardDescription>Últimos 20 accesos a tu cuenta.</CardDescription>
             </CardHeader>
             <CardContent>
               {cargandoHistorial ? (
@@ -724,7 +740,7 @@ export default function Perfil() {
                   <p className="text-xs text-muted-foreground mt-1">El historial se irá llenando con cada inicio de sesión.</p>
                 </div>
               ) : (
-                <ul className="space-y-0 divide-y">
+                <ul className="divide-y">
                   {historialData.data.map((sesion, idx) => {
                     const esActual = idx === 0;
                     const IconoDispositivo =
@@ -732,37 +748,41 @@ export default function Perfil() {
                       sesion.dispositivo === "Tablet" ? Tablet : Monitor;
                     return (
                       <li key={sesion.id} className={`flex items-start gap-3 py-3.5 ${esActual ? "rounded-lg bg-green-500/5 px-3 -mx-3" : ""}`}>
-                        <div className={`mt-0.5 flex size-8 shrink-0 items-center justify-center rounded-lg transition-colors ${esActual ? "bg-green-500/15 text-green-600" : "bg-muted text-muted-foreground"}`}>
+                        {/* Icono dispositivo */}
+                        <div className={`mt-0.5 flex size-8 shrink-0 items-center justify-center rounded-lg ${esActual ? "bg-green-500/15 text-green-600" : "bg-muted text-muted-foreground"}`}>
                           <IconoDispositivo className="size-4" />
                         </div>
-                        <div className="flex flex-1 flex-col gap-1 sm:flex-row sm:items-center sm:justify-between min-w-0">
-                          <div className="min-w-0">
-                            <div className="flex items-center gap-2 flex-wrap">
-                              <span className="text-sm font-medium">{sesion.navegador ?? "Navegador desconocido"}</span>
-                              <span className="text-xs text-muted-foreground">en {sesion.sistema_operativo ?? "SO desconocido"}</span>
-                              {esActual && (
-                                <Badge variant="outline" className="text-xs text-green-600 border-green-500/40 bg-green-500/5 gap-1">
-                                  <div className="size-1.5 rounded-full bg-green-500 animate-pulse" />
-                                  Sesión actual
-                                </Badge>
-                              )}
-                            </div>
-                            <div className="flex items-center gap-3 mt-0.5 flex-wrap">
-                              <span className="flex items-center gap-1 text-xs text-muted-foreground">
-                                <Globe className="size-3" />
-                                {sesion.ip_address ?? "IP desconocida"}
-                              </span>
-                              {(sesion.ciudad ?? sesion.pais) && (
-                                <span className="flex items-center gap-1 text-xs text-muted-foreground">
-                                  <MapPin className="size-3" />
-                                  {[sesion.ciudad, sesion.pais].filter(Boolean).join(", ")}
-                                </span>
-                              )}
-                            </div>
+
+                        <div className="flex flex-1 flex-col gap-1 min-w-0">
+                          {/* Fila 1: navegador + SO + badges */}
+                          <div className="flex flex-wrap items-center gap-2">
+                            <span className="text-sm font-medium">{sesion.navegador ?? "Navegador desconocido"}</span>
+                            <span className="text-xs text-muted-foreground">·</span>
+                            <span className="text-xs text-muted-foreground">{sesion.sistema_operativo ?? "SO desconocido"}</span>
+                            {esActual && (
+                              <Badge variant="outline" className="text-xs text-green-600 border-green-500/40 bg-green-500/5 gap-1 py-0">
+                                <div className="size-1.5 rounded-full bg-green-500 animate-pulse" />
+                                Sesión actual
+                              </Badge>
+                            )}
                           </div>
-                          <span className="text-xs text-muted-foreground whitespace-nowrap mt-1 sm:mt-0 shrink-0 sm:ml-4">
-                            {formatearFecha(sesion.iniciada_en)}
-                          </span>
+
+                          {/* Fila 2: IP + ubicación + fecha */}
+                          <div className="flex flex-wrap items-center gap-3">
+                            <span className="flex items-center gap-1 text-xs text-muted-foreground font-mono">
+                              <Globe className="size-3 shrink-0" />
+                              {sesion.ip_address ?? "IP desconocida"}
+                            </span>
+                            {(sesion.ciudad ?? sesion.pais) && (
+                              <span className="flex items-center gap-1 text-xs text-muted-foreground">
+                                <MapPin className="size-3 shrink-0" />
+                                {[sesion.ciudad, sesion.pais].filter(Boolean).join(", ")}
+                              </span>
+                            )}
+                            <span className="text-xs text-muted-foreground ml-auto">
+                              {formatearFecha(sesion.iniciada_en)}
+                            </span>
+                          </div>
                         </div>
                       </li>
                     );

@@ -56,9 +56,10 @@ export function ProveedorAutenticacion({ children }: { children: React.ReactNode
   const login = useCallback(async (email: string, password: string) => {
     const sesion = await loginConInsforge({ email, password });
     setUser(sesion);
-    enviarEventoLogin(sesion.authUserId).catch(() => {});
+    enviarEventoLogin(sesion.authUserId).catch((err) => {
+      console.warn("[historial] evento-login falló:", err);
+    });
     sincronizarPerfil(sesion.authUserId, sesion.displayName).catch(() => {});
-    // Actualizar rol desde el backend Laravel (fuente de verdad)
     obtenerRolDesdeBackend(sesion.authUserId).then((rol) => {
       if (rol) setUser((prev) => prev ? { ...prev, role: rol } : prev);
     }).catch(() => {});
@@ -68,7 +69,9 @@ export function ProveedorAutenticacion({ children }: { children: React.ReactNode
     const resultado = await registrarUsuario(email, password, displayName);
     if (resultado.tipo === "sesion_iniciada") {
       setUser(resultado.sesion);
-      enviarEventoLogin(resultado.sesion.authUserId).catch(() => {});
+      enviarEventoLogin(resultado.sesion.authUserId).catch((err) => {
+        console.warn("[historial] evento-login falló (registro):", err);
+      });
       sincronizarPerfil(resultado.sesion.authUserId, resultado.sesion.displayName).catch(() => {});
       obtenerRolDesdeBackend(resultado.sesion.authUserId).then((rol) => {
         if (rol) setUser((prev) => prev ? { ...prev, role: rol } : prev);
@@ -80,7 +83,9 @@ export function ProveedorAutenticacion({ children }: { children: React.ReactNode
   const verificarEmailFn = useCallback(async (email: string, otp: string) => {
     const sesion = await verificarEmail(email, otp);
     setUser(sesion);
-    enviarEventoLogin(sesion.authUserId).catch(() => {});
+    enviarEventoLogin(sesion.authUserId).catch((err) => {
+      console.warn("[historial] evento-login falló (verificar email):", err);
+    });
     sincronizarPerfil(sesion.authUserId, sesion.displayName).catch(() => {});
     obtenerRolDesdeBackend(sesion.authUserId).then((rol) => {
       if (rol) setUser((prev) => prev ? { ...prev, role: rol } : prev);

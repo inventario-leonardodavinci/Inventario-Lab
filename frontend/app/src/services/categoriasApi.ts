@@ -37,3 +37,7 @@ export function actualizarCategoria(
     { authUserId },
   )
 }
+
+export function eliminarCategoria(authUserId: string, id: number) {
+  return apiClient<void>(`/categorias/${id}`, { method: 'DELETE' }, { authUserId })
+}

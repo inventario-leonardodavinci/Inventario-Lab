@@ -6,6 +6,7 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@
 import { useMantenimiento, useCrearActivo } from '@/hooks/queries'
 import { toast } from 'sonner'
 import type { ActivoMantenimiento } from '@/types'
+import { SkeletonMantenimiento } from '@/components/ui/PageSkeleton'
 
 // Re-exportamos el tipo para compatibilidad con código que lo importa desde aquí
 export type { ActivoMantenimiento }
@@ -13,10 +14,12 @@ export type { ActivoMantenimiento }
 export default function Mantenimiento() {
   const [assetCode, setAssetCode] = useState('')
 
-  const { data, isFetching } = useMantenimiento()
+  const { data, isFetching, isLoading } = useMantenimiento()
   const assets = (data?.data ?? []) as ActivoMantenimiento[]
 
   const crearMutation = useCrearActivo()
+
+  if (isLoading) return <SkeletonMantenimiento />
 
   const createAsset = async () => {
     if (!assetCode.trim()) return

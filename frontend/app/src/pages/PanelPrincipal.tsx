@@ -9,6 +9,7 @@ import { usePanelData } from "@/hooks/usePanelData";
 import { formatearKpi } from "@/utils/panelUtils";
 import { formatearFechaRelativa } from "@/utils/formatters";
 import { ArrowDownToLine, ArrowUpFromLine, BellRing, PackageCheck, TriangleAlert } from "lucide-react";
+import { SkeletonPanel } from "@/components/ui/PageSkeleton";
 
 const kpiIconMap: Record<string, React.ElementType> = {
   PackageCheck,
@@ -27,6 +28,7 @@ const kpiBadgeVariant: Record<string, "destructive" | "secondary"> = {
 export default function PanelPrincipal() {
   const { user } = useAuth();
   const navigate = useNavigate();
+
   const {
     inventoryCount,
     criticalCount,
@@ -37,7 +39,14 @@ export default function PanelPrincipal() {
     errorMovimientos,
     lowStockItems,
     cargando,
-  } = usePanelData(user?.authUserId);
+  } = usePanelData();
+
+  if (!user) {
+    navigate("/login");
+    return null;
+  }
+
+  if (cargando) return <SkeletonPanel />;
 
   const kpiCards = [
     {

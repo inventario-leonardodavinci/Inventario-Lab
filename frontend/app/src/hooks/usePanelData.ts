@@ -23,7 +23,7 @@ export type PanelData = {
   cargando: boolean
 }
 
-export function usePanelData(_authUserId?: string | undefined): PanelData {
+export function usePanelData(): PanelData {
   // Los nuevos hooks obtienen authUserId del contexto internamente
   const inv = useInventario()
   const resumen = useResumenHoy()

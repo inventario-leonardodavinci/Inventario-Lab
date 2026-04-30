@@ -13,11 +13,13 @@ return new class extends Migration
             $table->foreignId('usuario_id')->constrained('usuarios_app')->cascadeOnDelete();
             $table->ipAddress('ip_address')->nullable();
             $table->text('user_agent')->nullable();
-            $table->string('dispositivo', 60)->nullable();   // Mobile / Desktop / Tablet
-            $table->string('navegador', 60)->nullable();     // Chrome, Firefox, Safari…
-            $table->string('sistema_operativo', 60)->nullable(); // Windows, macOS, Android…
+            $table->string('dispositivo', 60)->nullable();
+            $table->string('navegador', 80)->nullable();       // Chrome 124, Firefox 125…
+            $table->string('sistema_operativo', 80)->nullable(); // Windows 11, macOS 14…
             $table->string('pais', 80)->nullable();
             $table->string('ciudad', 80)->nullable();
+            $table->string('tipo_evento', 30)->default('login'); // login | logout | refresh
+            $table->boolean('exitoso')->default(true);
             $table->timestamp('iniciada_en')->useCurrent();
         });
     }

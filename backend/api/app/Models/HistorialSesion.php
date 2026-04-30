@@ -20,11 +20,14 @@ class HistorialSesion extends Model
         'sistema_operativo',
         'pais',
         'ciudad',
+        'tipo_evento',
+        'exitoso',
         'iniciada_en',
     ];
 
     protected $casts = [
         'iniciada_en' => 'datetime',
+        'exitoso'     => 'boolean',
     ];
 
     public function usuario(): BelongsTo

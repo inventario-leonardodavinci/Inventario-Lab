@@ -128,10 +128,6 @@ export async function loginConInsforge(
   }
 
   if (!data?.user) {
-    // Insforge puede devolver el user directamente en data
-    if (data?.id) {
-      return extraerSesion(data);
-    }
     throw new Error("No se recibió información del usuario");
   }
   return extraerSesion(data.user);
@@ -173,9 +169,8 @@ export async function registrarUsuario(
     return { tipo: "verificacion_requerida", email };
   }
 
-  const user = data?.user ?? data;
-  if (data?.accessToken && user?.id) {
-    return { tipo: "sesion_iniciada", sesion: extraerSesion(user) };
+  if (data?.accessToken && data?.user?.id) {
+    return { tipo: "sesion_iniciada", sesion: extraerSesion(data.user) };
   }
 
   // Fallback: verificación requerida sin flag explícito
@@ -197,9 +192,8 @@ export async function verificarEmail(
     throw new Error(error.message ?? "Error al verificar el código");
   }
 
-  const user = data?.user ?? data;
-  if (!user?.id) throw new Error("No se recibió información del usuario");
-  return extraerSesion(user);
+  if (!data?.user) throw new Error("No se recibió información del usuario");
+  return extraerSesion(data.user);
 }
 
 export async function reenviarCodigoVerificacion(email: string): Promise<void> {
@@ -256,13 +250,9 @@ export async function loginConOAuth(
 
 export async function obtenerSesionActual(): Promise<SesionUsuario | null> {
   const { data, error } = await insforge.auth.getCurrentUser();
-  if (error) return null;
+  if (error || !data?.user) return null;
 
-  // Insforge puede devolver user directamente o dentro de { user, ... }
-  const user = data?.user ?? data;
-  if (!user?.id) return null;
-
-  return extraerSesion(user);
+  return extraerSesion(data.user);
 }
 
 export async function logoutDeInsforge(): Promise<void> {
@@ -341,13 +331,13 @@ export async function obtenerUsuarioCompleto(): Promise<{
 
   const user = data.user;
   return {
-    id: user.id,
-    email: user.email,
-    emailVerified: user.emailVerified,
+    id: user.id ?? "",
+    email: user.email ?? "",
+    emailVerified: user.emailVerified ?? false,
     profile: user.profile ?? null,
     metadata: user.metadata ?? null,
-    createdAt: user.createdAt,
-    updatedAt: user.updatedAt,
+    createdAt: user.createdAt ?? "",
+    updatedAt: user.updatedAt ?? "",
   };
 }
 

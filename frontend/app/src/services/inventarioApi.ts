@@ -12,6 +12,9 @@ export type EntradaCrearArticulo = {
   categoria_id: number
   unidad?: string
   notas?: string
+  stock_inicial?: number
+  stock_minimo?: number
+  ubicacion_id?: number
 }
 
 export type EntradaActualizarArticulo = Partial<EntradaCrearArticulo>
