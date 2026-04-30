@@ -1,7 +1,3 @@
-/**
- * Página de listado de categorías.
- * Requisitos: 5.4, 5.5, 10.3, 10.5
- */
 import { useState } from 'react'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
@@ -24,17 +20,23 @@ import {
   TableRow,
 } from '@/components/ui/table'
 import { GuardRol } from '@/components/auth/GuardRol'
-import { useCategorias, useCrearCategoria } from '@/hooks/queries'
+import { useCategorias, useCrearCategoria, useEliminarCategoria } from '@/hooks/queries'
+import { Trash2 } from 'lucide-react'
 import { toast } from 'sonner'
+import { SkeletonCategorias } from '@/components/ui/PageSkeleton'
 
 export default function ListaCategorias() {
   const [dialogAbierto, setDialogAbierto] = useState(false)
   const [nombre, setNombre] = useState('')
+  const [confirmarEliminar, setConfirmarEliminar] = useState<{ id: number; nombre: string } | null>(null)
 
   const { data, isLoading } = useCategorias()
   const crearMutation = useCrearCategoria()
+  const eliminarMutation = useEliminarCategoria()
 
   const categorias = data?.data ?? []
+
+  if (isLoading) return <SkeletonCategorias />
 
   const onGuardar = async () => {
     if (!nombre.trim()) {
@@ -48,6 +50,17 @@ export default function ListaCategorias() {
       setNombre('')
     } catch (error) {
       toast.error(error instanceof Error ? error.message : 'No se pudo crear la categoría')
+    }
+  }
+
+  const onEliminar = async () => {
+    if (!confirmarEliminar) return
+    try {
+      await eliminarMutation.mutateAsync(confirmarEliminar.id)
+      toast.success(`Categoría "${confirmarEliminar.nombre}" eliminada`)
+      setConfirmarEliminar(null)
+    } catch (error) {
+      toast.error(error instanceof Error ? error.message : 'No se pudo eliminar la categoría')
     }
   }
 
@@ -78,12 +91,15 @@ export default function ListaCategorias() {
               <TableRow>
                 <TableHead>Nombre</TableHead>
                 <TableHead className="text-right">Artículos activos</TableHead>
+                <GuardRol roles={['administrador']}>
+                  <TableHead className="text-right">Acciones</TableHead>
+                </GuardRol>
               </TableRow>
             </TableHeader>
             <TableBody>
               {categorias.length === 0 && !isLoading && (
                 <TableRow>
-                  <TableCell colSpan={2} className="text-center text-muted-foreground py-8">
+                  <TableCell colSpan={3} className="text-center text-muted-foreground py-8">
                     No hay categorías registradas.
                   </TableCell>
                 </TableRow>
@@ -92,6 +108,20 @@ export default function ListaCategorias() {
                 <TableRow key={cat.id}>
                   <TableCell className="font-medium">{cat.nombre}</TableCell>
                   <TableCell className="text-right">{cat.total_articulos}</TableCell>
+                  <GuardRol roles={['administrador']}>
+                    <TableCell className="text-right">
+                      <Button
+                        variant="ghost"
+                        size="icon"
+                        className="text-muted-foreground hover:text-destructive"
+                        onClick={() => setConfirmarEliminar({ id: cat.id, nombre: cat.nombre })}
+                        disabled={cat.total_articulos > 0}
+                        title={cat.total_articulos > 0 ? 'Tiene artículos asociados' : 'Eliminar categoría'}
+                      >
+                        <Trash2 className="size-4" />
+                      </Button>
+                    </TableCell>
+                  </GuardRol>
                 </TableRow>
               ))}
             </TableBody>
@@ -128,6 +158,26 @@ export default function ListaCategorias() {
             </Button>
             <Button onClick={onGuardar} disabled={crearMutation.isPending}>
               {crearMutation.isPending ? 'Guardando...' : 'Guardar categoría'}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      {/* Dialog: Confirmar eliminación */}
+      <Dialog open={!!confirmarEliminar} onOpenChange={(open) => { if (!open) setConfirmarEliminar(null) }}>
+        <DialogContent className="sm:max-w-[400px]">
+          <DialogHeader>
+            <DialogTitle>Eliminar categoría</DialogTitle>
+            <DialogDescription>
+              ¿Seguro que quieres eliminar <strong>{confirmarEliminar?.nombre}</strong>? Esta acción no se puede deshacer.
+            </DialogDescription>
+          </DialogHeader>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setConfirmarEliminar(null)}>
+              Cancelar
+            </Button>
+            <Button variant="destructive" onClick={onEliminar} disabled={eliminarMutation.isPending}>
+              {eliminarMutation.isPending ? 'Eliminando...' : 'Eliminar'}
             </Button>
           </DialogFooter>
         </DialogContent>
