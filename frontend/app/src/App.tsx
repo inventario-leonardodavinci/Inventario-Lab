@@ -2,9 +2,9 @@ import { lazy, Suspense } from 'react'
 import { BrowserRouter as Router, Navigate, Route, Routes } from 'react-router-dom'
 import { ContenedorAplicacion } from './components/layout/ContenedorAplicacion'
 import { RutaProtegida } from './components/auth/RutaProtegida'
+import { SkeletonTabla } from './components/ui/PageSkeleton'
 
 const PanelPrincipal = lazy(() => import('./pages/PanelPrincipal'))
-const Inventario = lazy(() => import('./pages/Inventario'))
 const Articulos = lazy(() => import('./pages/Articulos'))
 const InicioSesion = lazy(() => import('./pages/InicioSesion'))
 const Mantenimiento = lazy(() => import('./pages/Mantenimiento'))
@@ -20,7 +20,7 @@ const ListaCategorias = lazy(() => import('./pages/Categorias/ListaCategorias'))
 function App() {
   return (
     <Router future={{ v7_startTransition: true, v7_relativeSplatPath: true }}>
-      <Suspense fallback={<main className="p-6 text-sm text-muted-foreground">Cargando...</main>}>
+      <Suspense fallback={<SkeletonTabla cols={['w-20', 'flex-1', 'w-24', 'w-20', 'w-20']} />}>
         <Routes>
           <Route path="/login" element={<InicioSesion />} />
           <Route path="/login/registro" element={<InicioSesion />} />
@@ -34,7 +34,7 @@ function App() {
                 <ContenedorAplicacion>
                   <Routes>
                     <Route path="/" element={<PanelPrincipal />} />
-                    <Route path="/inventario" element={<Inventario />} />
+                    <Route path="/inventario" element={<Navigate to="/articulos" replace />} />
                     <Route path="/articulos" element={<Articulos />} />
                     <Route path="/movimientos" element={<Movimientos />} />
                     <Route path="/informes" element={<Informes />} />
