@@ -15,6 +15,7 @@ import { useMovimientos, useCrearMovimiento, useUbicaciones } from '@/hooks/quer
 import { formatearTipoMovimiento, formatearFechaHora } from '@/utils/formatters'
 import type { TipoMovimiento } from '@/types'
 import { toast } from 'sonner'
+import { SkeletonMovimientos } from '@/components/ui/PageSkeleton'
 
 type FiltroTipo = TipoMovimiento | 'todos'
 
@@ -33,12 +34,14 @@ export default function Movimientos() {
   const [filtroTipo, setFiltroTipo] = useState<FiltroTipo>('todos')
 
   const filtros = filtroTipo !== 'todos' ? { tipo: filtroTipo } : undefined
-  const { data, isFetching, refetch } = useMovimientos(filtros)
+  const { data, isFetching, isLoading, refetch } = useMovimientos(filtros)
   const { data: ubicacionesData } = useUbicaciones()
   const rows = data?.data ?? []
   const ubicaciones = ubicacionesData?.data ?? []
 
   const crearMutation = useCrearMovimiento()
+
+  if (isLoading) return <SkeletonMovimientos />
 
   const onSubmit = async () => {
     if (!user) return

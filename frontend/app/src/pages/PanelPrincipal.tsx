@@ -9,6 +9,7 @@ import { usePanelData } from "@/hooks/usePanelData";
 import { formatearKpi } from "@/utils/panelUtils";
 import { formatearFechaRelativa } from "@/utils/formatters";
 import { ArrowDownToLine, ArrowUpFromLine, BellRing, PackageCheck, TriangleAlert } from "lucide-react";
+import { SkeletonPanel } from "@/components/ui/PageSkeleton";
 
 const kpiIconMap: Record<string, React.ElementType> = {
   PackageCheck,
@@ -38,6 +39,8 @@ export default function PanelPrincipal() {
     lowStockItems,
     cargando,
   } = usePanelData(user?.authUserId);
+
+  if (cargando) return <SkeletonPanel />;
 
   const kpiCards = [
     {
