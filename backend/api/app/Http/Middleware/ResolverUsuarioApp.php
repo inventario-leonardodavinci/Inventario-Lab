@@ -47,6 +47,17 @@ class ResolverUsuarioApp
             }
         }
 
+        // Establecer variable de sesión PostgreSQL para los triggers de auditoría.
+        // Usamos SET (sin LOCAL) para que persista en toda la conexión,
+        // ya que SET LOCAL solo funciona dentro de una transacción explícita.
+        try {
+            \Illuminate\Support\Facades\DB::statement(
+                "SET app.current_user_id = '{$usuarioApp->id}'"
+            );
+        } catch (\Throwable) {
+            // Silencioso: no bloquear la petición si falla
+        }
+
         $request->attributes->set('app_user', $usuarioApp);
 
         return $next($request);
