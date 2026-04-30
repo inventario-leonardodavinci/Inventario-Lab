@@ -19,13 +19,23 @@ return new class extends Migration
 
     public function up(): void
     {
-        // Crear la función PL/pgSQL que inserta en registros_auditoria
+        // Crear la función PL/pgSQL que inserta en registros_auditoria.
+        // Lee el usuario actual desde la variable de sesión app.current_user_id
+        // que el middleware ResolverUsuarioApp establece en cada petición.
         DB::statement(<<<'SQL'
             CREATE OR REPLACE FUNCTION fn_auditoria()
             RETURNS TRIGGER
             LANGUAGE plpgsql
             AS $$
+            DECLARE
+                v_usuario_id BIGINT;
             BEGIN
+                BEGIN
+                    v_usuario_id := current_setting('app.current_user_id', true)::BIGINT;
+                EXCEPTION WHEN OTHERS THEN
+                    v_usuario_id := NULL;
+                END;
+
                 INSERT INTO registros_auditoria (
                     usuario_id,
                     tipo_evento,
@@ -36,7 +46,7 @@ return new class extends Migration
                     created_at
                 )
                 VALUES (
-                    NULL,
+                    v_usuario_id,
                     TG_OP,
                     TG_TABLE_NAME,
                     CASE
