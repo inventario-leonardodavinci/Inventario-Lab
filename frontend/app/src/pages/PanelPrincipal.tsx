@@ -29,11 +29,6 @@ export default function PanelPrincipal() {
   const { user } = useAuth();
   const navigate = useNavigate();
 
-  if (!user) {
-    navigate("/login");
-    return null;
-  }
-
   const {
     inventoryCount,
     criticalCount,
@@ -45,6 +40,11 @@ export default function PanelPrincipal() {
     lowStockItems,
     cargando,
   } = usePanelData();
+
+  if (!user) {
+    navigate("/login");
+    return null;
+  }
 
   if (cargando) return <SkeletonPanel />;
 
