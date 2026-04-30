@@ -13,9 +13,50 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@
 import { useAuth } from '@/context/ContextoAutenticacion'
 import { useAuditoria } from '@/hooks/queries'
 import { formatearFechaHora } from '@/utils/formatters'
-import { Shield } from 'lucide-react'
+import { Shield, ChevronDown, ChevronRight } from 'lucide-react'
+import { SkeletonAuditoria } from '@/components/ui/PageSkeleton'
 
 type FiltroOperacion = 'todos' | 'INSERT' | 'UPDATE' | 'DELETE'
+
+// Traducción de nombres de campos técnicos a legibles
+const ETIQUETAS_CAMPO: Record<string, string> = {
+  id: 'ID',
+  nombre: 'Nombre',
+  nombre_visible: 'Nombre visible',
+  activo: 'Activo',
+  auth_user_id: 'ID de autenticación',
+  created_at: 'Creado el',
+  updated_at: 'Actualizado el',
+  codigo: 'Código',
+  descripcion: 'Descripción',
+  categoria_id: 'Categoría',
+  unidad: 'Unidad',
+  stock_total: 'Stock total',
+  tipo: 'Tipo',
+  motivo: 'Motivo',
+  usuario_id: 'Usuario',
+  ubicacion_origen_id: 'Ubicación origen',
+  ubicacion_destino_id: 'Ubicación destino',
+  estado: 'Estado',
+  severidad: 'Severidad',
+  nombre_completo: 'Nombre completo',
+}
+
+// Campos a ignorar en el resumen (técnicos/irrelevantes)
+const CAMPOS_IGNORAR = new Set(['created_at', 'updated_at', 'id', 'auth_user_id'])
+
+function etiqueta(campo: string): string {
+  return ETIQUETAS_CAMPO[campo] ?? campo.replace(/_/g, ' ')
+}
+
+function formatearValor(val: unknown): string {
+  if (val === null || val === undefined) return '—'
+  if (typeof val === 'boolean') return val ? 'Sí' : 'No'
+  if (typeof val === 'string' && val.match(/^\d{4}-\d{2}-\d{2}T/)) {
+    return new Intl.DateTimeFormat('es-ES', { dateStyle: 'medium', timeStyle: 'short' }).format(new Date(val))
+  }
+  return String(val)
+}
 
 function varianteOperacion(op: string): 'default' | 'secondary' | 'destructive' | 'outline' {
   switch (op.toUpperCase()) {
@@ -26,28 +67,114 @@ function varianteOperacion(op: string): 'default' | 'secondary' | 'destructive' 
   }
 }
 
+function etiquetaOperacion(op: string): string {
+  switch (op.toUpperCase()) {
+    case 'INSERT': return 'Creación'
+    case 'UPDATE': return 'Modificación'
+    case 'DELETE': return 'Eliminación'
+    default: return op
+  }
+}
+
+function etiquetaTabla(tabla: string): string {
+  const map: Record<string, string> = {
+    articulos: 'Artículos',
+    categorias: 'Categorías',
+    ubicaciones: 'Ubicaciones',
+    movimientos: 'Movimientos',
+    alertas: 'Alertas',
+    usuarios_app: 'Usuarios',
+  }
+  return map[tabla] ?? tabla
+}
+
 /**
- * Genera un resumen legible de los cambios entre antes_json y despues_json.
+ * Genera líneas de resumen legibles según el tipo de operación.
  */
-function resumirCambios(
+function generarLineasResumen(
+  op: string,
   antes: Record<string, unknown> | null,
   despues: Record<string, unknown> | null,
-): string {
-  if (!antes && !despues) return '-'
-  if (!antes && despues) {
-    const claves = Object.keys(despues).slice(0, 3)
-    return `Creado: ${claves.join(', ')}${Object.keys(despues).length > 3 ? '...' : ''}`
-  }
-  if (antes && !despues) return 'Registro eliminado'
+): { campo: string; antes?: string; despues?: string; tipo: 'nuevo' | 'cambio' | 'eliminado' }[] {
+  const lineas: { campo: string; antes?: string; despues?: string; tipo: 'nuevo' | 'cambio' | 'eliminado' }[] = []
 
-  // Comparar claves que cambiaron
-  const clavesAntes = Object.keys(antes ?? {})
-  const clavesCambiadas = clavesAntes.filter(
-    (k) => JSON.stringify(antes?.[k]) !== JSON.stringify(despues?.[k]),
+  if (op === 'INSERT' && despues) {
+    const camposRelevantes = Object.entries(despues)
+      .filter(([k, v]) => !CAMPOS_IGNORAR.has(k) && v !== null && v !== '' && v !== undefined)
+    for (const [k, v] of camposRelevantes) {
+      lineas.push({ campo: etiqueta(k), despues: formatearValor(v), tipo: 'nuevo' })
+    }
+  } else if (op === 'UPDATE' && antes && despues) {
+    const camposCambiados = Object.keys(despues).filter(
+      (k) => !CAMPOS_IGNORAR.has(k) && JSON.stringify(antes[k]) !== JSON.stringify(despues[k])
+    )
+    for (const k of camposCambiados) {
+      lineas.push({
+        campo: etiqueta(k),
+        antes: formatearValor(antes[k]),
+        despues: formatearValor(despues[k]),
+        tipo: 'cambio',
+      })
+    }
+  } else if (op === 'DELETE' && antes) {
+    const camposRelevantes = Object.entries(antes)
+      .filter(([k, v]) => !CAMPOS_IGNORAR.has(k) && v !== null && v !== '' && v !== undefined)
+    for (const [k, v] of camposRelevantes) {
+      lineas.push({ campo: etiqueta(k), antes: formatearValor(v), tipo: 'eliminado' })
+    }
+  }
+
+  return lineas
+}
+
+function ResumenCambio({
+  op,
+  antes,
+  despues,
+}: {
+  op: string
+  antes: Record<string, unknown> | null
+  despues: Record<string, unknown> | null
+}) {
+  const [expandido, setExpandido] = useState(false)
+  const lineas = generarLineasResumen(op, antes, despues)
+
+  if (lineas.length === 0) return <span className="text-muted-foreground">Sin cambios relevantes</span>
+
+  const visibles = expandido ? lineas : lineas.slice(0, 2)
+  const hayMas = lineas.length > 2
+
+  return (
+    <div className="flex flex-col gap-1">
+      {visibles.map((l, i) => (
+        <div key={i} className="flex flex-wrap items-center gap-1 text-xs">
+          <span className="font-medium text-foreground">{l.campo}:</span>
+          {l.tipo === 'cambio' ? (
+            <>
+              <span className="line-through text-muted-foreground">{l.antes}</span>
+              <span className="text-muted-foreground">→</span>
+              <span className="text-foreground font-medium">{l.despues}</span>
+            </>
+          ) : l.tipo === 'nuevo' ? (
+            <span className="text-foreground">{l.despues}</span>
+          ) : (
+            <span className="line-through text-muted-foreground">{l.antes}</span>
+          )}
+        </div>
+      ))}
+      {hayMas && (
+        <button
+          className="flex items-center gap-0.5 text-xs text-primary hover:underline w-fit"
+          onClick={() => setExpandido(!expandido)}
+        >
+          {expandido
+            ? <><ChevronDown className="size-3" /> Ver menos</>
+            : <><ChevronRight className="size-3" /> {lineas.length - 2} campo{lineas.length - 2 > 1 ? 's' : ''} más</>
+          }
+        </button>
+      )}
+    </div>
   )
-  if (clavesCambiadas.length === 0) return 'Sin cambios detectados'
-  const resumen = clavesCambiadas.slice(0, 3).join(', ')
-  return `Cambios en: ${resumen}${clavesCambiadas.length > 3 ? ` (+${clavesCambiadas.length - 3} más)` : ''}`
 }
 
 export default function Auditoria() {
@@ -67,8 +194,9 @@ export default function Auditoria() {
   const { data, isLoading } = useAuditoria(filtrosAplicados)
   const registros = data?.data ?? []
 
-  // Verificar si el usuario es administrador (compatible con esquema anterior y nuevo)
   const esAdmin = user?.role === 'admin' || (user?.role as string) === 'administrador'
+
+  if (isLoading) return <SkeletonAuditoria />
 
   if (!esAdmin) {
     return (
@@ -117,13 +245,20 @@ export default function Auditoria() {
         <CardContent className="flex flex-wrap gap-4">
           <div className="flex flex-col gap-2">
             <Label htmlFor="filtro-entidad">Tabla / Entidad</Label>
-            <Input
-              id="filtro-entidad"
-              placeholder="Ej. articulos"
-              value={entidadTipo}
-              onChange={(e) => setEntidadTipo(e.target.value)}
-              className="w-[180px]"
-            />
+            <Select value={entidadTipo || '_todos'} onValueChange={(v) => setEntidadTipo(v === '_todos' ? '' : v)}>
+              <SelectTrigger id="filtro-entidad" className="w-[180px]">
+                <SelectValue placeholder="Todas" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="_todos">Todas</SelectItem>
+                <SelectItem value="articulos">Artículos</SelectItem>
+                <SelectItem value="categorias">Categorías</SelectItem>
+                <SelectItem value="ubicaciones">Ubicaciones</SelectItem>
+                <SelectItem value="movimientos">Movimientos</SelectItem>
+                <SelectItem value="alertas">Alertas</SelectItem>
+                <SelectItem value="usuarios_app">Usuarios</SelectItem>
+              </SelectContent>
+            </Select>
           </div>
           <div className="flex flex-col gap-2">
             <Label htmlFor="filtro-operacion">Operación</Label>
@@ -132,45 +267,29 @@ export default function Auditoria() {
                 <SelectValue placeholder="Todos" />
               </SelectTrigger>
               <SelectContent>
-                <SelectItem value="todos">Todos</SelectItem>
-                <SelectItem value="INSERT">INSERT</SelectItem>
-                <SelectItem value="UPDATE">UPDATE</SelectItem>
-                <SelectItem value="DELETE">DELETE</SelectItem>
+                <SelectItem value="todos">Todas</SelectItem>
+                <SelectItem value="INSERT">Creación</SelectItem>
+                <SelectItem value="UPDATE">Modificación</SelectItem>
+                <SelectItem value="DELETE">Eliminación</SelectItem>
               </SelectContent>
             </Select>
           </div>
           <div className="flex flex-col gap-2">
             <Label htmlFor="filtro-desde">Desde</Label>
-            <Input
-              id="filtro-desde"
-              type="date"
-              value={desde}
-              onChange={(e) => setDesde(e.target.value)}
-              className="w-[160px]"
-            />
+            <Input id="filtro-desde" type="date" value={desde} onChange={(e) => setDesde(e.target.value)} className="w-[160px]" />
           </div>
           <div className="flex flex-col gap-2">
             <Label htmlFor="filtro-hasta">Hasta</Label>
-            <Input
-              id="filtro-hasta"
-              type="date"
-              value={hasta}
-              onChange={(e) => setHasta(e.target.value)}
-              className="w-[160px]"
-            />
+            <Input id="filtro-hasta" type="date" value={hasta} onChange={(e) => setHasta(e.target.value)} className="w-[160px]" />
           </div>
           <div className="flex items-end gap-2">
-            <Button onClick={onAplicarFiltros} disabled={isLoading}>
-              Aplicar filtros
-            </Button>
-            <Button variant="outline" onClick={onLimpiarFiltros}>
-              Limpiar
-            </Button>
+            <Button onClick={onAplicarFiltros} disabled={isLoading}>Aplicar filtros</Button>
+            <Button variant="outline" onClick={onLimpiarFiltros}>Limpiar</Button>
           </div>
         </CardContent>
       </Card>
 
-      {/* Tabla de registros */}
+      {/* Tabla */}
       <Card>
         <CardHeader>
           <CardTitle>Registros de auditoría</CardTitle>
@@ -182,37 +301,42 @@ export default function Auditoria() {
           <Table>
             <TableHeader>
               <TableRow>
-                <TableHead>Tabla afectada</TableHead>
+                <TableHead>Entidad</TableHead>
                 <TableHead>Operación</TableHead>
                 <TableHead>Usuario</TableHead>
                 <TableHead>Fecha</TableHead>
-                <TableHead>Resumen del cambio</TableHead>
+                <TableHead>Detalle del cambio</TableHead>
               </TableRow>
             </TableHeader>
             <TableBody>
               {registros.length === 0 && !isLoading && (
                 <TableRow>
                   <TableCell colSpan={5} className="text-center text-muted-foreground py-8">
-                    No hay registros de auditoría con los filtros seleccionados.
+                    No hay registros con los filtros seleccionados.
                   </TableCell>
                 </TableRow>
               )}
               {registros.map((reg) => (
-                <TableRow key={reg.id}>
-                  <TableCell className="font-medium font-mono text-sm">
-                    {reg.entidad_tipo}
+                <TableRow key={reg.id} className="align-top">
+                  <TableCell className="font-medium">
+                    {etiquetaTabla(reg.entidad_tipo)}
+                    <span className="block text-xs text-muted-foreground font-mono">#{reg.entidad_id}</span>
                   </TableCell>
                   <TableCell>
                     <Badge variant={varianteOperacion(reg.tipo_evento)}>
-                      {reg.tipo_evento}
+                      {etiquetaOperacion(reg.tipo_evento)}
                     </Badge>
                   </TableCell>
-                  <TableCell>{reg.usuario?.nombre_visible ?? '-'}</TableCell>
-                  <TableCell className="text-muted-foreground">
+                  <TableCell>{reg.usuario?.nombre_visible ?? <span className="text-muted-foreground italic">Sistema</span>}</TableCell>
+                  <TableCell className="text-muted-foreground text-sm whitespace-nowrap">
                     {formatearFechaHora(reg.created_at)}
                   </TableCell>
-                  <TableCell className="text-sm text-muted-foreground max-w-[300px] truncate">
-                    {resumirCambios(reg.antes_json, reg.despues_json)}
+                  <TableCell className="max-w-[320px]">
+                    <ResumenCambio
+                      op={reg.tipo_evento}
+                      antes={reg.antes_json}
+                      despues={reg.despues_json}
+                    />
                   </TableCell>
                 </TableRow>
               ))}
