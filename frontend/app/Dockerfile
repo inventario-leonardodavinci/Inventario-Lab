@@ -7,7 +7,6 @@ RUN npm ci --ignore-scripts
 
 COPY . .
 
-# Las variables VITE_ se inyectan en build time desde Railway
 RUN npm run build
 
 # Servir con nginx
@@ -15,16 +14,19 @@ FROM nginx:alpine
 
 COPY --from=build /app/dist /usr/share/nginx/html
 
-# Configuración para SPA (react-router)
+# Plantilla de config con $PORT dinámico (Railway)
 RUN printf 'server {\n\
-    listen 80;\n\
+    listen ${PORT};\n\
     root /usr/share/nginx/html;\n\
     index index.html;\n\
     location / {\n\
         try_files $uri $uri/ /index.html;\n\
     }\n\
-}\n' > /etc/nginx/conf.d/default.conf
+}\n' > /etc/nginx/templates/default.conf.template
 
-EXPOSE 80
+# Eliminar config estática por defecto
+RUN rm /etc/nginx/conf.d/default.conf
+
+EXPOSE ${PORT}
 
 CMD ["nginx", "-g", "daemon off;"]
