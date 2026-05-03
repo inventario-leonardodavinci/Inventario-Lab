@@ -9,24 +9,17 @@ COPY . .
 
 RUN npm run build
 
-# Servir con nginx
 FROM nginx:alpine
 
 COPY --from=build /app/dist /usr/share/nginx/html
 
-# Plantilla de config con $PORT dinámico (Railway)
-RUN printf 'server {\n\
-    listen ${PORT};\n\
-    root /usr/share/nginx/html;\n\
-    index index.html;\n\
-    location / {\n\
-        try_files $uri $uri/ /index.html;\n\
-    }\n\
-}\n' > /etc/nginx/templates/default.conf.template
+# Plantilla nginx con placeholder para el puerto
+RUN rm /etc/nginx/conf.d/default.conf && \
+    printf 'server {\n    listen __PORT__;\n    root /usr/share/nginx/html;\n    index index.html;\n    location / {\n        try_files $uri $uri/ /index.html;\n    }\n}\n' \
+    > /etc/nginx/conf.d/default.conf.tpl
 
-# Eliminar config estática por defecto
-RUN rm /etc/nginx/conf.d/default.conf
+# Script de arranque: sustituye __PORT__ y lanza nginx
+RUN printf '#!/bin/sh\nset -e\nsed "s/__PORT__/$PORT/" /etc/nginx/conf.d/default.conf.tpl > /etc/nginx/conf.d/default.conf\nexec nginx -g "daemon off;"\n' \
+    > /start.sh && chmod +x /start.sh
 
-EXPOSE ${PORT}
-
-CMD ["nginx", "-g", "daemon off;"]
+CMD ["/start.sh"]
