@@ -11,9 +11,10 @@ COPY --chown=www-data:www-data . .
 RUN composer dump-autoload --optimize --classmap-authoritative \
     && php artisan package:discover --ansi
 
-COPY --chown=root:root docker-entrypoint.sh /docker-entrypoint.sh
+# Copiar entrypoint como root para poder darle permisos
+USER root
+COPY docker-entrypoint.sh /docker-entrypoint.sh
 RUN chmod +x /docker-entrypoint.sh
 
-EXPOSE 8080
-
+# S6 Overlay (el /entrypoint.sh de la imagen base) necesita correr como root
 CMD ["/docker-entrypoint.sh"]
