@@ -1,0 +1,43 @@
+services:
+  api:
+    build:
+      context: ./backend/api
+      dockerfile: Dockerfile
+    ports:
+      - "8080:8080"
+    env_file:
+      - ./backend/api/.env
+    environment:
+      - APP_ENV=local
+      - APP_DEBUG=true
+      - DB_HOST=host.docker.internal
+    depends_on:
+      - postgres
+    volumes:
+      - ./backend/api:/var/www/html
+      - /var/www/html/vendor
+
+  web:
+    build:
+      context: ./frontend/app
+      dockerfile: Dockerfile
+    ports:
+      - "5173:8080"
+    environment:
+      - VITE_API_BASE_URL=http://localhost:8080/api/v1
+    depends_on:
+      - api
+
+  postgres:
+    image: postgres:16-alpine
+    ports:
+      - "5432:5432"
+    environment:
+      - POSTGRES_USER=postgres
+      - POSTGRES_PASSWORD=postgres
+      - POSTGRES_DB=inventario_saludambiental
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+
+volumes:
+  pgdata:
