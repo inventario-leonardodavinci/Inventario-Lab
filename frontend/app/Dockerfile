@@ -13,16 +13,12 @@ FROM nginx:alpine
 
 COPY --from=build /app/dist /usr/share/nginx/html
 
-# Configuración estática en puerto 8080 (Railway expone este puerto por defecto)
-RUN printf 'server {\n\
-    listen 8080;\n\
-    root /usr/share/nginx/html;\n\
-    index index.html;\n\
-    location / {\n\
-        try_files $uri $uri/ /index.html;\n\
-    }\n\
-}\n' > /etc/nginx/conf.d/default.conf
+# Eliminar scripts de init de nginx que interfieren con el puerto
+RUN rm -f /docker-entrypoint.d/10-listen-on-ipv6-by-default.sh \
+          /docker-entrypoint.d/20-envsubst-on-templates.sh \
+          /docker-entrypoint.d/30-tune-worker-processes.sh
 
-EXPOSE 8080
+COPY entrypoint.sh /entrypoint.sh
+RUN chmod +x /entrypoint.sh
 
-CMD ["nginx", "-g", "daemon off;"]
+ENTRYPOINT ["/entrypoint.sh"]
