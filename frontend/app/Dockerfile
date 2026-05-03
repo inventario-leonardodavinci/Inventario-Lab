@@ -13,9 +13,16 @@ FROM nginx:alpine
 
 COPY --from=build /app/dist /usr/share/nginx/html
 
-RUN rm /etc/nginx/conf.d/default.conf
+# Configuración estática en puerto 8080 (Railway expone este puerto por defecto)
+RUN printf 'server {\n\
+    listen 8080;\n\
+    root /usr/share/nginx/html;\n\
+    index index.html;\n\
+    location / {\n\
+        try_files $uri $uri/ /index.html;\n\
+    }\n\
+}\n' > /etc/nginx/conf.d/default.conf
 
-# nginx:alpine sustituye automáticamente ${PORT} via envsubst en runtime
-COPY nginx.conf.template /etc/nginx/templates/default.conf.template
+EXPOSE 8080
 
 CMD ["nginx", "-g", "daemon off;"]
