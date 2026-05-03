@@ -2,7 +2,13 @@
   "$schema": "https://railway.app/railway.schema.json",
   "build": {
     "builder": "DOCKERFILE",
-    "dockerfilePath": "Dockerfile"
+    "dockerfilePath": "Dockerfile",
+    "buildArgs": {
+      "VITE_API_BASE_URL": "${{VITE_API_BASE_URL}}",
+      "VITE_INSFORGE_URL": "${{VITE_INSFORGE_URL}}",
+      "VITE_INSFORGE_ANON_KEY": "${{VITE_INSFORGE_ANON_KEY}}",
+      "VITE_NOVU_APPLICATION_IDENTIFIER": "${{VITE_NOVU_APPLICATION_IDENTIFIER}}"
+    }
   },
   "deploy": {
     "healthcheckPath": "/",
