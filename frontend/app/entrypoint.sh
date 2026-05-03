@@ -4,6 +4,7 @@ set -e
 cat > /etc/nginx/conf.d/default.conf << EOF
 server {
     listen ${PORT};
+    listen [::]:${PORT};
     root /usr/share/nginx/html;
     index index.html;
     location / {
