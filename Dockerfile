@@ -1,4 +1,4 @@
-FROM serversideup/php:8.3-fpm-nginx AS base
+FROM serversideup/php:8.3-fpm-nginx
 
 WORKDIR /var/www/html
 
@@ -9,8 +9,7 @@ RUN composer install --no-dev --optimize-autoloader --no-interaction --no-script
 COPY --chown=www-data:www-data backend/api/ .
 
 RUN composer dump-autoload --optimize --classmap-authoritative \
-    && php artisan package:discover --ansi \
-    && php artisan optimize:clear
+    && php artisan package:discover --ansi
 
 COPY --chown=root:root backend/api/docker-entrypoint.sh /docker-entrypoint.sh
 RUN chmod +x /docker-entrypoint.sh
