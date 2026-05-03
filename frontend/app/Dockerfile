@@ -17,4 +17,4 @@ COPY --from=build /app/dist ./dist
 
 RUN npm install -g serve
 
-CMD serve -s dist -l $PORT
+CMD serve -s dist -l tcp://0.0.0.0:$PORT
