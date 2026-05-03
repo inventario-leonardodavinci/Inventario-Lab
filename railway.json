@@ -6,9 +6,8 @@
   },
   "deploy": {
     "healthcheckPath": "/up",
-    "healthcheckTimeout": 30,
+    "healthcheckTimeout": 60,
     "restartPolicyType": "ON_FAILURE",
-    "numReplicas": 1,
-    "startCommand": "/entrypoint.sh"
+    "numReplicas": 1
   }
 }
