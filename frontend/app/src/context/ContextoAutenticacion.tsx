@@ -11,6 +11,7 @@ import {
   restablecerContrasena,
   loginConOAuth,
   sincronizarPerfil,
+  sincronizarPerfilOAuth,
   obtenerRolDesdeBackend,
   type ResultadoRegistro,
   type SesionUsuario,
@@ -21,6 +22,7 @@ import { useSesionStore } from "@/stores/useSesionStore";
 type ValorContextoAutenticacion = {
   user: SesionUsuario | null;
   cargando: boolean;
+  procesandoOAuth: boolean;
   login: (email: string, password: string) => Promise<void>;
   registro: (email: string, password: string, displayName: string) => Promise<ResultadoRegistro>;
   verificarEmail: (email: string, otp: string) => Promise<void>;
@@ -47,6 +49,20 @@ export function ProveedorAutenticacion({ children }: { children: React.ReactNode
   // Con usuario en el store, mostramos la app inmediatamente y verificamos en background.
   const [cargando, setCargando] = useState(!usuarioPersistido);
 
+  // Indica que el SDK está procesando un callback OAuth (Apple/Google redirect).
+  // Mientras sea true, RutaProtegida no redirige al login aunque user sea null.
+  const [procesandoOAuth, setProcesandoOAuth] = useState(() => {
+    // Detectar si la URL contiene parámetros de callback OAuth
+    const hash = window.location.hash;
+    const search = window.location.search;
+    return (
+      hash.includes('access_token') ||
+      hash.includes('code=') ||
+      search.includes('code=') ||
+      search.includes('access_token')
+    );
+  });
+
   // Evitar que la verificación en background sobreescriba un logout explícito del usuario
   const logoutPendiente = useRef(false);
 
@@ -65,8 +81,23 @@ export function ProveedorAutenticacion({ children }: { children: React.ReactNode
       if (resultado.tipo === 'sesion_activa') {
         // SDK confirmó la sesión — actualizar con datos frescos del servidor
         setUser(resultado.sesion);
-        // Sincronizar nombre y rol en background (no bloquea la UI)
-        sincronizarPerfil(resultado.sesion.authUserId, resultado.sesion.displayName).catch(() => {});
+        setProcesandoOAuth(false);
+
+        // Si venimos de un callback OAuth, el proveedor puede no haber propagado
+        // el nombre todavía. Usar sincronizarPerfilOAuth que reintenta con backoff.
+        const eraOAuth = procesandoOAuth;
+        const sincronizar = eraOAuth
+          ? sincronizarPerfilOAuth(resultado.sesion.authUserId, resultado.sesion)
+          : sincronizarPerfil(resultado.sesion.authUserId, resultado.sesion.displayName).then(() => resultado.sesion);
+
+        sincronizar.then((sesionFinal) => {
+          if (logoutPendiente.current) return;
+          // Actualizar el nombre si cambió durante el reintento OAuth
+          if (sesionFinal.displayName !== resultado.sesion.displayName) {
+            setUser((prev) => prev ? { ...prev, displayName: sesionFinal.displayName, avatarUrl: sesionFinal.avatarUrl } : prev);
+          }
+        }).catch(() => {});
+
         obtenerRolDesdeBackend(resultado.sesion.authUserId).then((rol) => {
           if (logoutPendiente.current) return;
           if (rol) setUser((prev) => prev ? { ...prev, role: rol } : prev);
@@ -77,9 +108,11 @@ export function ProveedorAutenticacion({ children }: { children: React.ReactNode
         // No deslogueamos: el usuario puede seguir con datos cacheados.
         // Las queries de TanStack Query reintentarán cuando haya conexión.
         // Si no había usuario en el store, simplemente no hay sesión.
+        setProcesandoOAuth(false);
 
       } else {
         // 'sin_sesion' — sesión realmente expirada o nunca hubo
+        setProcesandoOAuth(false);
         if (usuarioPersistido) {
           setUser(null);
           limpiar();
@@ -100,7 +133,7 @@ export function ProveedorAutenticacion({ children }: { children: React.ReactNode
       console.warn("[historial] evento-login falló:", err);
     });
     // Sincronizar primero para que el usuario exista en BD antes de pedir el rol
-    await sincronizarPerfil(sesion.authUserId, sesion.displayName).catch(() => {});
+    await sincronizarPerfil(sesion.authUserId, sesion.displayName, sesion.email).catch(() => {});
     obtenerRolDesdeBackend(sesion.authUserId).then((rol) => {
       if (rol) setUser((prev) => prev ? { ...prev, role: rol } : prev);
     }).catch(() => {});
@@ -113,7 +146,7 @@ export function ProveedorAutenticacion({ children }: { children: React.ReactNode
       enviarEventoLogin(resultado.sesion.authUserId).catch((err) => {
         console.warn("[historial] evento-login falló (registro):", err);
       });
-      await sincronizarPerfil(resultado.sesion.authUserId, resultado.sesion.displayName).catch(() => {});
+      await sincronizarPerfil(resultado.sesion.authUserId, resultado.sesion.displayName, resultado.sesion.email).catch(() => {});
       obtenerRolDesdeBackend(resultado.sesion.authUserId).then((rol) => {
         if (rol) setUser((prev) => prev ? { ...prev, role: rol } : prev);
       }).catch(() => {});
@@ -127,7 +160,7 @@ export function ProveedorAutenticacion({ children }: { children: React.ReactNode
     enviarEventoLogin(sesion.authUserId).catch((err) => {
       console.warn("[historial] evento-login falló (verificar email):", err);
     });
-    await sincronizarPerfil(sesion.authUserId, sesion.displayName).catch(() => {});
+    await sincronizarPerfil(sesion.authUserId, sesion.displayName, sesion.email).catch(() => {});
     obtenerRolDesdeBackend(sesion.authUserId).then((rol) => {
       if (rol) setUser((prev) => prev ? { ...prev, role: rol } : prev);
     }).catch(() => {});
@@ -153,6 +186,7 @@ export function ProveedorAutenticacion({ children }: { children: React.ReactNode
     () => ({
       user,
       cargando,
+      procesandoOAuth,
       login,
       registro,
       verificarEmail: verificarEmailFn,
@@ -165,7 +199,7 @@ export function ProveedorAutenticacion({ children }: { children: React.ReactNode
       actualizarUsuario,
     }),
     // eslint-disable-next-line react-hooks/exhaustive-deps
-    [user, cargando],
+    [user, cargando, procesandoOAuth],
   );
 
   return (

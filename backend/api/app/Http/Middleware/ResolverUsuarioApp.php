@@ -28,10 +28,21 @@ class ResolverUsuarioApp
         if (! $usuarioApp) {
             // Primer acceso: crear el usuario automáticamente.
             // Usamos X-Auth-User-Name si el cliente lo envía (flujo OAuth/Google/Apple).
+            // Nunca guardar el placeholder genérico 'Usuario' — si no hay nombre real,
+            // usar la parte local del email (cabecera X-Auth-User-Email) como fallback.
             $nombreCabecera = $request->header('X-Auth-User-Name');
-            $nombreInicial  = (is_string($nombreCabecera) && $nombreCabecera !== '')
+            $emailCabecera  = $request->header('X-Auth-User-Email') ?? '';
+
+            $nombreLimpio = (is_string($nombreCabecera) && trim($nombreCabecera) !== '' && trim($nombreCabecera) !== 'Usuario')
                 ? mb_substr(trim($nombreCabecera), 0, 180)
-                : 'Usuario';
+                : null;
+
+            if (! $nombreLimpio && $emailCabecera !== '') {
+                // Parte local del email como fallback (p.ej. "juan.garcia" de "juan.garcia@gmail.com")
+                $nombreLimpio = mb_substr(explode('@', $emailCabecera)[0], 0, 180);
+            }
+
+            $nombreInicial = $nombreLimpio ?? 'Usuario';
 
             $usuarioApp = UsuarioApp::query()->create([
                 'auth_user_id'   => $idUsuarioAutenticado,

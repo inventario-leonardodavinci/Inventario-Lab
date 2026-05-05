@@ -244,7 +244,13 @@ export async function loginConOAuth(
   provider: string,
   redirectTo: string,
 ): Promise<void> {
-  await insforge.auth.signInWithOAuth({ provider, redirectTo });
+  // Apple hace POST al redirectTo (no GET como Google).
+  // Apuntar siempre a la raíz para que el SDK procese el token
+  // antes de que React Router decida qué renderizar.
+  const destino = provider === 'apple'
+    ? `${window.location.origin}/`
+    : redirectTo;
+  await insforge.auth.signInWithOAuth({ provider, redirectTo: destino });
 }
 
 // ─── Sesión ───────────────────────────────────────────────────────────────────
@@ -290,18 +296,65 @@ export async function logoutDeInsforge(): Promise<void> {
 }
 
 // Sincroniza el nombre visible del usuario con el backend Laravel.
-// También envía X-Auth-User-Name para que el alta automática use el nombre real
-// en lugar de 'Usuario' (necesario en flujo OAuth Google/Apple).
-export async function sincronizarPerfil(authUserId: string, displayName: string): Promise<void> {
+// También envía X-Auth-User-Name y X-Auth-User-Email para que el alta automática
+// use el nombre real en lugar de 'Usuario' (necesario en flujo OAuth Google/Apple).
+// No sincroniza si el nombre es el fallback genérico — evita sobreescribir
+// un nombre real ya guardado en BD con el placeholder.
+export async function sincronizarPerfil(authUserId: string, displayName: string, email?: string): Promise<void> {
+  // No sincronizar el fallback genérico: podría sobreescribir un nombre real en BD
+  if (!displayName || displayName === 'Usuario') return;
+
   try {
     await apiClient(
       "/perfil",
       { method: "PATCH", body: JSON.stringify({ nombre_visible: displayName }) },
-      { authUserId, authUserName: displayName },
+      { authUserId, authUserName: displayName, authUserEmail: email },
     );
   } catch {
     // Silencioso: no bloquear el login si falla la sincronización
   }
+}
+
+/**
+ * Versión para el callback OAuth: reintenta obtener el perfil hasta que
+ * el proveedor (Apple/Google) haya propagado el nombre real.
+ * Insforge puede tardar 1-3 segundos en poblar profile.name tras el redirect.
+ */
+export async function sincronizarPerfilOAuth(authUserId: string, sesionInicial: SesionUsuario): Promise<SesionUsuario> {
+  // Si ya tenemos un nombre real, sincronizar directamente
+  if (sesionInicial.displayName && sesionInicial.displayName !== 'Usuario') {
+    await sincronizarPerfil(authUserId, sesionInicial.displayName, sesionInicial.email);
+    return sesionInicial;
+  }
+
+  // El nombre es el fallback — reintentar hasta 4 veces con backoff
+  const intentos = [800, 1500, 2500, 4000];
+
+  for (const espera of intentos) {
+    await new Promise((r) => setTimeout(r, espera));
+
+    const { data } = await insforge.auth.getCurrentUser();
+    if (!data?.user) break;
+
+    const sesionFresca = extraerSesion(data.user);
+    if (sesionFresca.displayName && sesionFresca.displayName !== 'Usuario') {
+      // Nombre real disponible — sincronizar y devolver sesión actualizada
+      await sincronizarPerfil(authUserId, sesionFresca.displayName, sesionFresca.email);
+      return sesionFresca;
+    }
+  }
+
+  // Último recurso: usar la parte local del email si está disponible
+  if (sesionInicial.email) {
+    const nombreEmail = sesionInicial.email.split('@')[0];
+    if (nombreEmail) {
+      const sesionConEmail = { ...sesionInicial, displayName: nombreEmail };
+      await sincronizarPerfil(authUserId, nombreEmail, sesionInicial.email);
+      return sesionConEmail;
+    }
+  }
+
+  return sesionInicial;
 }
 
 // Obtiene el rol real del usuario desde el backend Laravel

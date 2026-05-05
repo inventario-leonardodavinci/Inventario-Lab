@@ -13,23 +13,23 @@ import {
 
 export default function InicioSesion() {
   const navigate = useNavigate();
-  const { user, cargando } = useAuth();
+  const { user, cargando, procesandoOAuth } = useAuth();
   const [searchParams] = useSearchParams();
   const [config, setConfig] = useState<ConfiguracionAuth | null>(null);
 
   // Si ya hay sesión activa, redirigir al panel (cubre el retorno de OAuth)
   useEffect(() => {
-    if (!cargando && user) {
+    if (!cargando && !procesandoOAuth && user) {
       navigate("/", { replace: true });
     }
-  }, [user, cargando, navigate]);
+  }, [user, cargando, procesandoOAuth, navigate]);
 
   useEffect(() => {
     obtenerConfigAuth().then(setConfig).catch(() => {});
   }, []);
 
-  // Mostrar nada mientras se comprueba la sesión
-  if (cargando) return null;
+  // Esperar mientras se verifica la sesión o se procesa un callback OAuth
+  if (cargando || procesandoOAuth) return null;
   if (user) return null;
 
   const oAuthProviders = config?.oAuthProviders ?? [];

@@ -12,8 +12,8 @@ const Informes = lazy(() => import('./pages/Informes'))
 const Perfil = lazy(() => import('./pages/Perfil'))
 const Auditoria = lazy(() => import('./pages/Auditoria'))
 const Usuarios = lazy(() => import('./pages/Usuarios'))
-const ListaUbicaciones = lazy(() => import('./pages/Ubicaciones/ListaUbicaciones'))
-const ListaCategorias = lazy(() => import('./pages/Categorias/ListaCategorias'))
+const ListaUbicaciones = lazy(() => import('./pages/ListaUbicaciones'))
+const ListaCategorias = lazy(() => import('./pages/ListaCategorias'))
 
 function App() {
   return (
