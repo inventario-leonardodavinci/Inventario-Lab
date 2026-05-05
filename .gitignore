@@ -18,6 +18,7 @@ Thumbs.db
 .kiro/
 .qoder/
 .qwen/
+.cursor/
 .roo/
 .trae/
 .windsurf/
@@ -60,6 +61,11 @@ cacert.pem
 packagist-chain.pem
 windows-*.pem
 windows-*-ca-*.pem
+
+# Notas internas de trabajo (no van al repo)
+PLAN-REESTRUCTURACION.md
+TAREAS-SEMANA.md
+skills-lock.json
 
 # IDE
 .vscode/
