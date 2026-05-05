@@ -16,6 +16,7 @@ import {
   type SesionUsuario,
 } from "@/services/authApi";
 import { enviarEventoLogin } from "@/services/notificacionesApi";
+import { useSesionStore } from "@/stores/useSesionStore";
 
 type ValorContextoAutenticacion = {
   user: SesionUsuario | null;
@@ -37,12 +38,20 @@ const ContextoAutenticacion = createContext<ValorContextoAutenticacion | undefin
 export function ProveedorAutenticacion({ children }: { children: React.ReactNode }) {
   const [user, setUser] = useState<SesionUsuario | null>(null);
   const [cargando, setCargando] = useState(true);
+  const { setUsuario, limpiar } = useSesionStore();
+
+  // Sincronizar zustand store cuando cambia el usuario del contexto
+  useEffect(() => {
+    setUsuario(user);
+  }, [user, setUsuario]);
 
   useEffect(() => {
     obtenerSesionActual()
       .then((sesion) => {
         if (sesion) {
           setUser(sesion);
+          // Sincronizar nombre con el backend (cubre el retorno de OAuth Google/Apple)
+          sincronizarPerfil(sesion.authUserId, sesion.displayName).catch(() => {});
           // Actualizar rol desde el backend Laravel
           obtenerRolDesdeBackend(sesion.authUserId).then((rol) => {
             if (rol) setUser((prev) => prev ? { ...prev, role: rol } : prev);
@@ -100,7 +109,8 @@ export function ProveedorAutenticacion({ children }: { children: React.ReactNode
   const logout = useCallback(async () => {
     await logoutDeInsforge();
     setUser(null);
-  }, []);
+    limpiar();
+  }, [limpiar]);
 
   const actualizarUsuario = useCallback((cambios: Partial<SesionUsuario>) => {
     setUser((prev) => prev ? { ...prev, ...cambios } : prev);

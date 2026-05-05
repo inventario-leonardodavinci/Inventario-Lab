@@ -4,6 +4,9 @@
  * Feature: reestructuracion-inventario-salud-ambiental
  */
 
+import { format, formatDistanceToNow, isValid, parseISO } from 'date-fns'
+import { es } from 'date-fns/locale'
+
 import type {
   TipoMovimiento,
   TipoAlerta,
@@ -18,50 +21,37 @@ import type {
 
 const LOCALE = 'es-ES'
 
+function parseFecha(iso: string | null | undefined): Date | null {
+  if (!iso) return null
+  const fecha = parseISO(iso)
+  return isValid(fecha) ? fecha : null
+}
+
 /**
  * Formatea una fecha ISO a formato corto: "12 ene 2026"
  */
-export function formatearFecha(iso: string): string {
-  const fecha = new Date(iso)
-  return fecha.toLocaleDateString(LOCALE, {
-    day: 'numeric',
-    month: 'short',
-    year: 'numeric',
-  })
+export function formatearFecha(iso: string | null | undefined): string {
+  const fecha = parseFecha(iso)
+  if (!fecha) return '—'
+  return format(fecha, 'd MMM yyyy', { locale: es })
 }
 
 /**
  * Formatea una fecha ISO a formato con hora: "12 ene 2026, 14:30"
  */
-export function formatearFechaHora(iso: string): string {
-  const fecha = new Date(iso)
-  return fecha.toLocaleString(LOCALE, {
-    day: 'numeric',
-    month: 'short',
-    year: 'numeric',
-    hour: '2-digit',
-    minute: '2-digit',
-  })
+export function formatearFechaHora(iso: string | null | undefined): string {
+  const fecha = parseFecha(iso)
+  if (!fecha) return '—'
+  return format(fecha, "d MMM yyyy, HH:mm", { locale: es })
 }
 
 /**
  * Formatea una fecha ISO a tiempo relativo: "hace 2 horas", "hace 3 días"
  */
-export function formatearFechaRelativa(iso: string): string {
-  const ahora = Date.now()
-  const fecha = new Date(iso).getTime()
-  const diffMs = ahora - fecha
-  const diffSeg = Math.floor(diffMs / 1000)
-  const diffMin = Math.floor(diffSeg / 60)
-  const diffHoras = Math.floor(diffMin / 60)
-  const diffDias = Math.floor(diffHoras / 24)
-
-  if (diffSeg < 60) return 'hace un momento'
-  if (diffMin < 60) return `hace ${diffMin} ${diffMin === 1 ? 'minuto' : 'minutos'}`
-  if (diffHoras < 24) return `hace ${diffHoras} ${diffHoras === 1 ? 'hora' : 'horas'}`
-  if (diffDias < 30) return `hace ${diffDias} ${diffDias === 1 ? 'día' : 'días'}`
-
-  return formatearFecha(iso)
+export function formatearFechaRelativa(iso: string | null | undefined): string {
+  const fecha = parseFecha(iso)
+  if (!fecha) return '—'
+  return formatDistanceToNow(fecha, { locale: es, addSuffix: true })
 }
 
 // ─── Enums → etiquetas en español ─────────────────────────────────────────────

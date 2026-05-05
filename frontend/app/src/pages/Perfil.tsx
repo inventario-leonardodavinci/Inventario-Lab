@@ -276,9 +276,10 @@ export default function Perfil() {
     e.preventDefault();
     if (nuevaPass !== confirmarPass) { toast.error("Las contraseñas no coinciden"); return; }
     if (nuevaPass.length < 6) { toast.error("La contraseña debe tener al menos 6 caracteres"); return; }
+    if (!tokenReset) { toast.error("Token de verificación no disponible. Solicita un nuevo código."); setPasoCambio("solicitar"); return; }
     setSubmittingPass(true);
     try {
-      await restablecerContrasena(nuevaPass, tokenReset!);
+      await restablecerContrasena(nuevaPass, tokenReset);
       toast.success("Contraseña actualizada correctamente");
       setPasoCambio("solicitar");
       setCodigoReset(""); setTokenReset(null); setNuevaPass(""); setConfirmarPass("");

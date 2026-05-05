@@ -13,7 +13,7 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@
 import { useAuth } from '@/context/ContextoAutenticacion'
 import { useAuditoria } from '@/hooks/queries'
 import { formatearFechaHora } from '@/utils/formatters'
-import { Shield, ChevronDown, ChevronRight } from 'lucide-react'
+import { Shield, ChevronDown, ChevronRight, ChevronLeft } from 'lucide-react'
 import { SkeletonAuditoria } from '@/components/ui/PageSkeleton'
 
 type FiltroOperacion = 'todos' | 'INSERT' | 'UPDATE' | 'DELETE'
@@ -184,15 +184,18 @@ export default function Auditoria() {
   const [filtroOperacion, setFiltroOperacion] = useState<FiltroOperacion>('todos')
   const [desde, setDesde] = useState('')
   const [hasta, setHasta] = useState('')
-  const [filtrosAplicados, setFiltrosAplicados] = useState({
-    entidad_tipo: '',
-    tipo_evento: '',
-    desde: '',
-    hasta: '',
-  })
+  const [pagina, setPagina] = useState(1)
+  const [filtrosAplicados, setFiltrosAplicados] = useState<{
+    entidad_tipo?: string
+    tipo_evento?: string
+    desde?: string
+    hasta?: string
+    pagina?: number
+  }>({ pagina: 1 })
 
   const { data, isLoading } = useAuditoria(filtrosAplicados)
   const registros = data?.data ?? []
+  const meta = data?.meta
 
   const esAdmin = user?.role === 'admin' || (user?.role as string) === 'administrador'
 
@@ -211,12 +214,13 @@ export default function Auditoria() {
   }
 
   const onAplicarFiltros = () => {
-    setFiltrosAplicados({
-      entidad_tipo: entidadTipo.trim(),
-      tipo_evento: filtroOperacion !== 'todos' ? filtroOperacion : '',
-      desde,
-      hasta,
-    })
+    const f: typeof filtrosAplicados = { pagina: 1 }
+    if (entidadTipo.trim()) f.entidad_tipo = entidadTipo.trim()
+    if (filtroOperacion !== 'todos') f.tipo_evento = filtroOperacion
+    if (desde) f.desde = desde
+    if (hasta) f.hasta = hasta
+    setPagina(1)
+    setFiltrosAplicados(f)
   }
 
   const onLimpiarFiltros = () => {
@@ -224,7 +228,13 @@ export default function Auditoria() {
     setFiltroOperacion('todos')
     setDesde('')
     setHasta('')
-    setFiltrosAplicados({ entidad_tipo: '', tipo_evento: '', desde: '', hasta: '' })
+    setPagina(1)
+    setFiltrosAplicados({ pagina: 1 })
+  }
+
+  const irPagina = (nueva: number) => {
+    setPagina(nueva)
+    setFiltrosAplicados((prev) => ({ ...prev, pagina: nueva }))
   }
 
   return (
@@ -294,7 +304,11 @@ export default function Auditoria() {
         <CardHeader>
           <CardTitle>Registros de auditoría</CardTitle>
           <CardDescription>
-            {isLoading ? 'Cargando...' : `${registros.length} registro${registros.length !== 1 ? 's' : ''}`}
+            {isLoading
+              ? 'Cargando...'
+              : meta
+                ? `${meta.total} registro${meta.total !== 1 ? 's' : ''} · página ${meta.current_page} de ${meta.last_page}`
+                : `${registros.length} registro${registros.length !== 1 ? 's' : ''}`}
           </CardDescription>
         </CardHeader>
         <CardContent>
@@ -342,6 +356,31 @@ export default function Auditoria() {
               ))}
             </TableBody>
           </Table>
+
+          {/* Paginación */}
+          {meta && meta.last_page > 1 && (
+            <div className="flex items-center justify-end gap-2 pt-4">
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={() => irPagina(pagina - 1)}
+                disabled={pagina <= 1 || isLoading}
+              >
+                <ChevronLeft className="size-4" />
+              </Button>
+              <span className="text-sm text-muted-foreground">
+                {pagina} / {meta.last_page}
+              </span>
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={() => irPagina(pagina + 1)}
+                disabled={pagina >= meta.last_page || isLoading}
+              >
+                <ChevronRight className="size-4" />
+              </Button>
+            </div>
+          )}
         </CardContent>
       </Card>
     </main>

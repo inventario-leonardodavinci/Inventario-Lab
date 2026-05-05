@@ -23,10 +23,12 @@ export function getArticulos(
   authUserId: string,
   search = '',
   pagina = 1,
+  activo?: boolean,
 ) {
   const params = new URLSearchParams()
   if (search) params.set('search', search)
   if (pagina > 1) params.set('page', String(pagina))
+  if (activo !== undefined) params.set('activo', String(activo))
   const qs = params.toString() ? `?${params.toString()}` : ''
   return apiClient<Paginado<Articulo>>(`/articulos${qs}`, {}, { authUserId })
 }

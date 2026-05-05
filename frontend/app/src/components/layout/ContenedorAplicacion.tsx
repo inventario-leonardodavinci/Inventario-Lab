@@ -6,6 +6,7 @@ import {
 } from "@/components/ui/sidebar"
 import { CentroNotificaciones } from "./CentroNotificaciones"
 import { MenuUsuario } from "./MenuUsuario"
+import { BotonTema } from "@/components/ui/BotonTema"
 
 export function ContenedorAplicacion({ children }: { children: React.ReactNode }) {
   return (
@@ -21,6 +22,7 @@ export function ContenedorAplicacion({ children }: { children: React.ReactNode }
             </h1>
           </div>
           <div className="flex items-center gap-2">
+            <BotonTema />
             <CentroNotificaciones />
             <MenuUsuario />
           </div>

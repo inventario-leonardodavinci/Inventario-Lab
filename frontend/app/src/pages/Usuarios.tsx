@@ -43,6 +43,7 @@ export default function Usuarios() {
 
   const usuarios = data?.data ?? []
   const perfilActual = perfilData?.data
+  const cargandoPerfil = perfilData === undefined
 
   const esAdmin = user?.role === 'admin' || (user?.role as string) === 'administrador'
 
@@ -129,7 +130,7 @@ export default function Usuarios() {
                         <Select
                           value={rolActual}
                           onValueChange={(v) => void onCambiarRol(usuario.id, v as Rol)}
-                          disabled={actualizarRolMutation.isPending}
+                          disabled={actualizarRolMutation.isPending || cargandoPerfil}
                         >
                           <SelectTrigger className="w-[160px] ml-auto">
                             <SelectValue />

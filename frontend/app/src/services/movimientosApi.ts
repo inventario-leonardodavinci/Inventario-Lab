@@ -16,6 +16,8 @@ export type EntradaCrearMovimiento = {
 export type ResumenHoy = {
   entradas_hoy: number
   salidas_hoy: number
+  ajustes_hoy: number
+  traslados_hoy: number
 }
 
 export function getMovimientos(
