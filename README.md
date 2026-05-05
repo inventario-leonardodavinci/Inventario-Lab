@@ -60,6 +60,7 @@ npm run dev
 | [Política de commits](docs/03-politica-commits.md) | Convenciones de commits y ramas |
 | [Importación Excel](docs/04-importacion-excel.md) | Mapeo y carga de datos iniciales |
 | [Checklist equipo](docs/05-checklist-equipo.md) | Estado de tareas por fase y persona |
+| [Esquema de BD](docs/esquema-base-datos.md) | Tablas, columnas, constraints y triggers |
 | [OpenAPI](docs/08-openapi-v1.yaml) | Contrato de la API REST |
 | [Checklist despliegue](docs/09-release-hardening-checklist.md) | Verificaciones antes de producción |
 | [Integración Novu](docs/10-novu-integration.md) | Configuración de notificaciones |
