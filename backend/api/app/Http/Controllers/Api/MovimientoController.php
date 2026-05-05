@@ -21,19 +21,17 @@ class MovimientoController extends Controller
     {
         $hoy = now()->toDateString();
 
-        $entradasHoy = Movimiento::query()
-            ->where('tipo', 'entrada')
+        $conteosPorTipo = Movimiento::query()
             ->whereDate('created_at', $hoy)
-            ->count();
-
-        $salidasHoy = Movimiento::query()
-            ->where('tipo', 'salida')
-            ->whereDate('created_at', $hoy)
-            ->count();
+            ->selectRaw('tipo, COUNT(*) as total')
+            ->groupBy('tipo')
+            ->pluck('total', 'tipo');
 
         return response()->json([
-            'entradas_hoy' => $entradasHoy,
-            'salidas_hoy'  => $salidasHoy,
+            'entradas_hoy'  => (int) ($conteosPorTipo['entrada']  ?? 0),
+            'salidas_hoy'   => (int) ($conteosPorTipo['salida']   ?? 0),
+            'ajustes_hoy'   => (int) ($conteosPorTipo['ajuste']   ?? 0),
+            'traslados_hoy' => (int) ($conteosPorTipo['traslado'] ?? 0),
         ]);
     }
 

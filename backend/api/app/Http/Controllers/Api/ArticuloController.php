@@ -27,7 +27,7 @@ class ArticuloController extends Controller
             'notas'        => $articulo->notas,
             'activo'       => $articulo->activo,
             'stock_total'  => $stockTotal,
-            'estado_stock' => $stockTotal <= $cantidadMinima ? 'critico' : 'ok',
+            'estado_stock' => ($cantidadMinima > 0 && $stockTotal <= $cantidadMinima) ? 'critico' : 'ok',
             'created_at'   => $articulo->created_at,
             'updated_at'   => $articulo->updated_at,
         ];
@@ -104,7 +104,7 @@ class ArticuloController extends Controller
                 'notas' => $articulo->notas,
                 'activo' => $articulo->activo,
                 'stock_total' => (float) $stockTotal,
-                'estado_stock' => (float) $stockTotal <= $cantidadMinima ? 'critico' : 'ok',
+                'estado_stock' => ($cantidadMinima > 0 && (float) $stockTotal <= $cantidadMinima) ? 'critico' : 'ok',
                 'niveles_stock' => $articulo->nivelesStock->map(fn ($nivel) => [
                     'id' => $nivel->id,
                     'ubicacion_id' => $nivel->ubicacion_id,
@@ -171,6 +171,7 @@ class ArticuloController extends Controller
     public function destroy(Articulo $articulo): JsonResponse
     {
         $articulo->update(['activo' => false]);
+        $articulo->load('categoria:id,nombre');
 
         return response()->json([
             'data' => $this->serializar($articulo),

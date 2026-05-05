@@ -32,7 +32,6 @@ class NotificacionController extends Controller
                 'body'       => $a->notas_resolucion ?: 'Nueva alerta pendiente de revision.',
                 'status'     => $a->estado,
                 'created_at' => $a->generada_en,
-                'user_id'    => $usuarioApp->id,
             ]);
 
         return response()->json([
@@ -108,9 +107,13 @@ class NotificacionController extends Controller
             return [];
         }
 
+        if (app()->environment('local', 'testing')) {
+            return [];
+        }
+
         try {
             $url       = "http://ip-api.com/json/{$ip}?fields=status,country,city&lang=es";
-            $ctx       = stream_context_create(['http' => ['timeout' => 2]]);
+            $ctx       = stream_context_create(['http' => ['timeout' => 1]]);
             $respuesta = @file_get_contents($url, false, $ctx);
 
             if (! $respuesta) {

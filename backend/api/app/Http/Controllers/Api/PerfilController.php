@@ -16,10 +16,13 @@ class PerfilController extends Controller
         $usuarioApp = $request->attributes->get('app_user');
 
         return response()->json([
-            'id' => $usuarioApp->id,
-            'auth_user_id' => $usuarioApp->auth_user_id,
-            'nombre_visible' => $usuarioApp->nombre_visible,
-            'roles' => $usuarioApp->roles->map(fn ($r) => ['id' => $r->id, 'name' => $r->name])->values(),
+            'data' => [
+                'id'             => $usuarioApp->id,
+                'auth_user_id'   => $usuarioApp->auth_user_id,
+                'nombre_visible' => $usuarioApp->nombre_visible,
+                'roles'          => $usuarioApp->roles->map(fn ($r) => ['id' => $r->id, 'name' => $r->name])->values(),
+                'created_at'     => $usuarioApp->created_at,
+            ],
         ]);
     }
 
@@ -29,18 +32,24 @@ class PerfilController extends Controller
         $usuarioApp = $request->attributes->get('app_user');
 
         $validados = $request->validate([
-            'nombre_visible' => ['required', 'string', 'max:180'],
+            'nombre_visible' => ['sometimes', 'string', 'max:180'],
         ], [
-            'nombre_visible.required' => 'El nombre visible es obligatorio.',
             'nombre_visible.string' => 'El nombre visible debe ser una cadena de texto.',
             'nombre_visible.max' => 'El nombre visible no puede superar los 180 caracteres.',
         ]);
 
-        $usuarioApp->update($validados);
+        if (! empty($validados)) {
+            $usuarioApp->update($validados);
+        }
+
+        $usuarioApp->load('roles');
 
         return response()->json([
-            'id' => $usuarioApp->id,
-            'nombre_visible' => $usuarioApp->nombre_visible,
+            'data' => [
+                'id'             => $usuarioApp->id,
+                'nombre_visible' => $usuarioApp->nombre_visible,
+                'roles'          => $usuarioApp->roles->map(fn ($r) => ['id' => $r->id, 'name' => $r->name])->values(),
+            ],
         ]);
     }
 

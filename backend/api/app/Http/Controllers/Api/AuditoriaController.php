@@ -20,26 +20,33 @@ class AuditoriaController extends Controller
             ->orderBy('created_at', 'desc');
 
         // Filtro por tabla (entidad_tipo)
-        if ($request->filled('tabla')) {
-            $query->where('entidad_tipo', $request->query('tabla'));
+        if ($request->filled('entidad_tipo')) {
+            $query->where('entidad_tipo', $request->query('entidad_tipo'));
         }
 
         // Filtro por operación (tipo_evento: INSERT, UPDATE, DELETE)
-        if ($request->filled('operacion')) {
-            $query->where('tipo_evento', strtoupper((string) $request->query('operacion')));
+        if ($request->filled('tipo_evento')) {
+            $query->where('tipo_evento', strtoupper((string) $request->query('tipo_evento')));
         }
 
         // Filtro por rango de fechas
         if ($request->filled('desde')) {
-            $query->where('created_at', '>=', $request->query('desde'));
+            $query->whereDate('created_at', '>=', $request->query('desde'));
         }
 
         if ($request->filled('hasta')) {
-            $query->where('created_at', '<=', $request->query('hasta'));
+            $query->whereDate('created_at', '<=', $request->query('hasta'));
         }
 
         $registros = $query->paginate((int) $request->query('per_page', 20));
 
-        return response()->json($registros);
+        return response()->json([
+            'data' => $registros->items(),
+            'meta' => [
+                'current_page' => $registros->currentPage(),
+                'last_page'    => $registros->lastPage(),
+                'total'        => $registros->total(),
+            ],
+        ]);
     }
 }

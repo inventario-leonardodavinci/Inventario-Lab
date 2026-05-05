@@ -47,7 +47,7 @@ Route::prefix('v1')->middleware(['throttle:api', 'app.user'])->group(function ()
     // ── Movimientos ───────────────────────────────────────────────────────────
     Route::get('/movimientos/resumen-hoy', [MovimientoController::class, 'resumenHoy']);
     Route::get('/movimientos', [MovimientoController::class, 'index']);
-    Route::post('/movimientos', [MovimientoController::class, 'store'])->middleware('role:administrador,profesor');
+    Route::post('/movimientos', [MovimientoController::class, 'store'])->middleware(['role:administrador,profesor', 'throttle:escritura']);
 
     // ── Alertas ───────────────────────────────────────────────────────────────
     Route::get('/alertas', [AlertaController::class, 'index']);
@@ -68,5 +68,5 @@ Route::prefix('v1')->middleware(['throttle:api', 'app.user'])->group(function ()
 
     // ── Notificaciones ────────────────────────────────────────────────────────
     Route::get('/notificaciones', [NotificacionController::class, 'index']);
-    Route::post('/notificaciones/evento-login', [NotificacionController::class, 'guardarEventoLogin']);
+    Route::post('/notificaciones/evento-login', [NotificacionController::class, 'guardarEventoLogin'])->middleware('throttle:login-evento');
 });

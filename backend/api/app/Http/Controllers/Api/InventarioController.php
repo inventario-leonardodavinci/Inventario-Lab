@@ -46,7 +46,7 @@ class InventarioController extends Controller
                 'categoria' => $articulo->categoria?->nombre,
                 'stock' => $cantidad,
                 'stock_minimo' => $cantidadMinima,
-                'estado_stock' => $cantidad <= $cantidadMinima ? 'critico' : 'ok',
+                'estado_stock' => ($cantidadMinima > 0 && $cantidad <= $cantidadMinima) ? 'critico' : 'ok',
             ];
         });
 
