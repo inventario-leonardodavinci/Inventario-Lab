@@ -47,8 +47,14 @@ COPY . .
 RUN composer dump-autoload --optimize --classmap-authoritative \
     && php artisan package:discover --ansi
 
+# Crear usuario y grupo www-data (Alpine no los tiene por defecto)
+RUN addgroup -g 82 -S www-data 2>/dev/null || true \
+    && adduser -u 82 -D -S -G www-data www-data 2>/dev/null || true \
+    && addgroup www-data www-data 2>/dev/null || true
+
 # Configurar permisos
-RUN chown -R www-data:www-data /var/www/html \
+RUN mkdir -p /var/log/nginx \
+    && chown -R www-data:www-data /var/www/html \
     && chmod -R 755 /var/www/html/storage \
     && chmod -R 755 /var/www/html/bootstrap/cache
 
