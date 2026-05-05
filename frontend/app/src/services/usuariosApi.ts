@@ -34,3 +34,24 @@ export function actualizarPerfil(
     { authUserId },
   )
 }
+
+export type RegistroSesion = {
+  id: number
+  ip_address: string | null
+  dispositivo: string | null
+  navegador: string | null
+  sistema_operativo: string | null
+  pais: string | null
+  ciudad: string | null
+  tipo_evento: 'login' | 'logout' | 'refresh'
+  exitoso: boolean
+  iniciada_en: string
+}
+
+export function getHistorialSesiones(authUserId: string) {
+  return apiClient<{ data: RegistroSesion[] }>(
+    '/perfil/historial-sesiones',
+    {},
+    { authUserId },
+  )
+}

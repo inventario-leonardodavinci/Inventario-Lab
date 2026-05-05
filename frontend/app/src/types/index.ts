@@ -100,6 +100,8 @@ export interface Alerta {
   generada_en: string
   confirmada_por_id: number | null
   confirmada_en: string | null
+  resuelta_por_id: number | null
+  resuelta_en: string | null
 }
 
 export interface RegistroAuditoria {
@@ -164,4 +166,5 @@ export interface FiltrosAuditoria {
   tipo_evento?: string
   desde?: string
   hasta?: string
+  pagina?: number
 }

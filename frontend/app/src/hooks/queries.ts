@@ -13,7 +13,7 @@ import { getMovimientos, getResumenHoy, crearMovimiento } from '@/services/movim
 import { getUbicaciones, crearUbicacion, actualizarUbicacion } from '@/services/ubicacionesApi'
 import { getCategorias, crearCategoria, actualizarCategoria, eliminarCategoria } from '@/services/categoriasApi'
 import { getAlertas, confirmarAlerta, resolverAlerta } from '@/services/alertasApi'
-import { getUsuarios, actualizarRolUsuario, getPerfil, actualizarPerfil } from '@/services/usuariosApi'
+import { getUsuarios, actualizarRolUsuario, getPerfil, actualizarPerfil, getHistorialSesiones } from '@/services/usuariosApi'
 import { getAuditoria } from '@/services/auditoriaApi'
 import { getNotificaciones } from '@/services/notificacionesApi'
 import { apiClient } from '@/services/clienteApi'
@@ -34,8 +34,8 @@ import type { EntradaCrearCategoria, EntradaActualizarCategoria } from '@/servic
 // ─── Query keys ───────────────────────────────────────────────────────────────
 
 export const queryKeys = {
-  articulos: (search?: string, pagina?: number) =>
-    ['articulos', search ?? '', pagina ?? 1] as const,
+  articulos: (search?: string, pagina?: number, activo?: boolean) =>
+    ['articulos', search ?? '', pagina ?? 1, activo] as const,
   articulo: (id: number) =>
     ['articulos', id] as const,
   ubicaciones: () =>
@@ -47,7 +47,7 @@ export const queryKeys = {
   alertas: (filtros?: FiltrosAlerta) =>
     ['alertas', filtros] as const,
   auditoria: (filtros?: FiltrosAuditoria) =>
-    ['auditoria', filtros] as const,
+    ['auditoria', filtros?.entidad_tipo, filtros?.tipo_evento, filtros?.desde, filtros?.hasta, filtros?.pagina] as const,
   usuarios: () =>
     ['usuarios'] as const,
   mantenimiento: () =>
@@ -65,8 +65,8 @@ export const queryKeys = {
 export function useArticulos(filtros?: FiltrosArticulos) {
   const { user } = useAuth()
   return useQuery({
-    queryKey: queryKeys.articulos(filtros?.search, filtros?.pagina),
-    queryFn: () => getArticulos(user!.authUserId, filtros?.search, filtros?.pagina),
+    queryKey: queryKeys.articulos(filtros?.search, filtros?.pagina, filtros?.activo),
+    queryFn: () => getArticulos(user!.authUserId, filtros?.search, filtros?.pagina, filtros?.activo),
     enabled: !!user,
   })
 }
@@ -368,29 +368,11 @@ export function useNotificaciones() {
 
 // ─── Historial de sesiones ────────────────────────────────────────────────────
 
-export type RegistroSesion = {
-  id: number
-  ip_address: string | null
-  dispositivo: string | null
-  navegador: string | null
-  sistema_operativo: string | null
-  pais: string | null
-  ciudad: string | null
-  tipo_evento: 'login' | 'logout' | 'refresh'
-  exitoso: boolean
-  iniciada_en: string
-}
-
 export function useHistorialSesiones() {
   const { user } = useAuth()
   return useQuery({
     queryKey: ['historial-sesiones'],
-    queryFn: () =>
-      apiClient<{ data: RegistroSesion[] }>(
-        '/perfil/historial-sesiones',
-        {},
-        { authUserId: user!.authUserId },
-      ),
+    queryFn: () => getHistorialSesiones(user!.authUserId),
     enabled: !!user,
   })
 }
