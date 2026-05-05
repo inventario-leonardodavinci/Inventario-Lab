@@ -66,6 +66,15 @@ windows-*-ca-*.pem
 PLAN-REESTRUCTURACION.md
 TAREAS-SEMANA.md
 skills-lock.json
+backend/README.md
+docs/06-matriz-cambios-bd.md
+docs/07-bd-operacion-mcp-checklist.md
+docs/12-convencion-idioma-es.md
+docs/13-inventario-espanolizacion.md
+docs/14-reporte-cierre-espanolizacion.md
+
+# SQLs históricos de evolución de BD (las migraciones Laravel son la fuente de verdad)
+docs/database/
 
 # IDE
 .vscode/

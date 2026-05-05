@@ -1,75 +1,72 @@
 # Inventario Laboratorio - Leonardo Da Vinci
 
-Aplicacion web para la gestion de inventario del laboratorio de quimica.
+Aplicación web para la gestión del inventario del laboratorio de química del IES Leonardo Da Vinci.
 
-## Stack acordado
+## Stack
 
-- Frontend: React + TypeScript
-- Backend: Laravel (version actual)
-- Base de datos: PostgreSQL gestionada en Insforge
+| Capa | Tecnología |
+|---|---|
+| Frontend | React + TypeScript (Vite) |
+| Backend | Laravel (API REST) |
+| Base de datos | PostgreSQL (Insforge) |
+| Autenticación | Insforge Auth |
+| Notificaciones | Novu |
+| Despliegue | Railway |
 
-## Objetivo del MVP
+## Estructura del proyecto
 
-- Inventariar materiales, equipos y reactivos.
-- Registrar entradas, salidas y traslados.
-- Mantener trazabilidad completa de movimientos.
-- Cargar datos iniciales desde Excel.
+```
+├── backend/api/        Laravel API REST
+├── frontend/app/       React + TypeScript SPA
+├── docs/               Documentación del proyecto
+├── Actas/              Actas de seguimiento
+└── docker-compose.yml  Entorno local con Docker
+```
 
-## Datos iniciales confirmados
+## Arranque rápido
 
-- Excel de partida:
-  - `Inventario Material fungible laboratorio.xlsx`
-  - `Medios cultivo L201.xlsx`
-- Categorias:
-  - `Medios de cultivo`
-  - `Fungibles`
-  - `Reactivos quimicos`
-  - `Inventariables`
-- Ubicaciones:
-  - `Armario alto 1` a `Armario alto 7`
-  - `Armario bajo 1` a `Armario bajo 7`
-  - `Nevera 1`
-  - `Cajonera 1`
-  - `Cajonera 2`
-  - `Almacen`
+### Con Docker
 
-## Documentacion del proyecto
+```bash
+docker-compose up --build
+```
 
-- `docs/01-anteproyecto-final.md`
-- `docs/02-plan-tecnico.md`
-- `docs/03-politica-commits.md`
-- `docs/04-importacion-excel.md`
-- `docs/05-checklist-equipo.md`
-- `docs/06-matriz-cambios-bd.md`
-- `docs/07-bd-operacion-mcp-checklist.md`
-- `docs/08-openapi-v1.yaml`
-- `docs/09-release-hardening-checklist.md`
-- `docs/10-novu-integration.md`
-- `docs/11-matriz-endpoints-pantallas.md`
-- `docs/12-convencion-idioma-es.md`
-- `docs/13-inventario-espanolizacion.md`
-- `docs/14-reporte-cierre-espanolizacion.md`
-- `database/sql/001_base_schema.sql`
+### Manual
 
-## Siguiente paso recomendado
+**Backend:**
+```bash
+cd backend/api
+cp .env.example .env
+composer install
+php artisan key:generate
+php artisan migrate --seed
+php artisan serve
+```
 
-1. Frontend listo en `FrontEnd/app` (React + TS + dependencias).
-2. Backend base en `BackEnd/api` (Laravel skeleton).
-3. Completar `composer install` en backend cuando se resuelva SSL local.
-4. Aplicar SQL versionado: `001`, `005`, `006`, `007`.
-5. Ejecutar migraciones Laravel y `InventoryCatalogSeeder`.
-6. Preparar importacion inicial de los dos Excel.
+**Frontend:**
+```bash
+cd frontend/app
+cp .env.example .env
+npm install
+npm run dev
+```
 
-## Preparacion local rapida
+## Documentación
 
-- Ejecutar script de preparación:
-  - `.\setup-dev.ps1`
-- Opciones:
-  - `.\setup-dev.ps1 -OmitirFrontend`
-  - `.\setup-dev.ps1 -OmitirBackend`
+| Documento | Descripción |
+|---|---|
+| [Anteproyecto](docs/01-anteproyecto-final.md) | Definición del proyecto, participantes y alcance |
+| [Plan técnico](docs/02-plan-tecnico.md) | Arquitectura, módulos y decisiones de diseño |
+| [Política de commits](docs/03-politica-commits.md) | Convenciones de commits y ramas |
+| [Importación Excel](docs/04-importacion-excel.md) | Mapeo y carga de datos iniciales |
+| [Checklist equipo](docs/05-checklist-equipo.md) | Estado de tareas por fase y persona |
+| [OpenAPI](docs/08-openapi-v1.yaml) | Contrato de la API REST |
+| [Checklist despliegue](docs/09-release-hardening-checklist.md) | Verificaciones antes de producción |
+| [Integración Novu](docs/10-novu-integration.md) | Configuración de notificaciones |
+| [Matriz endpoints](docs/11-matriz-endpoints-pantallas.md) | Mapa endpoint ↔ pantalla ↔ estado |
 
-## Estado de Insforge
+## Equipo
 
-- Proyecto enlazado por CLI.
-- Metadatos del backend accesibles.
-- Esquema base creado en la base de datos.
+- **Said Oudrhich** — Base de datos e integración Insforge
+- **Mario González** — Frontend
+- **César Sánchez** — Backend
