@@ -2,14 +2,26 @@
 
 namespace App\Models;
 
+use Illuminate\Auth\Authenticatable;
+use Illuminate\Contracts\Auth\Authenticatable as AuthenticatableContract;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 use Spatie\Permission\Traits\HasRoles;
 
-class UsuarioApp extends Model
+/**
+ * Modelo de usuario de la aplicación.
+ * Extiende Model (no User de Laravel) porque la autenticación la gestiona
+ * Insforge Auth via cabecera X-Auth-User-Id.
+ * Implementa AuthenticatableContract para que spatie/laravel-permission
+ * pueda resolver el guard y asignar/verificar roles correctamente.
+ */
+class UsuarioApp extends Model implements AuthenticatableContract
 {
-    use HasRoles;
+    use HasRoles, Authenticatable;
+
     protected $table = 'usuarios_app';
+
+    protected $guard_name = 'api';
 
     protected $fillable = [
         'auth_user_id',
@@ -20,15 +32,6 @@ class UsuarioApp extends Model
     protected $casts = [
         'activo' => 'boolean',
     ];
-
-    /**
-     * Necesario para spatie/laravel-permission.
-     * Usa guard 'api' para la API.
-     */
-    protected function getDefaultGuardName(): string
-    {
-        return 'api';
-    }
 
     public function movimientos(): HasMany
     {

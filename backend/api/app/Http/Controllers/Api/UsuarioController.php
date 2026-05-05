@@ -3,10 +3,10 @@
 namespace App\Http\Controllers\Api;
 
 use App\Http\Controllers\Controller;
-use App\Models\Rol;
 use App\Models\UsuarioApp;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
+use Spatie\Permission\Models\Role;
 
 class UsuarioController extends Controller
 {
@@ -40,16 +40,14 @@ class UsuarioController extends Controller
         /** @var UsuarioApp $usuarioAutenticado */
         $usuarioAutenticado = $request->attributes->get('app_user');
 
-        // Un administrador no puede cambiar su propio rol
         if ($usuarioAutenticado->id === $usuario->id) {
             return response()->json([
                 'message' => 'No puedes cambiar tu propio rol.',
             ], 422);
         }
 
-        $rol = Rol::query()->where('name', $validados['rol'])->firstOrFail();
-
-        $usuario->roles()->sync([$rol->id]);
+        // syncRoles reemplaza todos los roles actuales por el nuevo
+        $usuario->syncRoles([$validados['rol']]);
 
         $usuario->load('roles:id,name');
 

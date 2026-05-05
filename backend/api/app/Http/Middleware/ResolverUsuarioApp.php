@@ -2,7 +2,6 @@
 
 namespace App\Http\Middleware;
 
-use App\Models\Rol;
 use App\Models\UsuarioApp;
 use Closure;
 use Illuminate\Http\JsonResponse;
@@ -48,12 +47,10 @@ class ResolverUsuarioApp
         }
 
         // Asignar rol 'consultor' si el usuario no tiene ninguno
-        if ($usuarioApp->roles->isEmpty()) {
-            $rolConsultor = Rol::where('name', 'consultor')->first();
-            if ($rolConsultor) {
-                $usuarioApp->roles()->attach($rolConsultor->id);
-                $usuarioApp->load('roles');
-            }
+        if (! $usuarioApp->hasAnyRole(['administrador', 'profesor', 'consultor'])) {
+            $usuarioApp->assignRole('consultor');
+            // Limpiar caché de spatie para que hasAnyRole refleje el rol recién asignado
+            app(\Spatie\Permission\PermissionRegistrar::class)->forgetCachedPermissions();
         }
 
         // Establecer variable de sesión PostgreSQL para los triggers de auditoría.
