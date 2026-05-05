@@ -4,6 +4,7 @@ import tailwindcss from '@tailwindcss/vite'
 import path from 'path'
 import { compression } from 'vite-plugin-compression2'
 import { VitePWA } from 'vite-plugin-pwa'
+import { visualizer } from 'rollup-plugin-visualizer'
 
 export default defineConfig({
   plugins: [
@@ -13,6 +14,16 @@ export default defineConfig({
     // ── Compresión Brotli + gzip ──────────────────────────────────────────────
     compression({ algorithms: ['brotliCompress'], exclude: [/\.(br)$/, /\.(gz)$/] }),
     compression({ algorithms: ['gzip'], exclude: [/\.(br)$/, /\.(gz)$/] }),
+
+    // ── Bundle visualizer — solo con ANALYZE=true ─────────────────────────────
+    // Ejecutar: ANALYZE=true npm run build  →  genera dist/stats.html
+    process.env.ANALYZE === 'true' && visualizer({
+      filename: 'dist/stats.html',
+      open: true,
+      gzipSize: true,
+      brotliSize: true,
+      template: 'treemap',
+    }),
 
     // ── PWA ───────────────────────────────────────────────────────────────────
     VitePWA({
