@@ -20,6 +20,8 @@ class Alerta extends Model
         'generada_en',
         'confirmada_por_id',
         'confirmada_en',
+        'resuelta_por_id',
+        'resuelta_en',
         'notas_resolucion',
     ];
 
@@ -27,6 +29,7 @@ class Alerta extends Model
         'datos_json' => 'array',
         'generada_en' => 'datetime',
         'confirmada_en' => 'datetime',
+        'resuelta_en' => 'datetime',
     ];
 
     public function articulo(): BelongsTo
@@ -37,5 +40,10 @@ class Alerta extends Model
     public function confirmadaPor(): BelongsTo
     {
         return $this->belongsTo(UsuarioApp::class, 'confirmada_por_id');
+    }
+
+    public function resueltaPor(): BelongsTo
+    {
+        return $this->belongsTo(UsuarioApp::class, 'resuelta_por_id');
     }
 }

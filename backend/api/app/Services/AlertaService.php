@@ -5,6 +5,7 @@ namespace App\Services;
 use App\Models\Alerta;
 use App\Models\NivelStock;
 use App\Models\UsuarioApp;
+use Illuminate\Support\Facades\DB;
 
 class AlertaService
 {
@@ -19,7 +20,7 @@ class AlertaService
             ->get();
 
         foreach ($niveles as $nivel) {
-            if ((float) $nivel->cantidad < (float) $nivel->cantidad_minima) {
+            if ((float) $nivel->cantidad_minima > 0 && (float) $nivel->cantidad <= (float) $nivel->cantidad_minima) {
                 // Comprobar si ya existe una alerta abierta de tipo stock_bajo para este artículo
                 $existeAlerta = Alerta::query()
                     ->where('tipo', 'stock_bajo')
@@ -53,27 +54,31 @@ class AlertaService
      */
     public function generarAlerta(array $datos): Alerta
     {
-        // Deduplicación: no crear si ya existe una alerta abierta del mismo tipo para el mismo artículo
-        $existente = Alerta::query()
-            ->where('tipo', $datos['tipo'])
-            ->where('estado', 'abierta')
-            ->where('articulo_id', $datos['articulo_id'] ?? null)
-            ->first();
+        return DB::transaction(function () use ($datos): Alerta {
+            // lockForUpdate garantiza que dos transacciones concurrentes no
+            // pasen ambas el SELECT y generen alertas duplicadas.
+            $existente = Alerta::query()
+                ->lockForUpdate()
+                ->where('tipo', $datos['tipo'])
+                ->where('estado', 'abierta')
+                ->where('articulo_id', $datos['articulo_id'] ?? null)
+                ->first();
 
-        if ($existente !== null) {
-            return $existente;
-        }
+            if ($existente !== null) {
+                return $existente;
+            }
 
-        return Alerta::query()->create([
-            'tipo'         => $datos['tipo'],
-            'severidad'    => $datos['severidad'] ?? 'baja',
-            'estado'       => 'abierta',
-            'articulo_id'  => $datos['articulo_id'] ?? null,
-            'ubicacion_id' => $datos['ubicacion_id'] ?? null,
-            'activo_id'    => $datos['activo_id'] ?? null,
-            'datos_json'   => $datos['datos_json'] ?? null,
-            'generada_en'  => now(),
-        ]);
+            return Alerta::query()->create([
+                'tipo'         => $datos['tipo'],
+                'severidad'    => $datos['severidad'] ?? 'baja',
+                'estado'       => 'abierta',
+                'articulo_id'  => $datos['articulo_id'] ?? null,
+                'ubicacion_id' => $datos['ubicacion_id'] ?? null,
+                'activo_id'    => $datos['activo_id'] ?? null,
+                'datos_json'   => $datos['datos_json'] ?? null,
+                'generada_en'  => now(),
+            ]);
+        });
     }
 
     /**
@@ -116,9 +121,9 @@ class AlertaService
      */
     public function resolverAlerta(Alerta $alerta, UsuarioApp $usuario): Alerta
     {
-        $alerta->estado             = 'resuelta';
-        $alerta->confirmada_por_id  = $usuario->id;
-        $alerta->confirmada_en      = now();
+        $alerta->estado          = 'resuelta';
+        $alerta->resuelta_por_id = $usuario->id;
+        $alerta->resuelta_en     = now();
         $alerta->save();
 
         return $alerta;
