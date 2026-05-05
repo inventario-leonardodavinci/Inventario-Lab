@@ -8,7 +8,7 @@ import { useAuth } from "@/context/ContextoAutenticacion";
 import { usePanelData } from "@/hooks/usePanelData";
 import { formatearKpi } from "@/utils/panelUtils";
 import { formatearFechaRelativa } from "@/utils/formatters";
-import { ArrowDownToLine, ArrowUpFromLine, BellRing, PackageCheck, TriangleAlert, Plus } from "lucide-react";
+import { ArrowDownToLine, ArrowUpFromLine, BellRing, PackageCheck, TriangleAlert, Plus, ArrowLeftRight, SlidersHorizontal } from "lucide-react";
 import { SkeletonPanel } from "@/components/ui/PageSkeleton";
 
 const kpiIconMap: Record<string, React.ElementType> = {
@@ -18,7 +18,6 @@ const kpiIconMap: Record<string, React.ElementType> = {
   TriangleAlert,
 };
 
-// Color del icono por KPI
 const kpiIconColor: Record<string, string> = {
   PackageCheck: "text-blue-600 bg-blue-500/10",
   ArrowDownToLine: "text-green-600 bg-green-500/10",
@@ -32,6 +31,24 @@ const kpiBadgeVariant: Record<string, "destructive" | "secondary" | "outline"> =
   Operativo: "secondary",
   Control: "outline",
 };
+
+function IconoMovimiento({ tipo }: { tipo: string }) {
+  const t = tipo.toLowerCase()
+  if (t === 'entrada') return <ArrowDownToLine className="size-3.5 text-green-600" />
+  if (t === 'salida') return <ArrowUpFromLine className="size-3.5 text-amber-600" />
+  if (t === 'traslado') return <ArrowLeftRight className="size-3.5 text-blue-600" />
+  if (t === 'ajuste') return <SlidersHorizontal className="size-3.5 text-purple-600" />
+  return <BellRing className="size-3.5 text-muted-foreground" />
+}
+
+function colorFondoMovimiento(tipo: string): string {
+  const t = tipo.toLowerCase()
+  if (t === 'entrada') return 'bg-green-500/10'
+  if (t === 'salida') return 'bg-amber-500/10'
+  if (t === 'traslado') return 'bg-blue-500/10'
+  if (t === 'ajuste') return 'bg-purple-500/10'
+  return 'bg-muted'
+}
 
 export default function PanelPrincipal() {
   const { user } = useAuth();
@@ -135,75 +152,87 @@ export default function PanelPrincipal() {
       <div className="grid gap-4 xl:grid-cols-3">
         <Card className="xl:col-span-2">
           <CardHeader>
-            <CardTitle>Alertas de stock y caducidad</CardTitle>
-            <CardDescription>Articulos que requieren intervención durante las próximas 24 horas.</CardDescription>
+            <CardTitle>Artículos con stock crítico</CardTitle>
+            <CardDescription>Requieren reposición o revisión urgente.</CardDescription>
           </CardHeader>
-          <CardContent>
-            <Table>
-              <TableHeader>
-                <TableRow>
-                  <TableHead>Artículo</TableHead>
-                  <TableHead>Stock actual</TableHead>
-                  <TableHead>Stock mínimo</TableHead>
-                  <TableHead>Estado</TableHead>
-                </TableRow>
-              </TableHeader>
-              <TableBody>
-                {lowStockItems.length === 0 && (
+          <CardContent className="p-0">
+            {lowStockItems.length === 0 ? (
+              <div className="flex flex-col items-center justify-center gap-3 py-10 text-center">
+                <div className="flex size-10 items-center justify-center rounded-full bg-green-500/10">
+                  <PackageCheck className="size-5 text-green-600" />
+                </div>
+                <p className="text-sm text-green-700 dark:text-green-400 font-medium">Todo el stock está en orden</p>
+              </div>
+            ) : (
+              <Table>
+                <TableHeader>
                   <TableRow>
-                    <TableCell colSpan={4} className="text-center text-muted-foreground py-6">
-                      Sin artículos en estado crítico.
-                    </TableCell>
+                    <TableHead>Artículo</TableHead>
+                    <TableHead className="text-right">Stock actual</TableHead>
+                    <TableHead className="text-right">Mínimo</TableHead>
+                    <TableHead>Estado</TableHead>
                   </TableRow>
-                )}
-                {lowStockItems.map((row) => (
-                  <TableRow key={row.item}>
-                    <TableCell className="font-medium">{row.item}</TableCell>
-                    <TableCell>{row.stock}</TableCell>
-                    <TableCell>{row.min}</TableCell>
-                    <TableCell>
-                      <Badge variant={row.status === "Crítico" ? "destructive" : "outline"}>{row.status}</Badge>
-                    </TableCell>
-                  </TableRow>
-                ))}
-              </TableBody>
-            </Table>
+                </TableHeader>
+                <TableBody>
+                  {lowStockItems.map((row) => (
+                    <TableRow key={row.item}>
+                      <TableCell className="font-medium">{row.item}</TableCell>
+                      <TableCell className="text-right font-mono">{row.stock}</TableCell>
+                      <TableCell className="text-right font-mono text-muted-foreground">{row.min}</TableCell>
+                      <TableCell>
+                        <Badge variant={row.status === "Crítico" ? "destructive" : "outline"}>{row.status}</Badge>
+                      </TableCell>
+                    </TableRow>
+                  ))}
+                </TableBody>
+              </Table>
+            )}
           </CardContent>
         </Card>
 
         <Card>
           <CardHeader>
             <CardTitle>Actividad reciente</CardTitle>
-            <CardDescription>Eventos relevantes del turno actual.</CardDescription>
+            <CardDescription>Últimos movimientos del turno actual.</CardDescription>
           </CardHeader>
-          <CardContent className="flex flex-col gap-4">
+          <CardContent className="flex flex-col gap-3">
             {movimientosRecientes === null && (
-              <p className="text-sm text-muted-foreground animate-pulse">Cargando actividad…</p>
+              <div className="flex items-center gap-2 text-sm text-muted-foreground">
+                <div className="size-4 animate-spin rounded-full border-2 border-primary border-t-transparent" />
+                Cargando actividad…
+              </div>
             )}
 
             {errorMovimientos && (
-              <p className="text-sm text-destructive">
+              <div className="flex items-center gap-2 rounded-lg border border-destructive/20 bg-destructive/5 px-3 py-2 text-sm text-destructive">
                 No se pudo cargar la actividad reciente.
-              </p>
+              </div>
             )}
 
             {movimientosRecientes !== null && movimientosRecientes.length === 0 && !errorMovimientos && (
-              <p className="text-sm text-muted-foreground">Sin actividad reciente.</p>
+              <div className="flex flex-col items-center justify-center gap-2 py-6 text-center">
+                <div className="flex size-9 items-center justify-center rounded-full bg-muted">
+                  <BellRing className="size-4 text-muted-foreground" />
+                </div>
+                <p className="text-sm text-muted-foreground">Sin actividad reciente.</p>
+              </div>
             )}
 
             {movimientosRecientes !== null && movimientosRecientes.length > 0 &&
               movimientosRecientes.map((mov, idx) => (
                 <div key={mov.id}>
                   <div className="flex items-start gap-3">
-                    <BellRing className="mt-0.5 text-muted-foreground" />
-                    <div className="flex flex-col gap-1">
-                      <p className="text-sm font-medium">{mov.tipo}</p>
-                      <p className="text-xs text-muted-foreground">
-                        {formatearFechaRelativa(mov.fechaHora)} — Responsable: {mov.responsable}
+                    <div className={`mt-0.5 flex size-7 shrink-0 items-center justify-center rounded-lg ${colorFondoMovimiento(mov.tipo)}`}>
+                      <IconoMovimiento tipo={mov.tipo} />
+                    </div>
+                    <div className="flex flex-col gap-0.5 min-w-0">
+                      <p className="text-sm font-medium capitalize">{mov.tipo}</p>
+                      <p className="text-xs text-muted-foreground truncate">
+                        {formatearFechaRelativa(mov.fechaHora)} · {mov.responsable}
                       </p>
                     </div>
                   </div>
-                  {idx < movimientosRecientes.length - 1 && <Separator className="mt-4" />}
+                  {idx < movimientosRecientes.length - 1 && <Separator className="mt-3" />}
                 </div>
               ))
             }

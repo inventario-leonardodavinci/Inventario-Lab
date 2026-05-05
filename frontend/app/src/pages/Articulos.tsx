@@ -24,7 +24,7 @@ import {
   useMovimientos, useCrearMovimiento,
   useAlertas, useConfirmarAlerta, useResolverAlerta,
 } from '@/hooks/queries'
-import { Pencil, Trash2, Search } from 'lucide-react'
+import { Pencil, Trash2, Search, Package, ArrowDownToLine, ArrowUpFromLine, RefreshCw } from 'lucide-react'
 import { toast } from 'sonner'
 import type { Articulo, TipoMovimiento, TipoAlerta, Severidad, EstadoAlerta } from '@/types'
 import { SkeletonArticulos, SkeletonMovimientos, SkeletonAlertas } from '@/components/ui/PageSkeleton'
@@ -207,104 +207,126 @@ function TabArticulos() {
         </GuardRol>
       </div>
 
-      {/* Filtros */}
-      <Card>
-        <CardHeader>
-          <CardTitle>Búsqueda y filtros</CardTitle>
-          <CardDescription>Filtra por nombre, código o estado.</CardDescription>
-        </CardHeader>
-        <CardContent className="flex flex-col gap-3 md:flex-row">
-          <div className="relative flex-1">
-            <Search className="pointer-events-none absolute left-2 top-[6px] text-muted-foreground" />
-            <Input className="pl-9" placeholder="Buscar por código o nombre..." value={search}
-              onChange={(e) => setSearch(e.target.value)}
-              onKeyDown={(e) => { if (e.key === 'Enter') onBuscar() }} />
-          </div>
-          <Select value={filtroActivo} onValueChange={(v) => setFiltroActivo(v as FiltroActivo)}>
-            <SelectTrigger className="w-[160px]"><SelectValue placeholder="Estado" /></SelectTrigger>
-            <SelectContent>
-              <SelectItem value="todos">Todos</SelectItem>
-              <SelectItem value="activo">Solo activos</SelectItem>
-              <SelectItem value="inactivo">Solo inactivos</SelectItem>
-            </SelectContent>
-          </Select>
-          <Button variant="outline" onClick={onBuscar} disabled={isFetching}>
-            {isFetching ? 'Buscando...' : 'Buscar'}
-          </Button>
-        </CardContent>
-      </Card>
+      {/* Filtros inline */}
+      <div className="flex flex-col gap-3 sm:flex-row">
+        <div className="relative flex-1">
+          <Search className="pointer-events-none absolute left-2.5 top-1/2 -translate-y-1/2 size-4 text-muted-foreground" />
+          <Input
+            className="pl-9"
+            placeholder="Buscar por código o nombre..."
+            value={search}
+            onChange={(e) => setSearch(e.target.value)}
+            onKeyDown={(e) => { if (e.key === 'Enter') onBuscar() }}
+          />
+        </div>
+        <Select value={filtroActivo} onValueChange={(v) => setFiltroActivo(v as FiltroActivo)}>
+          <SelectTrigger className="w-full sm:w-[160px]"><SelectValue placeholder="Estado" /></SelectTrigger>
+          <SelectContent>
+            <SelectItem value="todos">Todos</SelectItem>
+            <SelectItem value="activo">Solo activos</SelectItem>
+            <SelectItem value="inactivo">Solo inactivos</SelectItem>
+          </SelectContent>
+        </Select>
+        <Button variant="outline" onClick={onBuscar} disabled={isFetching} className="gap-1.5 shrink-0">
+          <RefreshCw className={`size-4 ${isFetching ? 'animate-spin' : ''}`} />
+          {isFetching ? 'Buscando...' : 'Buscar'}
+        </Button>
+      </div>
 
       {/* Tabla */}
       <Card>
-        <CardHeader>
-          <CardTitle>Listado de artículos</CardTitle>
-          <CardDescription>{rows.length} artículo{rows.length !== 1 ? 's' : ''} encontrado{rows.length !== 1 ? 's' : ''}</CardDescription>
+        <CardHeader className="flex flex-row items-center justify-between pb-3">
+          <div>
+            <CardTitle className="text-base">
+              {rows.length} artículo{rows.length !== 1 ? 's' : ''} encontrado{rows.length !== 1 ? 's' : ''}
+            </CardTitle>
+          </div>
         </CardHeader>
-        <CardContent>
-          <Table>
-            <TableHeader>
-              <TableRow>
-                <TableHead>Código</TableHead>
-                <TableHead>Nombre</TableHead>
-                <TableHead>Categoría</TableHead>
-                <TableHead>Unidad</TableHead>
-                <TableHead>Stock</TableHead>
-                <TableHead>Estado</TableHead>
-                <TableHead>Activo</TableHead>
-                <GuardRol roles={['administrador', 'profesor']}>
-                  <TableHead className="text-right">Acciones</TableHead>
-                </GuardRol>
-              </TableRow>
-            </TableHeader>
-            <TableBody>
-              {rows.length === 0 && (
-                <TableRow>
-                  <TableCell colSpan={8} className="text-center text-muted-foreground py-8">
-                    No se encontraron artículos.
-                  </TableCell>
-                </TableRow>
-              )}
-              {rows.map((row) => (
-                <TableRow key={row.id} className={!row.activo ? 'opacity-50' : undefined}>
-                  <TableCell className="font-medium">{row.codigo ?? '-'}</TableCell>
-                  <TableCell>{row.nombre}</TableCell>
-                  <TableCell>{row.categoria ?? '-'}</TableCell>
-                  <TableCell>{row.unidad ?? '-'}</TableCell>
-                  <TableCell>{row.stock_total}</TableCell>
-                  <TableCell>
-                    <Badge variant={row.estado_stock === 'critico' ? 'destructive' : 'secondary'}>
-                      {row.estado_stock === 'critico' ? 'Crítico' : 'Estable'}
-                    </Badge>
-                  </TableCell>
-                  <TableCell>
-                    {row.activo ? <Badge variant="secondary">Activo</Badge> : <Badge variant="outline">Inactivo</Badge>}
-                  </TableCell>
-                  <GuardRol roles={['administrador', 'profesor']}>
-                    <TableCell className="text-right">
-                      <div className="flex items-center justify-end gap-1">
-                        <Button variant="ghost" size="icon" onClick={() => abrirEditar(row)} title="Editar artículo">
-                          <Pencil className="size-4" />
-                        </Button>
-                        <GuardRol roles={['administrador']}>
-                          {row.activo && (
-                            <Button
-                              variant="ghost" size="icon"
-                              className="text-muted-foreground hover:text-destructive"
-                              onClick={() => setConfirmarBorrar(row)}
-                              disabled={desactivarMutation.isPending}
-                              title="Desactivar artículo"
-                            >
-                              <Trash2 className="size-4" />
-                            </Button>
+        <CardContent className="p-0">
+          {rows.length === 0 ? (
+            <div className="flex flex-col items-center justify-center gap-3 py-12 text-center">
+              <div className="flex size-12 items-center justify-center rounded-full bg-muted">
+                <Package className="size-5 text-muted-foreground" />
+              </div>
+              <div>
+                <p className="text-sm font-medium">Sin artículos</p>
+                <p className="text-xs text-muted-foreground mt-1">
+                  {searchActivo ? 'No hay resultados para esa búsqueda.' : 'Crea el primer artículo del inventario.'}
+                </p>
+              </div>
+            </div>
+          ) : (
+            <div className="overflow-x-auto">
+              <Table>
+                <TableHeader>
+                  <TableRow>
+                    <TableHead>Artículo</TableHead>
+                    <TableHead className="hidden sm:table-cell">Categoría</TableHead>
+                    <TableHead className="hidden md:table-cell">Unidad</TableHead>
+                    <TableHead className="text-right">Stock</TableHead>
+                    <TableHead>Estado</TableHead>
+                    <GuardRol roles={['administrador', 'profesor']}>
+                      <TableHead className="text-right">Acciones</TableHead>
+                    </GuardRol>
+                  </TableRow>
+                </TableHeader>
+                <TableBody>
+                  {rows.map((row) => (
+                    <TableRow key={row.id} className={!row.activo ? 'opacity-50' : undefined}>
+                      <TableCell>
+                        <div className="flex flex-col">
+                          <span className="font-medium text-sm">{row.nombre}</span>
+                          {row.codigo && (
+                            <span className="text-xs text-muted-foreground font-mono">{row.codigo}</span>
                           )}
-                        </GuardRol>
-                      </div>
-                    </TableCell>
-                  </GuardRol>
-                </TableRow>
-              ))}
-            </TableBody>
-          </Table>
+                        </div>
+                      </TableCell>
+                      <TableCell className="hidden sm:table-cell text-muted-foreground text-sm">
+                        {row.categoria ?? '—'}
+                      </TableCell>
+                      <TableCell className="hidden md:table-cell text-muted-foreground text-sm">
+                        {row.unidad ?? '—'}
+                      </TableCell>
+                      <TableCell className="text-right font-medium">
+                        {row.stock_total}
+                      </TableCell>
+                      <TableCell>
+                        {!row.activo ? (
+                          <Badge variant="outline">Inactivo</Badge>
+                        ) : row.estado_stock === 'critico' ? (
+                          <Badge variant="destructive">Crítico</Badge>
+                        ) : (
+                          <Badge variant="secondary">Estable</Badge>
+                        )}
+                      </TableCell>
+                      <GuardRol roles={['administrador', 'profesor']}>
+                        <TableCell className="text-right">
+                          <div className="flex items-center justify-end gap-1">
+                            <Button variant="ghost" size="icon" onClick={() => abrirEditar(row)} title="Editar artículo">
+                              <Pencil className="size-4" />
+                            </Button>
+                            <GuardRol roles={['administrador']}>
+                              {row.activo && (
+                                <Button
+                                  variant="ghost" size="icon"
+                                  className="text-muted-foreground hover:text-destructive"
+                                  onClick={() => setConfirmarBorrar(row)}
+                                  disabled={desactivarMutation.isPending}
+                                  title="Desactivar artículo"
+                                >
+                                  <Trash2 className="size-4" />
+                                </Button>
+                              )}
+                            </GuardRol>
+                          </div>
+                        </TableCell>
+                      </GuardRol>
+                    </TableRow>
+                  ))}
+                </TableBody>
+              </Table>
+            </div>
+          )}
         </CardContent>
       </Card>
 
@@ -561,11 +583,10 @@ function TabMovimientos() {
       <Card>
         <CardHeader className="flex flex-col gap-3 md:flex-row md:items-center md:justify-between">
           <div>
-            <CardTitle>Historial de movimientos</CardTitle>
+            <CardTitle className="text-base">Historial de movimientos</CardTitle>
             <CardDescription>Registro completo de movimientos del inventario.</CardDescription>
           </div>
           <div className="flex items-center gap-2">
-            <Label className="shrink-0 text-sm">Filtrar:</Label>
             <Select value={filtroTipo} onValueChange={(v) => setFiltroTipo(v as FiltroTipoMov)}>
               <SelectTrigger className="w-[150px]"><SelectValue /></SelectTrigger>
               <SelectContent>
@@ -578,54 +599,69 @@ function TabMovimientos() {
             </Select>
           </div>
         </CardHeader>
-        <CardContent>
-          <Table>
-            <TableHeader>
-              <TableRow>
-                <TableHead>ID</TableHead>
-                <TableHead>Tipo</TableHead>
-                <TableHead>Artículo</TableHead>
-                <TableHead>Cantidad</TableHead>
-                <TableHead>Origen</TableHead>
-                <TableHead>Destino</TableHead>
-                <TableHead>Responsable</TableHead>
-                <TableHead>Fecha</TableHead>
-              </TableRow>
-            </TableHeader>
-            <TableBody>
-              {rows.length === 0 && (
-                <TableRow>
-                  <TableCell colSpan={8} className="text-center text-muted-foreground py-8">
-                    No hay movimientos registrados.
-                  </TableCell>
-                </TableRow>
-              )}
-              {rows.map((row) => {
-                const origenNombre = row.ubicacion_origen_id
-                  ? (ubicaciones.find((u) => u.id === row.ubicacion_origen_id)?.nombre ?? `#${row.ubicacion_origen_id}`)
-                  : '-'
-                const destinoNombre = row.ubicacion_destino_id
-                  ? (ubicaciones.find((u) => u.id === row.ubicacion_destino_id)?.nombre ?? `#${row.ubicacion_destino_id}`)
-                  : '-'
-                return (
-                  <TableRow key={row.id}>
-                    <TableCell className="font-medium">MOV-{row.id}</TableCell>
-                    <TableCell>
-                      <Badge variant={row.tipo === 'salida' ? 'destructive' : 'secondary'}>
-                        {formatearTipoMovimiento(row.tipo)}
-                      </Badge>
-                    </TableCell>
-                    <TableCell>{row.lineas?.[0]?.articulo ?? row.lineas?.[0]?.articulo_id ?? '-'}</TableCell>
-                    <TableCell>{row.lineas?.[0]?.cantidad ?? '-'}</TableCell>
-                    <TableCell className="text-muted-foreground">{origenNombre}</TableCell>
-                    <TableCell className="text-muted-foreground">{destinoNombre}</TableCell>
-                    <TableCell>{row.usuario?.nombre_visible ?? '-'}</TableCell>
-                    <TableCell>{formatearFechaHora(row.created_at)}</TableCell>
+        <CardContent className="p-0">
+          {rows.length === 0 ? (
+            <div className="flex flex-col items-center justify-center gap-3 py-12 text-center">
+              <div className="flex size-12 items-center justify-center rounded-full bg-muted">
+                <ArrowDownToLine className="size-5 text-muted-foreground" />
+              </div>
+              <p className="text-sm text-muted-foreground">No hay movimientos registrados.</p>
+            </div>
+          ) : (
+            <div className="overflow-x-auto">
+              <Table>
+                <TableHeader>
+                  <TableRow>
+                    <TableHead>Tipo</TableHead>
+                    <TableHead>Artículo</TableHead>
+                    <TableHead className="text-right">Cant.</TableHead>
+                    <TableHead className="hidden sm:table-cell">Origen → Destino</TableHead>
+                    <TableHead className="hidden md:table-cell">Responsable</TableHead>
+                    <TableHead className="hidden sm:table-cell text-right">Fecha</TableHead>
                   </TableRow>
-                )
-              })}
-            </TableBody>
-          </Table>
+                </TableHeader>
+                <TableBody>
+                  {rows.map((row) => {
+                    const origenNombre = row.ubicacion_origen_id
+                      ? (ubicaciones.find((u) => u.id === row.ubicacion_origen_id)?.nombre ?? `#${row.ubicacion_origen_id}`)
+                      : null
+                    const destinoNombre = row.ubicacion_destino_id
+                      ? (ubicaciones.find((u) => u.id === row.ubicacion_destino_id)?.nombre ?? `#${row.ubicacion_destino_id}`)
+                      : null
+                    const varianteTipo = row.tipo === 'salida' ? 'destructive'
+                      : row.tipo === 'entrada' ? 'secondary'
+                      : 'outline'
+                    return (
+                      <TableRow key={row.id}>
+                        <TableCell>
+                          <Badge variant={varianteTipo}>
+                            {formatearTipoMovimiento(row.tipo)}
+                          </Badge>
+                        </TableCell>
+                        <TableCell className="font-medium text-sm">
+                          {row.lineas?.[0]?.articulo ?? (row.lineas?.[0]?.articulo_id ? `#${row.lineas[0].articulo_id}` : '—')}
+                        </TableCell>
+                        <TableCell className="text-right font-mono text-sm">
+                          {row.lineas?.[0]?.cantidad ?? '—'}
+                        </TableCell>
+                        <TableCell className="hidden sm:table-cell text-muted-foreground text-sm">
+                          {origenNombre && destinoNombre
+                            ? `${origenNombre} → ${destinoNombre}`
+                            : origenNombre ?? destinoNombre ?? '—'}
+                        </TableCell>
+                        <TableCell className="hidden md:table-cell text-muted-foreground text-sm">
+                          {row.usuario?.nombre_visible ?? '—'}
+                        </TableCell>
+                        <TableCell className="hidden sm:table-cell text-right text-muted-foreground text-xs whitespace-nowrap">
+                          {formatearFechaHora(row.created_at)}
+                        </TableCell>
+                      </TableRow>
+                    )
+                  })}
+                </TableBody>
+              </Table>
+            </div>
+          )}
         </CardContent>
       </Card>
     </div>
@@ -671,121 +707,115 @@ function TabAlertas() {
   }
 
   return (
-    <div className="flex flex-col gap-6">
-      <Card>
-        <CardHeader>
-          <CardTitle>Filtros</CardTitle>
-          <CardDescription>Filtra las alertas por tipo, severidad y estado.</CardDescription>
-        </CardHeader>
-        <CardContent className="flex flex-wrap gap-4">
-          <div className="flex flex-col gap-2">
-            <Label>Tipo</Label>
-            <Select value={filtroTipo} onValueChange={(v) => setFiltroTipo(v as FiltroTipoAlerta)}>
-              <SelectTrigger className="w-[170px]"><SelectValue /></SelectTrigger>
-              <SelectContent>
-                <SelectItem value="todos">Todos</SelectItem>
-                <SelectItem value="stock_bajo">Stock bajo</SelectItem>
-                <SelectItem value="caducidad">Caducidad</SelectItem>
-                <SelectItem value="mantenimiento">Mantenimiento</SelectItem>
-                <SelectItem value="inactividad">Inactividad</SelectItem>
-              </SelectContent>
-            </Select>
-          </div>
-          <div className="flex flex-col gap-2">
-            <Label>Severidad</Label>
-            <Select value={filtroSeveridad} onValueChange={(v) => setFiltroSeveridad(v as FiltroSeveridad)}>
-              <SelectTrigger className="w-[150px]"><SelectValue /></SelectTrigger>
-              <SelectContent>
-                <SelectItem value="todas">Todas</SelectItem>
-                <SelectItem value="baja">Baja</SelectItem>
-                <SelectItem value="media">Media</SelectItem>
-                <SelectItem value="alta">Alta</SelectItem>
-                <SelectItem value="critica">Crítica</SelectItem>
-              </SelectContent>
-            </Select>
-          </div>
-          <div className="flex flex-col gap-2">
-            <Label>Estado</Label>
-            <Select value={filtroEstado} onValueChange={(v) => setFiltroEstado(v as FiltroEstado)}>
-              <SelectTrigger className="w-[150px]"><SelectValue /></SelectTrigger>
-              <SelectContent>
-                <SelectItem value="todos">Todos</SelectItem>
-                <SelectItem value="abierta">Abierta</SelectItem>
-                <SelectItem value="confirmada">Confirmada</SelectItem>
-                <SelectItem value="resuelta">Resuelta</SelectItem>
-                <SelectItem value="ignorada">Ignorada</SelectItem>
-              </SelectContent>
-            </Select>
-          </div>
-        </CardContent>
-      </Card>
+    <div className="flex flex-col gap-4">
+      {/* Filtros inline */}
+      <div className="flex flex-wrap gap-2">
+        <Select value={filtroTipo} onValueChange={(v) => setFiltroTipo(v as FiltroTipoAlerta)}>
+          <SelectTrigger className="w-[160px] h-8 text-xs"><SelectValue placeholder="Tipo" /></SelectTrigger>
+          <SelectContent>
+            <SelectItem value="todos">Todos los tipos</SelectItem>
+            <SelectItem value="stock_bajo">Stock bajo</SelectItem>
+            <SelectItem value="caducidad">Caducidad</SelectItem>
+            <SelectItem value="mantenimiento">Mantenimiento</SelectItem>
+            <SelectItem value="inactividad">Inactividad</SelectItem>
+          </SelectContent>
+        </Select>
+        <Select value={filtroSeveridad} onValueChange={(v) => setFiltroSeveridad(v as FiltroSeveridad)}>
+          <SelectTrigger className="w-[150px] h-8 text-xs"><SelectValue placeholder="Severidad" /></SelectTrigger>
+          <SelectContent>
+            <SelectItem value="todas">Toda severidad</SelectItem>
+            <SelectItem value="baja">Baja</SelectItem>
+            <SelectItem value="media">Media</SelectItem>
+            <SelectItem value="alta">Alta</SelectItem>
+            <SelectItem value="critica">Crítica</SelectItem>
+          </SelectContent>
+        </Select>
+        <Select value={filtroEstado} onValueChange={(v) => setFiltroEstado(v as FiltroEstado)}>
+          <SelectTrigger className="w-[150px] h-8 text-xs"><SelectValue placeholder="Estado" /></SelectTrigger>
+          <SelectContent>
+            <SelectItem value="todos">Todos los estados</SelectItem>
+            <SelectItem value="abierta">Abierta</SelectItem>
+            <SelectItem value="confirmada">Confirmada</SelectItem>
+            <SelectItem value="resuelta">Resuelta</SelectItem>
+            <SelectItem value="ignorada">Ignorada</SelectItem>
+          </SelectContent>
+        </Select>
+        <span className="ml-auto self-center text-xs text-muted-foreground">
+          {alertas.length} alerta{alertas.length !== 1 ? 's' : ''}
+        </span>
+      </div>
 
       <Card>
-        <CardHeader>
-          <CardTitle>Listado de alertas</CardTitle>
-          <CardDescription>{alertas.length} alerta{alertas.length !== 1 ? 's' : ''}</CardDescription>
-        </CardHeader>
-        <CardContent>
-          <Table>
-            <TableHeader>
-              <TableRow>
-                <TableHead>Artículo afectado</TableHead>
-                <TableHead>Tipo</TableHead>
-                <TableHead>Severidad</TableHead>
-                <TableHead>Estado</TableHead>
-                <TableHead>Generada</TableHead>
-                <GuardRol roles={['administrador', 'profesor']}>
-                  <TableHead className="text-right">Acciones</TableHead>
-                </GuardRol>
-              </TableRow>
-            </TableHeader>
-            <TableBody>
-              {alertas.length === 0 && (
-                <TableRow>
-                  <TableCell colSpan={6} className="text-center text-muted-foreground py-8">
-                    No hay alertas con los filtros seleccionados.
-                  </TableCell>
-                </TableRow>
-              )}
-              {alertas.map((alerta) => (
-                <TableRow key={alerta.id}>
-                  <TableCell className="font-medium">{alerta.articulo?.nombre ?? '-'}</TableCell>
-                  <TableCell>{formatearTipoAlerta(alerta.tipo)}</TableCell>
-                  <TableCell>
-                    <Badge variant={varianteSeveridad(alerta.severidad)}>
-                      {formatearSeveridad(alerta.severidad)}
-                    </Badge>
-                  </TableCell>
-                  <TableCell>
-                    <Badge variant="outline">{formatearEstadoAlerta(alerta.estado)}</Badge>
-                  </TableCell>
-                  <TableCell className="text-muted-foreground">
-                    {formatearFechaRelativa(alerta.generada_en)}
-                  </TableCell>
-                  <GuardRol roles={['administrador', 'profesor']}>
-                    <TableCell className="text-right">
-                      <div className="flex justify-end gap-2">
-                        {alerta.estado === 'abierta' && (
-                          <Button variant="outline" size="sm"
-                            onClick={() => void onConfirmar(alerta.id)}
-                            disabled={confirmarMutation.isPending}>
-                            Confirmar
-                          </Button>
-                        )}
-                        {alerta.estado === 'confirmada' && (
-                          <Button variant="outline" size="sm"
-                            onClick={() => void onResolver(alerta.id)}
-                            disabled={resolverMutation.isPending}>
-                            Resolver
-                          </Button>
-                        )}
-                      </div>
-                    </TableCell>
-                  </GuardRol>
-                </TableRow>
-              ))}
-            </TableBody>
-          </Table>
+        <CardContent className="p-0">
+          {alertas.length === 0 ? (
+            <div className="flex flex-col items-center justify-center gap-3 py-12 text-center">
+              <div className="flex size-12 items-center justify-center rounded-full bg-green-500/10">
+                <ArrowUpFromLine className="size-5 text-green-600" />
+              </div>
+              <div>
+                <p className="text-sm font-medium text-green-700 dark:text-green-400">Sin alertas activas</p>
+                <p className="text-xs text-muted-foreground mt-1">Todo el inventario está en orden.</p>
+              </div>
+            </div>
+          ) : (
+            <div className="overflow-x-auto">
+              <Table>
+                <TableHeader>
+                  <TableRow>
+                    <TableHead>Artículo</TableHead>
+                    <TableHead className="hidden sm:table-cell">Tipo</TableHead>
+                    <TableHead>Severidad</TableHead>
+                    <TableHead className="hidden md:table-cell">Estado</TableHead>
+                    <TableHead className="hidden sm:table-cell">Generada</TableHead>
+                    <GuardRol roles={['administrador', 'profesor']}>
+                      <TableHead className="text-right">Acción</TableHead>
+                    </GuardRol>
+                  </TableRow>
+                </TableHeader>
+                <TableBody>
+                  {alertas.map((alerta) => (
+                    <TableRow key={alerta.id}>
+                      <TableCell className="font-medium text-sm">
+                        {alerta.articulo?.nombre ?? '—'}
+                      </TableCell>
+                      <TableCell className="hidden sm:table-cell text-sm text-muted-foreground">
+                        {formatearTipoAlerta(alerta.tipo)}
+                      </TableCell>
+                      <TableCell>
+                        <Badge variant={varianteSeveridad(alerta.severidad)}>
+                          {formatearSeveridad(alerta.severidad)}
+                        </Badge>
+                      </TableCell>
+                      <TableCell className="hidden md:table-cell">
+                        <Badge variant="outline">{formatearEstadoAlerta(alerta.estado)}</Badge>
+                      </TableCell>
+                      <TableCell className="hidden sm:table-cell text-muted-foreground text-xs">
+                        {formatearFechaRelativa(alerta.generada_en)}
+                      </TableCell>
+                      <GuardRol roles={['administrador', 'profesor']}>
+                        <TableCell className="text-right">
+                          {alerta.estado === 'abierta' && (
+                            <Button variant="outline" size="sm"
+                              onClick={() => void onConfirmar(alerta.id)}
+                              disabled={confirmarMutation.isPending}>
+                              Confirmar
+                            </Button>
+                          )}
+                          {alerta.estado === 'confirmada' && (
+                            <Button variant="outline" size="sm"
+                              onClick={() => void onResolver(alerta.id)}
+                              disabled={resolverMutation.isPending}>
+                              Resolver
+                            </Button>
+                          )}
+                        </TableCell>
+                      </GuardRol>
+                    </TableRow>
+                  ))}
+                </TableBody>
+              </Table>
+            </div>
+          )}
         </CardContent>
       </Card>
     </div>
