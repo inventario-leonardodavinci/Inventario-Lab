@@ -123,6 +123,9 @@ export interface UsuarioApp {
   activo: boolean
   roles: Array<{ id: number; name: string }>
   created_at: string
+  updated_at: string
+  // avatar_url viene de Insforge Auth (no se guarda en nuestra BD)
+  avatar_url?: string | null
 }
 
 export interface ActivoMantenimiento {

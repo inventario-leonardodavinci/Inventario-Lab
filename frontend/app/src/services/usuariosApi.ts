@@ -20,6 +20,26 @@ export function actualizarRolUsuario(
   )
 }
 
+export function actualizarEstadoUsuario(
+  authUserId: string,
+  usuarioId: number,
+  activo: boolean,
+) {
+  return apiClient<{ data: UsuarioApp }>(
+    `/usuarios/${usuarioId}/estado`,
+    { method: 'PATCH', body: JSON.stringify({ activo }) },
+    { authUserId },
+  )
+}
+
+export function eliminarUsuario(authUserId: string, usuarioId: number) {
+  return apiClient<void>(
+    `/usuarios/${usuarioId}`,
+    { method: 'DELETE' },
+    { authUserId },
+  )
+}
+
 export function getPerfil(authUserId: string) {
   return apiClient<{ data: UsuarioApp }>('/perfil', {}, { authUserId })
 }

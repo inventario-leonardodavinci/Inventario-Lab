@@ -13,7 +13,7 @@ import { getMovimientos, getResumenHoy, crearMovimiento } from '@/services/movim
 import { getUbicaciones, crearUbicacion, actualizarUbicacion } from '@/services/ubicacionesApi'
 import { getCategorias, crearCategoria, actualizarCategoria, eliminarCategoria } from '@/services/categoriasApi'
 import { getAlertas, confirmarAlerta, resolverAlerta } from '@/services/alertasApi'
-import { getUsuarios, actualizarRolUsuario, getPerfil, actualizarPerfil, getHistorialSesiones } from '@/services/usuariosApi'
+import { getUsuarios, actualizarRolUsuario, actualizarEstadoUsuario, eliminarUsuario, getPerfil, actualizarPerfil, getHistorialSesiones } from '@/services/usuariosApi'
 import { getAuditoria } from '@/services/auditoriaApi'
 import { getNotificaciones } from '@/services/notificacionesApi'
 import { apiClient } from '@/services/clienteApi'
@@ -295,6 +295,30 @@ export function useActualizarRolUsuario() {
   return useMutation({
     mutationFn: ({ usuarioId, rol }: { usuarioId: number; rol: Rol }) =>
       actualizarRolUsuario(user!.authUserId, usuarioId, rol),
+    onSuccess: () => {
+      void queryClient.invalidateQueries({ queryKey: queryKeys.usuarios() })
+    },
+  })
+}
+
+export function useActualizarEstadoUsuario() {
+  const { user } = useAuth()
+  const queryClient = useQueryClient()
+  return useMutation({
+    mutationFn: ({ usuarioId, activo }: { usuarioId: number; activo: boolean }) =>
+      actualizarEstadoUsuario(user!.authUserId, usuarioId, activo),
+    onSuccess: () => {
+      void queryClient.invalidateQueries({ queryKey: queryKeys.usuarios() })
+    },
+  })
+}
+
+export function useEliminarUsuario() {
+  const { user } = useAuth()
+  const queryClient = useQueryClient()
+  return useMutation({
+    mutationFn: (usuarioId: number) =>
+      eliminarUsuario(user!.authUserId, usuarioId),
     onSuccess: () => {
       void queryClient.invalidateQueries({ queryKey: queryKeys.usuarios() })
     },

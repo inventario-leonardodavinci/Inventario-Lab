@@ -62,6 +62,8 @@ Route::prefix('v1')->middleware(['throttle:api', 'app.user'])->group(function ()
     // ── Usuarios (solo administrador) ─────────────────────────────────────────
     Route::get('/usuarios', [UsuarioController::class, 'index'])->middleware('role:administrador');
     Route::patch('/usuarios/{usuario}/rol', [UsuarioController::class, 'actualizarRol'])->middleware('role:administrador');
+    Route::patch('/usuarios/{usuario}/estado', [UsuarioController::class, 'actualizarEstado'])->middleware('role:administrador');
+    Route::delete('/usuarios/{usuario}', [UsuarioController::class, 'destroy'])->middleware('role:administrador');
 
     // ── Auditoría (solo administrador) ────────────────────────────────────────
     Route::get('/auditoria', [AuditoriaController::class, 'index'])->middleware('role:administrador');
