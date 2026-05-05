@@ -87,7 +87,10 @@ export function AuthLayout({ children }: AuthLayoutProps) {
                 <path d="M24 10v28M17 18c0 0 3-4 7-4s7 4 7 4M14 28c0 0 5-5 10-5s10 5 10 5" strokeLinecap="round" strokeLinejoin="round" />
               </svg>
             </div>
-            <span className="text-sm font-medium tracking-wide uppercase text-white/80">Salud Ambiental</span>
+            <div>
+              <span className="text-sm font-semibold text-white">Inventario Lab</span>
+              <p className="text-xs text-white/50 tracking-wide uppercase">Salud Ambiental</p>
+            </div>
           </div>
           <h1 className="text-5xl font-semibold leading-tight text-white tracking-tight">
             Inventario de<br />
@@ -106,6 +109,19 @@ export function AuthLayout({ children }: AuthLayoutProps) {
       </div>
       <div className="flex-1 flex items-center justify-center px-4">
         <div className="w-full max-w-md mx-auto">
+          {/* Branding visible en móvil (el panel izquierdo está oculto) */}
+          <div className="flex items-center justify-center gap-2.5 mb-6 lg:hidden">
+            <div className="w-8 h-8 rounded-lg bg-primary/10 flex items-center justify-center">
+              <svg viewBox="0 0 48 48" fill="none" className="w-5 h-5 text-primary" stroke="currentColor" strokeWidth="1.5">
+                <circle cx="24" cy="24" r="22" opacity="0.3" />
+                <path d="M24 10v28M17 18c0 0 3-4 7-4s7 4 7 4M14 28c0 0 5-5 10-5s10 5 10 5" strokeLinecap="round" strokeLinejoin="round" />
+              </svg>
+            </div>
+            <div>
+              <p className="text-sm font-semibold leading-none">Inventario Lab</p>
+              <p className="text-xs text-muted-foreground">Salud Ambiental</p>
+            </div>
+          </div>
           {children}
         </div>
       </div>
@@ -236,7 +252,12 @@ export function VistaLogin({ onNavegar, oAuthProviders }: { onNavegar: (ruta: st
   if (usandoUltimoUsuario && ultimoUsuario) {
     return (
       <AuthCard titulo="Bienvenido de nuevo" descripcion="Última sesión iniciada con esta cuenta."
-        icono={<svg viewBox="0 0 24 24" fill="none" className="w-7 h-7" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"><rect x="3" y="11" width="18" height="11" rx="2" /><path d="M7 11V7a5 5 0 0 1 10 0v4" /></svg>}
+        icono={
+          <svg viewBox="0 0 48 48" fill="none" className="w-7 h-7" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
+            <circle cx="24" cy="24" r="22" opacity="0.3" />
+            <path d="M24 10v28M17 18c0 0 3-4 7-4s7 4 7 4M14 28c0 0 5-5 10-5s10 5 10 5" />
+          </svg>
+        }
       >
         <div className="mb-5 flex flex-col items-center gap-3 rounded-2xl border bg-muted/30 px-6 py-5">
           <div className="relative">
@@ -255,7 +276,13 @@ export function VistaLogin({ onNavegar, oAuthProviders }: { onNavegar: (ruta: st
           <div className="space-y-1.5">
             <div className="flex items-center justify-between">
               <Label htmlFor="password-rapido" className="text-sm font-medium">Contraseña</Label>
-              <button type="button" className="text-xs text-muted-foreground underline-offset-4 hover:underline" onClick={() => onNavegar("/login/recuperar")}>¿Olvidaste tu contraseña?</button>
+              <button
+                type="button"
+                className="min-h-[36px] px-1 text-xs text-primary underline-offset-4 hover:underline"
+                onClick={() => onNavegar("/login/recuperar")}
+              >
+                ¿Olvidaste tu contraseña?
+              </button>
             </div>
             <div className="relative">
               <Input id="password-rapido" type={showPassword ? "text" : "password"} value={password}
@@ -275,7 +302,12 @@ export function VistaLogin({ onNavegar, oAuthProviders }: { onNavegar: (ruta: st
 
   return (
     <AuthCard titulo="Acceso al sistema" descripcion="Inicia sesión para ver inventario y notificaciones."
-      icono={<svg viewBox="0 0 24 24" fill="none" className="w-7 h-7" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"><rect x="3" y="11" width="18" height="11" rx="2" /><path d="M7 11V7a5 5 0 0 1 10 0v4" /></svg>}
+      icono={
+        <svg viewBox="0 0 48 48" fill="none" className="w-7 h-7" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
+          <circle cx="24" cy="24" r="22" opacity="0.3" />
+          <path d="M24 10v28M17 18c0 0 3-4 7-4s7 4 7 4M14 28c0 0 5-5 10-5s10 5 10 5" />
+        </svg>
+      }
     >
       <BotonesOAuth onOAuth={onOAuth} oAuthProviders={oAuthProviders} />
       <form className="space-y-4" onSubmit={onSubmit}>
@@ -289,11 +321,18 @@ export function VistaLogin({ onNavegar, oAuthProviders }: { onNavegar: (ruta: st
         <div className="space-y-1.5">
           <div className="flex items-center justify-between">
             <Label htmlFor="password" className="text-sm font-medium">Contraseña</Label>
-            <button type="button" className="text-xs text-muted-foreground underline-offset-4 hover:underline" onClick={() => onNavegar("/login/recuperar")}>¿Olvidaste tu contraseña?</button>
+            <button
+              type="button"
+              className="min-h-[36px] px-1 text-xs text-primary underline-offset-4 hover:underline"
+              onClick={() => onNavegar("/login/recuperar")}
+            >
+              ¿Olvidaste tu contraseña?
+            </button>
           </div>
           <div className="relative">
             <Input id="password" type={showPassword ? "text" : "password"} value={password}
               onChange={(e) => { setPassword(e.target.value); setErrores((p) => ({ ...p, password: undefined, general: undefined })); }}
+              placeholder="Tu contraseña"
               autoComplete="current-password" className={`${inputCls(!!errores.password)} pr-10`} />
             <TogglePassword show={showPassword} onToggle={() => setShowPassword(!showPassword)} />
           </div>
@@ -301,7 +340,9 @@ export function VistaLogin({ onNavegar, oAuthProviders }: { onNavegar: (ruta: st
         </div>
         {errores.general && <AlertaError mensaje={errores.general} />}
         <Button type="submit" className="w-full h-11 rounded-xl font-normal" disabled={submitting}>{submitting ? "Entrando..." : "Entrar"}</Button>
-        <Button type="button" variant="ghost" className="w-full h-10 text-sm font-normal rounded-xl" onClick={() => onNavegar("/login/registro")}>Crear una cuenta nueva</Button>
+        <Button type="button" variant="outline" className="w-full h-11 rounded-xl font-normal" onClick={() => onNavegar("/login/registro")}>
+          Crear una cuenta nueva
+        </Button>
       </form>
     </AuthCard>
   );
