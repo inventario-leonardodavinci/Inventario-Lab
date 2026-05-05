@@ -17,8 +17,8 @@ export function ContenedorAplicacion({ children }: { children: React.ReactNode }
           <div className="flex items-center gap-2">
             <SidebarTrigger className="-ml-1" />
             <div className="h-4 w-px bg-border" />
-            <h1 className="text-sm font-medium tracking-tight">
-              Inventario Laboratorio Salud Ambiental
+            <h1 className="hidden sm:block text-sm font-medium tracking-tight text-muted-foreground">
+              Inventario Lab
             </h1>
           </div>
           <div className="flex items-center gap-2">

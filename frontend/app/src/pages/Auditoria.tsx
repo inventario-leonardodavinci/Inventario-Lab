@@ -13,7 +13,7 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@
 import { useAuth } from '@/context/ContextoAutenticacion'
 import { useAuditoria } from '@/hooks/queries'
 import { formatearFechaHora } from '@/utils/formatters'
-import { Shield, ChevronDown, ChevronRight, ChevronLeft } from 'lucide-react'
+import { Shield, ChevronDown, ChevronRight, ChevronLeft, FileSearch } from 'lucide-react'
 import { SkeletonAuditoria } from '@/components/ui/PageSkeleton'
 
 type FiltroOperacion = 'todos' | 'INSERT' | 'UPDATE' | 'DELETE'
@@ -302,13 +302,16 @@ export default function Auditoria() {
       {/* Tabla */}
       <Card>
         <CardHeader>
-          <CardTitle>Registros de auditoría</CardTitle>
+          <CardTitle className="flex items-center gap-2 text-base">
+            <div className="flex size-7 items-center justify-center rounded-lg bg-primary/10">
+              <FileSearch className="size-4 text-primary" />
+            </div>
+            Registros de auditoría
+          </CardTitle>
           <CardDescription>
-            {isLoading
-              ? 'Cargando...'
-              : meta
-                ? `${meta.total} registro${meta.total !== 1 ? 's' : ''} · página ${meta.current_page} de ${meta.last_page}`
-                : `${registros.length} registro${registros.length !== 1 ? 's' : ''}`}
+            {meta
+              ? `${meta.total} registro${meta.total !== 1 ? 's' : ''} · página ${meta.current_page} de ${meta.last_page}`
+              : `${registros.length} registro${registros.length !== 1 ? 's' : ''}`}
           </CardDescription>
         </CardHeader>
         <CardContent>
@@ -325,8 +328,13 @@ export default function Auditoria() {
             <TableBody>
               {registros.length === 0 && !isLoading && (
                 <TableRow>
-                  <TableCell colSpan={5} className="text-center text-muted-foreground py-8">
-                    No hay registros con los filtros seleccionados.
+                  <TableCell colSpan={5} className="py-12">
+                    <div className="flex flex-col items-center justify-center gap-3 text-center">
+                      <div className="flex size-10 items-center justify-center rounded-full bg-muted">
+                        <FileSearch className="size-5 text-muted-foreground" />
+                      </div>
+                      <p className="text-sm text-muted-foreground">No hay registros con los filtros seleccionados.</p>
+                    </div>
                   </TableCell>
                 </TableRow>
               )}

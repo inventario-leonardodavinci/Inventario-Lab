@@ -1,7 +1,3 @@
-/**
- * Página de informes: KPIs reales + log de auditoría con filtros funcionales.
- * Requisitos: 8.1, 8.2, 8.3
- */
 import { useState } from 'react'
 import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
@@ -13,10 +9,25 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@
 import { useResumenHoy, useAuditoria, useUsuarios } from '@/hooks/queries'
 import { formatearFechaHora } from '@/utils/formatters'
 import { SkeletonTabla } from '@/components/ui/PageSkeleton'
-import { ChevronLeft, ChevronRight } from 'lucide-react'
+import { ChevronLeft, ChevronRight, ArrowDownToLine, ArrowUpFromLine, SlidersHorizontal, Users } from 'lucide-react'
 
 const ENTIDADES = ['articulos', 'movimientos', 'alertas', 'categorias', 'ubicaciones', 'usuarios_app'] as const
 const OPERACIONES = ['INSERT', 'UPDATE', 'DELETE'] as const
+
+const ETIQUETA_ENTIDAD: Record<string, string> = {
+  articulos: 'Artículos',
+  movimientos: 'Movimientos',
+  alertas: 'Alertas',
+  categorias: 'Categorías',
+  ubicaciones: 'Ubicaciones',
+  usuarios_app: 'Usuarios',
+}
+
+const ETIQUETA_OPERACION: Record<string, string> = {
+  INSERT: 'Creación',
+  UPDATE: 'Modificación',
+  DELETE: 'Eliminación',
+}
 
 type FiltroEntidad = typeof ENTIDADES[number] | ''
 type FiltroOperacion = typeof OPERACIONES[number] | ''
@@ -91,46 +102,58 @@ export default function Informes() {
       {/* KPIs */}
       <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
         <Card>
-          <CardHeader>
-            <CardDescription>Entradas hoy</CardDescription>
-            <CardTitle className="text-3xl">
-              {cargandoResumen ? '…' : (resumen?.entradas_hoy ?? 0)}
-            </CardTitle>
+          <CardHeader className="flex flex-row items-start justify-between pb-2">
+            <div className="flex flex-col gap-1">
+              <CardDescription>Entradas hoy</CardDescription>
+              <CardTitle className="text-3xl">{cargandoResumen ? '…' : (resumen?.entradas_hoy ?? 0)}</CardTitle>
+            </div>
+            <div className="rounded-lg bg-green-500/10 p-2">
+              <ArrowDownToLine className="size-5 text-green-600" />
+            </div>
           </CardHeader>
           <CardContent>
             <p className="text-xs text-muted-foreground">Movimientos de entrada registrados</p>
           </CardContent>
         </Card>
         <Card>
-          <CardHeader>
-            <CardDescription>Salidas hoy</CardDescription>
-            <CardTitle className="text-3xl">
-              {cargandoResumen ? '…' : (resumen?.salidas_hoy ?? 0)}
-            </CardTitle>
+          <CardHeader className="flex flex-row items-start justify-between pb-2">
+            <div className="flex flex-col gap-1">
+              <CardDescription>Salidas hoy</CardDescription>
+              <CardTitle className="text-3xl">{cargandoResumen ? '…' : (resumen?.salidas_hoy ?? 0)}</CardTitle>
+            </div>
+            <div className="rounded-lg bg-amber-500/10 p-2">
+              <ArrowUpFromLine className="size-5 text-amber-600" />
+            </div>
           </CardHeader>
           <CardContent>
             <p className="text-xs text-muted-foreground">Movimientos de salida registrados</p>
           </CardContent>
         </Card>
         <Card>
-          <CardHeader>
-            <CardDescription>Ajustes hoy</CardDescription>
-            <CardTitle className="text-3xl">
-              {cargandoResumen ? '…' : ajustesHoy}
-            </CardTitle>
+          <CardHeader className="flex flex-row items-start justify-between pb-2">
+            <div className="flex flex-col gap-1">
+              <CardDescription>Ajustes y traslados</CardDescription>
+              <CardTitle className="text-3xl">{cargandoResumen ? '…' : ajustesHoy + trasladosHoy}</CardTitle>
+            </div>
+            <div className="rounded-lg bg-primary/10 p-2">
+              <SlidersHorizontal className="size-5 text-primary" />
+            </div>
           </CardHeader>
           <CardContent>
             <p className="text-xs text-muted-foreground">
-              {cargandoResumen ? '' : `${trasladosHoy} traslado${trasladosHoy !== 1 ? 's' : ''} también`}
+              {cargandoResumen ? '' : `${ajustesHoy} ajuste${ajustesHoy !== 1 ? 's' : ''} · ${trasladosHoy} traslado${trasladosHoy !== 1 ? 's' : ''}`}
             </p>
           </CardContent>
         </Card>
         <Card>
-          <CardHeader>
-            <CardDescription>Usuarios registrados</CardDescription>
-            <CardTitle className="text-3xl">
-              {cargandoUsuarios ? '…' : totalUsuarios}
-            </CardTitle>
+          <CardHeader className="flex flex-row items-start justify-between pb-2">
+            <div className="flex flex-col gap-1">
+              <CardDescription>Usuarios registrados</CardDescription>
+              <CardTitle className="text-3xl">{cargandoUsuarios ? '…' : totalUsuarios}</CardTitle>
+            </div>
+            <div className="rounded-lg bg-blue-500/10 p-2">
+              <Users className="size-5 text-blue-600" />
+            </div>
           </CardHeader>
           <CardContent>
             <p className="text-xs text-muted-foreground">
@@ -156,7 +179,7 @@ export default function Informes() {
               <SelectContent>
                 <SelectItem value="todas">Todas</SelectItem>
                 {ENTIDADES.map((e) => (
-                  <SelectItem key={e} value={e}>{e}</SelectItem>
+                  <SelectItem key={e} value={e}>{ETIQUETA_ENTIDAD[e] ?? e}</SelectItem>
                 ))}
               </SelectContent>
             </Select>
@@ -170,7 +193,7 @@ export default function Informes() {
               <SelectContent>
                 <SelectItem value="todas">Todas</SelectItem>
                 {OPERACIONES.map((o) => (
-                  <SelectItem key={o} value={o}>{o}</SelectItem>
+                  <SelectItem key={o} value={o}>{ETIQUETA_OPERACION[o] ?? o}</SelectItem>
                 ))}
               </SelectContent>
             </Select>
@@ -229,10 +252,10 @@ export default function Informes() {
                       <TableCell className="font-medium text-muted-foreground">#{reg.id}</TableCell>
                       <TableCell>
                         <Badge variant={varianteOperacion(reg.tipo_evento)}>
-                          {reg.tipo_evento}
+                          {ETIQUETA_OPERACION[reg.tipo_evento] ?? reg.tipo_evento}
                         </Badge>
                       </TableCell>
-                      <TableCell className="font-mono text-xs">{reg.entidad_tipo}</TableCell>
+                      <TableCell className="font-mono text-xs">{ETIQUETA_ENTIDAD[reg.entidad_tipo] ?? reg.entidad_tipo}</TableCell>
                       <TableCell className="text-muted-foreground">#{reg.entidad_id ?? '—'}</TableCell>
                       <TableCell>{reg.usuario?.nombre_visible ?? <span className="text-muted-foreground italic">sistema</span>}</TableCell>
                       <TableCell className="text-muted-foreground">{formatearFechaHora(reg.created_at)}</TableCell>

@@ -1,27 +1,18 @@
 import { useState } from 'react'
+import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
 import {
-  Dialog,
-  DialogContent,
-  DialogDescription,
-  DialogFooter,
-  DialogHeader,
-  DialogTitle,
+  Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle,
 } from '@/components/ui/dialog'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import {
-  Table,
-  TableBody,
-  TableCell,
-  TableHead,
-  TableHeader,
-  TableRow,
+  Table, TableBody, TableCell, TableHead, TableHeader, TableRow,
 } from '@/components/ui/table'
 import { GuardRol } from '@/components/auth/GuardRol'
 import { useCategorias, useCrearCategoria, useEliminarCategoria } from '@/hooks/queries'
-import { Trash2 } from 'lucide-react'
+import { FolderOpen, Trash2 } from 'lucide-react'
 import { toast } from 'sonner'
 import { SkeletonCategorias } from '@/components/ui/PageSkeleton'
 
@@ -80,52 +71,66 @@ export default function ListaCategorias() {
 
       <Card>
         <CardHeader>
-          <CardTitle>Listado de categorías</CardTitle>
+          <CardTitle className="flex items-center gap-2 text-base">
+            <div className="flex size-7 items-center justify-center rounded-lg bg-primary/10">
+              <FolderOpen className="size-4 text-primary" />
+            </div>
+            Listado de categorías
+          </CardTitle>
           <CardDescription>
-            {isLoading ? 'Cargando...' : `${categorias.length} categoría${categorias.length !== 1 ? 's' : ''} registrada${categorias.length !== 1 ? 's' : ''}`}
+            {categorias.length} categoría{categorias.length !== 1 ? 's' : ''} registrada{categorias.length !== 1 ? 's' : ''}
           </CardDescription>
         </CardHeader>
         <CardContent>
-          <Table>
-            <TableHeader>
-              <TableRow>
-                <TableHead>Nombre</TableHead>
-                <TableHead className="text-right">Artículos activos</TableHead>
-                <GuardRol roles={['administrador']}>
-                  <TableHead className="text-right">Acciones</TableHead>
-                </GuardRol>
-              </TableRow>
-            </TableHeader>
-            <TableBody>
-              {categorias.length === 0 && !isLoading && (
+          {categorias.length === 0 ? (
+            <div className="flex flex-col items-center justify-center gap-3 py-12 text-center">
+              <div className="flex size-12 items-center justify-center rounded-full bg-muted">
+                <FolderOpen className="size-5 text-muted-foreground" />
+              </div>
+              <div>
+                <p className="text-sm font-medium">Sin categorías</p>
+                <p className="text-xs text-muted-foreground mt-1">Crea la primera categoría para clasificar los artículos.</p>
+              </div>
+            </div>
+          ) : (
+            <Table>
+              <TableHeader>
                 <TableRow>
-                  <TableCell colSpan={3} className="text-center text-muted-foreground py-8">
-                    No hay categorías registradas.
-                  </TableCell>
-                </TableRow>
-              )}
-              {categorias.map((cat) => (
-                <TableRow key={cat.id}>
-                  <TableCell className="font-medium">{cat.nombre}</TableCell>
-                  <TableCell className="text-right">{cat.total_articulos}</TableCell>
+                  <TableHead>Nombre</TableHead>
+                  <TableHead className="text-right">Artículos activos</TableHead>
                   <GuardRol roles={['administrador']}>
-                    <TableCell className="text-right">
-                      <Button
-                        variant="ghost"
-                        size="icon"
-                        className="text-muted-foreground hover:text-destructive"
-                        onClick={() => setConfirmarEliminar({ id: cat.id, nombre: cat.nombre })}
-                        disabled={cat.total_articulos > 0}
-                        title={cat.total_articulos > 0 ? 'Tiene artículos asociados' : 'Eliminar categoría'}
-                      >
-                        <Trash2 className="size-4" />
-                      </Button>
-                    </TableCell>
+                    <TableHead className="text-right">Acciones</TableHead>
                   </GuardRol>
                 </TableRow>
-              ))}
-            </TableBody>
-          </Table>
+              </TableHeader>
+              <TableBody>
+                {categorias.map((cat) => (
+                  <TableRow key={cat.id}>
+                    <TableCell className="font-medium">{cat.nombre}</TableCell>
+                    <TableCell className="text-right">
+                      <Badge variant={cat.total_articulos > 0 ? 'secondary' : 'outline'}>
+                        {cat.total_articulos}
+                      </Badge>
+                    </TableCell>
+                    <GuardRol roles={['administrador']}>
+                      <TableCell className="text-right">
+                        <Button
+                          variant="ghost"
+                          size="icon"
+                          className="text-muted-foreground hover:text-destructive"
+                          onClick={() => setConfirmarEliminar({ id: cat.id, nombre: cat.nombre })}
+                          disabled={cat.total_articulos > 0}
+                          title={cat.total_articulos > 0 ? 'Tiene artículos asociados' : 'Eliminar categoría'}
+                        >
+                          <Trash2 className="size-4" />
+                        </Button>
+                      </TableCell>
+                    </GuardRol>
+                  </TableRow>
+                ))}
+              </TableBody>
+            </Table>
+          )}
         </CardContent>
       </Card>
 

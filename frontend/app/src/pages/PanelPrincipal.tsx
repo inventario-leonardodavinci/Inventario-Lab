@@ -8,7 +8,7 @@ import { useAuth } from "@/context/ContextoAutenticacion";
 import { usePanelData } from "@/hooks/usePanelData";
 import { formatearKpi } from "@/utils/panelUtils";
 import { formatearFechaRelativa } from "@/utils/formatters";
-import { ArrowDownToLine, ArrowUpFromLine, BellRing, PackageCheck, TriangleAlert } from "lucide-react";
+import { ArrowDownToLine, ArrowUpFromLine, BellRing, PackageCheck, TriangleAlert, Plus } from "lucide-react";
 import { SkeletonPanel } from "@/components/ui/PageSkeleton";
 
 const kpiIconMap: Record<string, React.ElementType> = {
@@ -18,11 +18,19 @@ const kpiIconMap: Record<string, React.ElementType> = {
   TriangleAlert,
 };
 
-const kpiBadgeVariant: Record<string, "destructive" | "secondary"> = {
+// Color del icono por KPI
+const kpiIconColor: Record<string, string> = {
+  PackageCheck: "text-blue-600 bg-blue-500/10",
+  ArrowDownToLine: "text-green-600 bg-green-500/10",
+  ArrowUpFromLine: "text-amber-600 bg-amber-500/10",
+  TriangleAlert: "text-destructive bg-destructive/10",
+};
+
+const kpiBadgeVariant: Record<string, "destructive" | "secondary" | "outline"> = {
   Urgente: "destructive",
   Estable: "secondary",
   Operativo: "secondary",
-  Control: "secondary",
+  Control: "outline",
 };
 
 export default function PanelPrincipal() {
@@ -50,7 +58,7 @@ export default function PanelPrincipal() {
 
   const kpiCards = [
     {
-      title: "Articulos en inventario",
+      title: "Artículos en inventario",
       value: formatearKpi(inventoryCount),
       delta: "Total registrados",
       badge: "Estable" as const,
@@ -59,14 +67,14 @@ export default function PanelPrincipal() {
     {
       title: "Entradas hoy",
       value: formatearKpi(entradasHoy),
-      delta: "Movimientos registrados hoy",
+      delta: "Movimientos de entrada",
       badge: "Operativo" as const,
       icon: "ArrowDownToLine" as const,
     },
     {
       title: "Salidas hoy",
       value: formatearKpi(salidasHoy),
-      delta: "Movimientos registrados hoy",
+      delta: "Movimientos de salida",
       badge: "Control" as const,
       icon: "ArrowUpFromLine" as const,
     },
@@ -92,14 +100,18 @@ export default function PanelPrincipal() {
           {cargando && (
             <span className="text-xs text-muted-foreground animate-pulse">Cargando datos…</span>
           )}
-          <Button variant="outline">Exportar resumen</Button>
-          <Button onClick={() => navigate('/movimientos')}>Registrar movimiento</Button>
+          <Button variant="outline" size="sm">Exportar resumen</Button>
+          <Button size="sm" className="gap-1.5" onClick={() => navigate('/articulos')}>
+            <Plus className="size-4" />
+            Registrar movimiento
+          </Button>
         </div>
       </div>
 
       <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-4">
         {kpiCards.map((kpi) => {
           const Icon = kpiIconMap[kpi.icon];
+          const iconColor = kpiIconColor[kpi.icon];
           return (
             <Card key={kpi.title}>
               <CardHeader className="flex flex-row items-start justify-between pb-2">
@@ -107,8 +119,8 @@ export default function PanelPrincipal() {
                   <CardDescription>{kpi.title}</CardDescription>
                   <CardTitle className="text-3xl">{kpi.value}</CardTitle>
                 </div>
-                <div className="rounded-md bg-muted p-2 text-muted-foreground">
-                  <Icon />
+                <div className={`rounded-lg p-2 ${iconColor}`}>
+                  <Icon className="size-5" />
                 </div>
               </CardHeader>
               <CardContent className="flex items-center justify-between gap-2">

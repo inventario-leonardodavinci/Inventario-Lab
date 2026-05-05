@@ -1,42 +1,39 @@
-/**
- * Página de listado de ubicaciones.
- * Requisitos: 4.5, 4.6, 10.3, 10.5
- */
 import { useState } from 'react'
 import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
 import {
-  Dialog,
-  DialogContent,
-  DialogDescription,
-  DialogFooter,
-  DialogHeader,
-  DialogTitle,
+  Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle,
 } from '@/components/ui/dialog'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from '@/components/ui/select'
-import {
-  Table,
-  TableBody,
-  TableCell,
-  TableHead,
-  TableHeader,
-  TableRow,
-} from '@/components/ui/table'
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
 import { GuardRol } from '@/components/auth/GuardRol'
 import { useUbicaciones, useCrearUbicacion } from '@/hooks/queries'
 import { formatearTipoUbicacion } from '@/utils/formatters'
 import type { TipoUbicacion } from '@/types'
 import { toast } from 'sonner'
 import { SkeletonUbicaciones } from '@/components/ui/PageSkeleton'
+import { MapPin, Refrigerator, Archive, Layers, Eye, Box, HelpCircle } from 'lucide-react'
+
+// Icono por tipo de ubicación
+const ICONO_TIPO: Record<TipoUbicacion, React.ElementType> = {
+  armario: Archive,
+  nevera: Refrigerator,
+  estanteria: Layers,
+  cajon: Box,
+  vitrina: Eye,
+  otro: HelpCircle,
+}
+
+const COLOR_TIPO: Record<TipoUbicacion, string> = {
+  armario: 'bg-amber-500/10 text-amber-600',
+  nevera: 'bg-blue-500/10 text-blue-600',
+  estanteria: 'bg-green-500/10 text-green-600',
+  cajon: 'bg-purple-500/10 text-purple-600',
+  vitrina: 'bg-pink-500/10 text-pink-600',
+  otro: 'bg-muted text-muted-foreground',
+}
 
 interface FormNuevaUbicacion {
   nombre: string
@@ -102,39 +99,51 @@ export default function ListaUbicaciones() {
 
       <Card>
         <CardHeader>
-          <CardTitle>Listado de ubicaciones</CardTitle>
+          <CardTitle className="flex items-center gap-2 text-base">
+            <div className="flex size-7 items-center justify-center rounded-lg bg-primary/10">
+              <MapPin className="size-4 text-primary" />
+            </div>
+            Listado de ubicaciones
+          </CardTitle>
           <CardDescription>
-            {isLoading ? 'Cargando...' : `${ubicaciones.length} ubicación${ubicaciones.length !== 1 ? 'es' : ''} registrada${ubicaciones.length !== 1 ? 's' : ''}`}
+            {ubicaciones.length} ubicación{ubicaciones.length !== 1 ? 'es' : ''} registrada{ubicaciones.length !== 1 ? 's' : ''}
           </CardDescription>
         </CardHeader>
         <CardContent>
-          <Table>
-            <TableHeader>
-              <TableRow>
-                <TableHead>Nombre</TableHead>
-                <TableHead>Tipo</TableHead>
-                <TableHead>Descripción</TableHead>
-              </TableRow>
-            </TableHeader>
-            <TableBody>
-              {ubicaciones.length === 0 && !isLoading && (
-                <TableRow>
-                  <TableCell colSpan={3} className="text-center text-muted-foreground py-8">
-                    No hay ubicaciones registradas.
-                  </TableCell>
-                </TableRow>
-              )}
-              {ubicaciones.map((ub) => (
-                <TableRow key={ub.id}>
-                  <TableCell className="font-medium">{ub.nombre}</TableCell>
-                  <TableCell>
-                    <Badge variant="outline">{formatearTipoUbicacion(ub.tipo)}</Badge>
-                  </TableCell>
-                  <TableCell className="text-muted-foreground">{ub.descripcion ?? '-'}</TableCell>
-                </TableRow>
-              ))}
-            </TableBody>
-          </Table>
+          {ubicaciones.length === 0 ? (
+            <div className="flex flex-col items-center justify-center gap-3 py-12 text-center">
+              <div className="flex size-12 items-center justify-center rounded-full bg-muted">
+                <MapPin className="size-5 text-muted-foreground" />
+              </div>
+              <div>
+                <p className="text-sm font-medium">Sin ubicaciones</p>
+                <p className="text-xs text-muted-foreground mt-1">Registra el primer lugar de almacenamiento.</p>
+              </div>
+            </div>
+          ) : (
+            <div className="divide-y">
+              {ubicaciones.map((ub) => {
+                const Icono = ICONO_TIPO[ub.tipo] ?? HelpCircle
+                const colorClase = COLOR_TIPO[ub.tipo] ?? 'bg-muted text-muted-foreground'
+                return (
+                  <div key={ub.id} className="flex items-center gap-3 py-3">
+                    <div className={`flex size-9 shrink-0 items-center justify-center rounded-lg ${colorClase}`}>
+                      <Icono className="size-4" />
+                    </div>
+                    <div className="flex flex-1 flex-col min-w-0">
+                      <span className="font-medium text-sm">{ub.nombre}</span>
+                      {ub.descripcion && (
+                        <span className="text-xs text-muted-foreground truncate">{ub.descripcion}</span>
+                      )}
+                    </div>
+                    <Badge variant="outline" className="shrink-0">
+                      {formatearTipoUbicacion(ub.tipo)}
+                    </Badge>
+                  </div>
+                )
+              })}
+            </div>
+          )}
         </CardContent>
       </Card>
 

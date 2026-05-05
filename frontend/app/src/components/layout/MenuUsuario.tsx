@@ -20,16 +20,22 @@ function iniciales(nombre: string): string {
 }
 
 const COLORES_ROL: Record<string, string> = {
-  admin: "bg-red-100 text-red-700",
-  tecnico: "bg-blue-100 text-blue-700",
-  consulta: "bg-gray-100 text-gray-600",
-};
+  administrador: 'bg-primary/10 text-primary',
+  admin: 'bg-primary/10 text-primary',
+  profesor: 'bg-blue-500/10 text-blue-600',
+  tecnico: 'bg-blue-500/10 text-blue-600',
+  consultor: 'bg-muted text-muted-foreground',
+  consulta: 'bg-muted text-muted-foreground',
+}
 
 const ETIQUETA_ROL: Record<string, string> = {
-  admin: "Administrador",
-  tecnico: "Técnico",
-  consulta: "Consulta",
-};
+  administrador: 'Administrador',
+  admin: 'Administrador',
+  profesor: 'Profesor',
+  tecnico: 'Técnico',
+  consultor: 'Consultor',
+  consulta: 'Consultor',
+}
 
 export function MenuUsuario() {
   const { user, logout } = useAuth();
@@ -37,8 +43,8 @@ export function MenuUsuario() {
 
   if (!user) return null;
 
-  const colorRol = COLORES_ROL[user.role] ?? "bg-gray-100 text-gray-600";
-  const etiquetaRol = ETIQUETA_ROL[user.role] ?? user.role;
+  const colorRol = COLORES_ROL[user.role] ?? 'bg-muted text-muted-foreground'
+  const etiquetaRol = ETIQUETA_ROL[user.role] ?? user.role
 
   return (
     <DropdownMenu>
