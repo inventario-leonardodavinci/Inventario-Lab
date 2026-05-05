@@ -15,6 +15,7 @@ return Application::configure(basePath: dirname(__DIR__))
         $middleware->alias([
             'app.user' => \App\Http\Middleware\ResolverUsuarioApp::class,
             'role' => \App\Http\Middleware\AsegurarRol::class,
+            'permiso' => \App\Http\Middleware\AsegurarPermiso::class,
         ]);
     })
     ->withExceptions(function (Exceptions $exceptions): void {

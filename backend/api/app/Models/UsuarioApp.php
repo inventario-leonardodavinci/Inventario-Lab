@@ -3,11 +3,12 @@
 namespace App\Models;
 
 use Illuminate\Database\Eloquent\Model;
-use Illuminate\Database\Eloquent\Relations\BelongsToMany;
 use Illuminate\Database\Eloquent\Relations\HasMany;
+use Spatie\Permission\Traits\HasRoles;
 
 class UsuarioApp extends Model
 {
+    use HasRoles;
     protected $table = 'usuarios_app';
 
     protected $fillable = [
@@ -20,18 +21,17 @@ class UsuarioApp extends Model
         'activo' => 'boolean',
     ];
 
-    public function roles(): BelongsToMany
+    /**
+     * Necesario para spatie/laravel-permission.
+     * Usa guard 'api' para la API.
+     */
+    protected function getDefaultGuardName(): string
     {
-        return $this->belongsToMany(Rol::class, 'usuario_roles', 'usuario_id', 'rol_id');
+        return 'api';
     }
 
     public function movimientos(): HasMany
     {
         return $this->hasMany(Movimiento::class, 'usuario_id');
-    }
-
-    public function tieneRol(string $nombreRol): bool
-    {
-        return $this->roles()->where('name', $nombreRol)->exists();
     }
 }
