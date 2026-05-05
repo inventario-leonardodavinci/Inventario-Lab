@@ -17,11 +17,13 @@ class MovimientoController extends Controller
     {
     }
 
-    public function resumenHoy(): JsonResponse
+    public function resumenHoy(Request $request): JsonResponse
     {
         $hoy = now()->toDateString();
+        $usuarioApp = $request->attributes->get('app_user');
 
         $conteosPorTipo = Movimiento::query()
+            ->when($usuarioApp, fn ($query) => $query->where('usuario_id', $usuarioApp->id))
             ->whereDate('created_at', $hoy)
             ->selectRaw('tipo, COUNT(*) as total')
             ->groupBy('tipo')
