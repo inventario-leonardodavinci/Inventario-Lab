@@ -6,12 +6,12 @@ WORKDIR /var/www/html
 COPY --chown=www-data:www-data composer.json composer.lock ./
 
 # Instalar dependencias PHP.
-# --no-scripts: los scripts post-install (artisan) se ejecutan después de copiar el código.
-# Si composer.lock no incluye sentry (instalación local con SSL roto),
-# se actualiza solo ese paquete para que el build no falle.
+# --no-dev: sin dependencias de desarrollo en producción.
+# --no-update: respetar versiones del lock file para los paquetes existentes.
+# Si el lock está desincronizado con composer.json (p.ej. sentry añadido manualmente),
+# --no-update falla — usamos install sin lock para resolver todo desde composer.json.
 RUN composer install --no-dev --optimize-autoloader --no-interaction --no-scripts --prefer-dist \
-    && (composer show sentry/sentry-laravel > /dev/null 2>&1 || \
-        composer require sentry/sentry-laravel --no-dev --no-interaction --no-scripts --prefer-dist --update-no-dev)
+    || composer update --no-dev --optimize-autoloader --no-interaction --no-scripts --prefer-dist
 
 # Copiar el resto del código
 COPY --chown=www-data:www-data . .
