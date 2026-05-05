@@ -2,7 +2,7 @@ FROM php:8.3-fpm-alpine
 
 WORKDIR /var/www/html
 
-# Instalar dependencias del sistema y nginx
+# Instalar dependencias del sistema, nginx y PostgreSQL
 RUN apk add --no-cache \
     nginx \
     supervisor \
@@ -13,8 +13,11 @@ RUN apk add --no-cache \
     unzip \
     oniguruma-dev \
     libxml2-dev \
+    postgresql-dev \
     && docker-php-ext-install \
     pdo_mysql \
+    pdo_pgsql \
+    pgsql \
     mbstring \
     exif \
     pcntl \
