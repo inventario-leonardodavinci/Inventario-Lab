@@ -1,8 +1,9 @@
 import { NavLink } from 'react-router-dom'
-import { Beaker, Bell, FileText, FolderOpen, LayoutDashboard, MapPin, Package, Shield, User, Users, Wrench } from 'lucide-react'
+import { FileText, FolderOpen, LayoutDashboard, MapPin, Package, Shield, User, Users, Wrench } from 'lucide-react'
 import { useAuth } from '@/context/ContextoAutenticacion'
 import { GuardRol } from '@/components/auth/GuardRol'
 import { formatearRol } from '@/utils/formatters'
+import { useAlertas } from '@/hooks/queries'
 import type { Rol } from '@/types'
 import logo from '@/assets/logo.svg'
 
@@ -23,8 +24,6 @@ import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar'
 const menuItems = [
   { title: 'Panel', url: '/', icon: LayoutDashboard },
   { title: 'Artículos', url: '/articulos', icon: Package },
-  { title: 'Movimientos', url: '/movimientos', icon: Beaker },
-  { title: 'Alertas', url: '/alertas', icon: Bell },
   { title: 'Informes', url: '/informes', icon: FileText },
   { title: 'Mantenimiento', url: '/mantenimiento', icon: Wrench },
   { title: 'Ubicaciones', url: '/ubicaciones', icon: MapPin },
@@ -37,12 +36,18 @@ function iniciales(nombre: string): string {
 
 export function BarraLateralAplicacion() {
   const { user } = useAuth()
+  const { data: alertasData } = useAlertas({ estado: 'abierta' })
+  const alertasAbiertas = alertasData?.data?.length ?? 0
 
   return (
     <Sidebar>
       <SidebarHeader className="flex h-16 justify-center border-b px-4">
         <div className="flex items-center gap-2.5 font-semibold">
-          <img src={logo} alt="Logo" className="size-7 text-primary" style={{ color: 'hsl(var(--primary, 212 85% 55%))' }} />
+          <img
+            src={logo}
+            alt="Logo"
+            className="size-7 dark:invert"
+          />
           Inventario Lab
         </div>
       </SidebarHeader>
@@ -63,7 +68,13 @@ export function BarraLateralAplicacion() {
                       }
                     >
                       <item.icon />
-                      <span>{item.title}</span>
+                      <span className="flex-1">{item.title}</span>
+                      {/* Badge de alertas abiertas en el item de Artículos */}
+                      {item.url === '/articulos' && alertasAbiertas > 0 && (
+                        <span className="ml-auto flex size-5 items-center justify-center rounded-full bg-destructive text-[10px] font-bold text-destructive-foreground">
+                          {alertasAbiertas > 9 ? '9+' : alertasAbiertas}
+                        </span>
+                      )}
                     </NavLink>
                   </SidebarMenuButton>
                 </SidebarMenuItem>

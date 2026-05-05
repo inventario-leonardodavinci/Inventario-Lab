@@ -1,4 +1,9 @@
+/**
+ * Página unificada: Artículos + Movimientos + Alertas
+ */
 import { useState } from 'react'
+import { useForm, Controller } from 'react-hook-form'
+import { zodResolver } from '@hookform/resolvers/zod'
 import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
@@ -10,15 +15,24 @@ import { Label } from '@/components/ui/label'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table'
 import { Separator } from '@/components/ui/separator'
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
 import { GuardRol } from '@/components/auth/GuardRol'
+import { useAuth } from '@/context/ContextoAutenticacion'
 import {
   useArticulos, useCategorias, useUbicaciones,
   useCrearArticulo, useActualizarArticulo, useDesactivarArticulo,
+  useMovimientos, useCrearMovimiento,
+  useAlertas, useConfirmarAlerta, useResolverAlerta,
 } from '@/hooks/queries'
 import { Pencil, Trash2, Search } from 'lucide-react'
 import { toast } from 'sonner'
-import type { Articulo } from '@/types'
-import { SkeletonArticulos } from '@/components/ui/PageSkeleton'
+import type { Articulo, TipoMovimiento, TipoAlerta, Severidad, EstadoAlerta } from '@/types'
+import { SkeletonArticulos, SkeletonMovimientos, SkeletonAlertas } from '@/components/ui/PageSkeleton'
+import {
+  formatearTipoMovimiento, formatearFechaHora,
+  formatearTipoAlerta, formatearSeveridad, formatearEstadoAlerta, formatearFechaRelativa,
+} from '@/utils/formatters'
+import { esquemaMovimiento, type EntradaMovimientoForm } from '@/schemas'
 
 type FiltroActivo = 'todos' | 'activo' | 'inactivo'
 
@@ -67,7 +81,25 @@ function articuloAForm(a: Articulo): FormArticulo {
   }
 }
 
-export default function Articulos() {
+// ─── Helpers alertas ─────────────────────────────────────────────────────────
+
+type FiltroTipoAlerta = TipoAlerta | 'todos'
+type FiltroSeveridad = Severidad | 'todas'
+type FiltroEstado = EstadoAlerta | 'todos'
+type FiltroTipoMov = TipoMovimiento | 'todos'
+
+function varianteSeveridad(sev: Severidad): 'secondary' | 'outline' | 'default' | 'destructive' {
+  switch (sev) {
+    case 'baja': return 'secondary'
+    case 'media': return 'outline'
+    case 'alta': return 'default'
+    case 'critica': return 'destructive'
+  }
+}
+
+// ─── Tab Artículos ────────────────────────────────────────────────────────────
+
+function TabArticulos() {
   const [search, setSearch] = useState('')
   const [searchActivo, setSearchActivo] = useState('')
   const [filtroActivo, setFiltroActivo] = useState<FiltroActivo>('todos')
@@ -164,7 +196,7 @@ export default function Articulos() {
   const isPending = crearMutation.isPending || actualizarMutation.isPending
 
   return (
-    <main className="flex flex-1 flex-col gap-6 bg-muted/20 p-4 lg:p-6">
+    <div className="flex flex-col gap-6">
       <div className="flex flex-col items-start justify-between gap-4 md:flex-row md:items-center">
         <div className="flex flex-col gap-1">
           <h2 className="text-2xl font-semibold tracking-tight">Artículos</h2>
@@ -386,6 +418,425 @@ export default function Articulos() {
           </DialogFooter>
         </DialogContent>
       </Dialog>
+    </div>
+  )
+}
+
+// ─── Tab Movimientos ──────────────────────────────────────────────────────────
+
+function TabMovimientos() {
+  const { user } = useAuth()
+  const {
+    control, register, handleSubmit, watch, reset,
+    formState: { errors, isSubmitting },
+  } = useForm<EntradaMovimientoForm>({
+    resolver: zodResolver(esquemaMovimiento),
+    defaultValues: { tipo: 'entrada', articulo_id: '', cantidad: 1 },
+  })
+
+  const tipoActual = watch('tipo')
+  const mostrarOrigen = tipoActual === 'salida' || tipoActual === 'traslado'
+  const mostrarDestino = tipoActual === 'entrada' || tipoActual === 'traslado'
+
+  const [filtroTipo, setFiltroTipo] = useState<FiltroTipoMov>('todos')
+  const filtros = filtroTipo !== 'todos' ? { tipo: filtroTipo } : undefined
+
+  const { data, isFetching, isLoading, refetch } = useMovimientos(filtros)
+  const { data: ubicacionesData } = useUbicaciones()
+  const { data: articulosData } = useArticulos({ activo: true })
+  const rows = data?.data ?? []
+  const ubicaciones = ubicacionesData?.data ?? []
+  const articulos = articulosData?.data ?? []
+  const crearMutation = useCrearMovimiento()
+
+  if (isLoading) return <SkeletonMovimientos />
+
+  const onSubmit = async (valores: EntradaMovimientoForm) => {
+    try {
+      await crearMutation.mutateAsync({
+        tipo: valores.tipo,
+        motivo: valores.motivo || undefined,
+        ubicacion_origen_id: valores.ubicacion_origen_id ? Number(valores.ubicacion_origen_id) : undefined,
+        ubicacion_destino_id: valores.ubicacion_destino_id ? Number(valores.ubicacion_destino_id) : undefined,
+        lineas: [{ articulo_id: Number(valores.articulo_id), cantidad: valores.cantidad }],
+      })
+      toast.success('Movimiento guardado')
+      reset({ tipo: valores.tipo, articulo_id: '', cantidad: 1, motivo: '', ubicacion_origen_id: '', ubicacion_destino_id: '' })
+    } catch (error) {
+      toast.error(error instanceof Error ? error.message : 'No se pudo guardar')
+    }
+  }
+
+  return (
+    <div className="flex flex-col gap-6">
+      <Card>
+        <CardHeader>
+          <CardTitle>Registrar nuevo movimiento</CardTitle>
+          <CardDescription>Completa los datos para mantener trazabilidad y auditoría.</CardDescription>
+        </CardHeader>
+        <CardContent>
+          <form onSubmit={handleSubmit(onSubmit)} className="grid gap-4 md:grid-cols-2">
+            <div className="flex flex-col gap-2">
+              <Label>Tipo de movimiento</Label>
+              <Controller name="tipo" control={control} render={({ field }) => (
+                <Select value={field.value} onValueChange={field.onChange}>
+                  <SelectTrigger><SelectValue /></SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="entrada">Entrada</SelectItem>
+                    <SelectItem value="salida">Salida</SelectItem>
+                    <SelectItem value="traslado">Traslado</SelectItem>
+                    <SelectItem value="ajuste">Ajuste</SelectItem>
+                  </SelectContent>
+                </Select>
+              )} />
+            </div>
+            <div className="flex flex-col gap-2">
+              <Label>Artículo</Label>
+              <Controller name="articulo_id" control={control} render={({ field }) => (
+                <Select value={field.value} onValueChange={field.onChange}>
+                  <SelectTrigger aria-invalid={!!errors.articulo_id}><SelectValue placeholder="Seleccionar artículo" /></SelectTrigger>
+                  <SelectContent>
+                    {articulos.map((a) => (
+                      <SelectItem key={a.id} value={String(a.id)}>
+                        {a.nombre}{a.codigo ? ` (${a.codigo})` : ''}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              )} />
+              {errors.articulo_id && <p className="text-xs text-destructive">{errors.articulo_id.message}</p>}
+            </div>
+            <div className="flex flex-col gap-2">
+              <Label>Cantidad</Label>
+              <Input type="number" min="1" placeholder="Ej. 24" aria-invalid={!!errors.cantidad}
+                {...register('cantidad', { valueAsNumber: true })} />
+              {errors.cantidad && <p className="text-xs text-destructive">{errors.cantidad.message}</p>}
+            </div>
+            <div className="flex flex-col gap-2">
+              <Label>Responsable</Label>
+              <Input value={user?.displayName ?? '-'} disabled />
+            </div>
+            {mostrarOrigen && (
+              <div className="flex flex-col gap-2">
+                <Label>Ubicación origen</Label>
+                <Controller name="ubicacion_origen_id" control={control} render={({ field }) => (
+                  <Select value={field.value ?? ''} onValueChange={field.onChange}>
+                    <SelectTrigger><SelectValue placeholder="Seleccionar origen" /></SelectTrigger>
+                    <SelectContent>
+                      {ubicaciones.map((ub) => <SelectItem key={ub.id} value={String(ub.id)}>{ub.nombre}</SelectItem>)}
+                    </SelectContent>
+                  </Select>
+                )} />
+              </div>
+            )}
+            {mostrarDestino && (
+              <div className="flex flex-col gap-2">
+                <Label>Ubicación destino</Label>
+                <Controller name="ubicacion_destino_id" control={control} render={({ field }) => (
+                  <Select value={field.value ?? ''} onValueChange={field.onChange}>
+                    <SelectTrigger><SelectValue placeholder="Seleccionar destino" /></SelectTrigger>
+                    <SelectContent>
+                      {ubicaciones.map((ub) => <SelectItem key={ub.id} value={String(ub.id)}>{ub.nombre}</SelectItem>)}
+                    </SelectContent>
+                  </Select>
+                )} />
+              </div>
+            )}
+            <div className="flex flex-col gap-2 md:col-span-2">
+              <Label>Observaciones</Label>
+              <Input placeholder="Lote, motivo, destino, etc." {...register('motivo')} />
+            </div>
+            <div className="flex justify-end gap-2 md:col-span-2">
+              <Button type="button" variant="outline" onClick={() => void refetch()} disabled={isFetching}>
+                {isFetching ? 'Cargando...' : 'Refrescar'}
+              </Button>
+              <Button type="submit" disabled={isSubmitting || crearMutation.isPending}>
+                {isSubmitting || crearMutation.isPending ? 'Guardando...' : 'Guardar movimiento'}
+              </Button>
+            </div>
+          </form>
+        </CardContent>
+      </Card>
+
+      <Card>
+        <CardHeader className="flex flex-col gap-3 md:flex-row md:items-center md:justify-between">
+          <div>
+            <CardTitle>Historial de movimientos</CardTitle>
+            <CardDescription>Registro completo de movimientos del inventario.</CardDescription>
+          </div>
+          <div className="flex items-center gap-2">
+            <Label className="shrink-0 text-sm">Filtrar:</Label>
+            <Select value={filtroTipo} onValueChange={(v) => setFiltroTipo(v as FiltroTipoMov)}>
+              <SelectTrigger className="w-[150px]"><SelectValue /></SelectTrigger>
+              <SelectContent>
+                <SelectItem value="todos">Todos</SelectItem>
+                <SelectItem value="entrada">Entrada</SelectItem>
+                <SelectItem value="salida">Salida</SelectItem>
+                <SelectItem value="traslado">Traslado</SelectItem>
+                <SelectItem value="ajuste">Ajuste</SelectItem>
+              </SelectContent>
+            </Select>
+          </div>
+        </CardHeader>
+        <CardContent>
+          <Table>
+            <TableHeader>
+              <TableRow>
+                <TableHead>ID</TableHead>
+                <TableHead>Tipo</TableHead>
+                <TableHead>Artículo</TableHead>
+                <TableHead>Cantidad</TableHead>
+                <TableHead>Origen</TableHead>
+                <TableHead>Destino</TableHead>
+                <TableHead>Responsable</TableHead>
+                <TableHead>Fecha</TableHead>
+              </TableRow>
+            </TableHeader>
+            <TableBody>
+              {rows.length === 0 && (
+                <TableRow>
+                  <TableCell colSpan={8} className="text-center text-muted-foreground py-8">
+                    No hay movimientos registrados.
+                  </TableCell>
+                </TableRow>
+              )}
+              {rows.map((row) => {
+                const origenNombre = row.ubicacion_origen_id
+                  ? (ubicaciones.find((u) => u.id === row.ubicacion_origen_id)?.nombre ?? `#${row.ubicacion_origen_id}`)
+                  : '-'
+                const destinoNombre = row.ubicacion_destino_id
+                  ? (ubicaciones.find((u) => u.id === row.ubicacion_destino_id)?.nombre ?? `#${row.ubicacion_destino_id}`)
+                  : '-'
+                return (
+                  <TableRow key={row.id}>
+                    <TableCell className="font-medium">MOV-{row.id}</TableCell>
+                    <TableCell>
+                      <Badge variant={row.tipo === 'salida' ? 'destructive' : 'secondary'}>
+                        {formatearTipoMovimiento(row.tipo)}
+                      </Badge>
+                    </TableCell>
+                    <TableCell>{row.lineas?.[0]?.articulo ?? row.lineas?.[0]?.articulo_id ?? '-'}</TableCell>
+                    <TableCell>{row.lineas?.[0]?.cantidad ?? '-'}</TableCell>
+                    <TableCell className="text-muted-foreground">{origenNombre}</TableCell>
+                    <TableCell className="text-muted-foreground">{destinoNombre}</TableCell>
+                    <TableCell>{row.usuario?.nombre_visible ?? '-'}</TableCell>
+                    <TableCell>{formatearFechaHora(row.created_at)}</TableCell>
+                  </TableRow>
+                )
+              })}
+            </TableBody>
+          </Table>
+        </CardContent>
+      </Card>
+    </div>
+  )
+}
+
+// ─── Tab Alertas ──────────────────────────────────────────────────────────────
+
+function TabAlertas() {
+  const [filtroTipo, setFiltroTipo] = useState<FiltroTipoAlerta>('todos')
+  const [filtroSeveridad, setFiltroSeveridad] = useState<FiltroSeveridad>('todas')
+  const [filtroEstado, setFiltroEstado] = useState<FiltroEstado>('todos')
+
+  const filtros = {
+    ...(filtroTipo !== 'todos' ? { tipo: filtroTipo } : {}),
+    ...(filtroSeveridad !== 'todas' ? { severidad: filtroSeveridad } : {}),
+    ...(filtroEstado !== 'todos' ? { estado: filtroEstado } : {}),
+  }
+
+  const { data, isLoading } = useAlertas(filtros)
+  const confirmarMutation = useConfirmarAlerta()
+  const resolverMutation = useResolverAlerta()
+  const alertas = data?.data ?? []
+
+  if (isLoading) return <SkeletonAlertas />
+
+  const onConfirmar = async (id: number) => {
+    try {
+      await confirmarMutation.mutateAsync(id)
+      toast.success('Alerta confirmada')
+    } catch (error) {
+      toast.error(error instanceof Error ? error.message : 'No se pudo confirmar la alerta')
+    }
+  }
+
+  const onResolver = async (id: number) => {
+    try {
+      await resolverMutation.mutateAsync(id)
+      toast.success('Alerta resuelta')
+    } catch (error) {
+      toast.error(error instanceof Error ? error.message : 'No se pudo resolver la alerta')
+    }
+  }
+
+  return (
+    <div className="flex flex-col gap-6">
+      <Card>
+        <CardHeader>
+          <CardTitle>Filtros</CardTitle>
+          <CardDescription>Filtra las alertas por tipo, severidad y estado.</CardDescription>
+        </CardHeader>
+        <CardContent className="flex flex-wrap gap-4">
+          <div className="flex flex-col gap-2">
+            <Label>Tipo</Label>
+            <Select value={filtroTipo} onValueChange={(v) => setFiltroTipo(v as FiltroTipoAlerta)}>
+              <SelectTrigger className="w-[170px]"><SelectValue /></SelectTrigger>
+              <SelectContent>
+                <SelectItem value="todos">Todos</SelectItem>
+                <SelectItem value="stock_bajo">Stock bajo</SelectItem>
+                <SelectItem value="caducidad">Caducidad</SelectItem>
+                <SelectItem value="mantenimiento">Mantenimiento</SelectItem>
+                <SelectItem value="inactividad">Inactividad</SelectItem>
+              </SelectContent>
+            </Select>
+          </div>
+          <div className="flex flex-col gap-2">
+            <Label>Severidad</Label>
+            <Select value={filtroSeveridad} onValueChange={(v) => setFiltroSeveridad(v as FiltroSeveridad)}>
+              <SelectTrigger className="w-[150px]"><SelectValue /></SelectTrigger>
+              <SelectContent>
+                <SelectItem value="todas">Todas</SelectItem>
+                <SelectItem value="baja">Baja</SelectItem>
+                <SelectItem value="media">Media</SelectItem>
+                <SelectItem value="alta">Alta</SelectItem>
+                <SelectItem value="critica">Crítica</SelectItem>
+              </SelectContent>
+            </Select>
+          </div>
+          <div className="flex flex-col gap-2">
+            <Label>Estado</Label>
+            <Select value={filtroEstado} onValueChange={(v) => setFiltroEstado(v as FiltroEstado)}>
+              <SelectTrigger className="w-[150px]"><SelectValue /></SelectTrigger>
+              <SelectContent>
+                <SelectItem value="todos">Todos</SelectItem>
+                <SelectItem value="abierta">Abierta</SelectItem>
+                <SelectItem value="confirmada">Confirmada</SelectItem>
+                <SelectItem value="resuelta">Resuelta</SelectItem>
+                <SelectItem value="ignorada">Ignorada</SelectItem>
+              </SelectContent>
+            </Select>
+          </div>
+        </CardContent>
+      </Card>
+
+      <Card>
+        <CardHeader>
+          <CardTitle>Listado de alertas</CardTitle>
+          <CardDescription>{alertas.length} alerta{alertas.length !== 1 ? 's' : ''}</CardDescription>
+        </CardHeader>
+        <CardContent>
+          <Table>
+            <TableHeader>
+              <TableRow>
+                <TableHead>Artículo afectado</TableHead>
+                <TableHead>Tipo</TableHead>
+                <TableHead>Severidad</TableHead>
+                <TableHead>Estado</TableHead>
+                <TableHead>Generada</TableHead>
+                <GuardRol roles={['administrador', 'profesor']}>
+                  <TableHead className="text-right">Acciones</TableHead>
+                </GuardRol>
+              </TableRow>
+            </TableHeader>
+            <TableBody>
+              {alertas.length === 0 && (
+                <TableRow>
+                  <TableCell colSpan={6} className="text-center text-muted-foreground py-8">
+                    No hay alertas con los filtros seleccionados.
+                  </TableCell>
+                </TableRow>
+              )}
+              {alertas.map((alerta) => (
+                <TableRow key={alerta.id}>
+                  <TableCell className="font-medium">{alerta.articulo?.nombre ?? '-'}</TableCell>
+                  <TableCell>{formatearTipoAlerta(alerta.tipo)}</TableCell>
+                  <TableCell>
+                    <Badge variant={varianteSeveridad(alerta.severidad)}>
+                      {formatearSeveridad(alerta.severidad)}
+                    </Badge>
+                  </TableCell>
+                  <TableCell>
+                    <Badge variant="outline">{formatearEstadoAlerta(alerta.estado)}</Badge>
+                  </TableCell>
+                  <TableCell className="text-muted-foreground">
+                    {formatearFechaRelativa(alerta.generada_en)}
+                  </TableCell>
+                  <GuardRol roles={['administrador', 'profesor']}>
+                    <TableCell className="text-right">
+                      <div className="flex justify-end gap-2">
+                        {alerta.estado === 'abierta' && (
+                          <Button variant="outline" size="sm"
+                            onClick={() => void onConfirmar(alerta.id)}
+                            disabled={confirmarMutation.isPending}>
+                            Confirmar
+                          </Button>
+                        )}
+                        {alerta.estado === 'confirmada' && (
+                          <Button variant="outline" size="sm"
+                            onClick={() => void onResolver(alerta.id)}
+                            disabled={resolverMutation.isPending}>
+                            Resolver
+                          </Button>
+                        )}
+                      </div>
+                    </TableCell>
+                  </GuardRol>
+                </TableRow>
+              ))}
+            </TableBody>
+          </Table>
+        </CardContent>
+      </Card>
+    </div>
+  )
+}
+
+// ─── Página principal con tabs ────────────────────────────────────────────────
+
+export default function Articulos() {
+  const { data: alertasData } = useAlertas({ estado: 'abierta' })
+  const alertasAbiertas = alertasData?.data?.length ?? 0
+
+  return (
+    <main className="flex flex-1 flex-col gap-6 bg-muted/20 p-4 lg:p-6">
+      <div className="flex flex-col gap-1">
+        <h2 className="text-2xl font-semibold tracking-tight">Inventario</h2>
+        <p className="text-sm text-muted-foreground">
+          Artículos, movimientos de stock y alertas del laboratorio.
+        </p>
+      </div>
+
+      <Tabs defaultValue="articulos" className="flex flex-col gap-4">
+        <TabsList className="w-full sm:w-auto">
+          <TabsTrigger value="articulos" className="flex-1 sm:flex-none gap-1.5">
+            Artículos
+          </TabsTrigger>
+          <TabsTrigger value="movimientos" className="flex-1 sm:flex-none gap-1.5">
+            Movimientos
+          </TabsTrigger>
+          <TabsTrigger value="alertas" className="flex-1 sm:flex-none gap-1.5 relative">
+            Alertas
+            {alertasAbiertas > 0 && (
+              <span className="ml-1 flex size-4 items-center justify-center rounded-full bg-destructive text-[9px] font-bold text-destructive-foreground">
+                {alertasAbiertas > 9 ? '9+' : alertasAbiertas}
+              </span>
+            )}
+          </TabsTrigger>
+        </TabsList>
+
+        <TabsContent value="articulos">
+          <TabArticulos />
+        </TabsContent>
+
+        <TabsContent value="movimientos">
+          <TabMovimientos />
+        </TabsContent>
+
+        <TabsContent value="alertas">
+          <TabAlertas />
+        </TabsContent>
+      </Tabs>
     </main>
   )
 }
