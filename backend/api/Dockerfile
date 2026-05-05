@@ -1,27 +1,58 @@
-FROM serversideup/php:8.3-fpm-nginx
+FROM php:8.3-fpm-alpine
 
 WORKDIR /var/www/html
 
-# Copiar manifiestos de dependencias
-COPY --chown=www-data:www-data composer.json composer.lock ./
+# Instalar dependencias del sistema y nginx
+RUN apk add --no-cache \
+    nginx \
+    supervisor \
+    curl \
+    libpng-dev \
+    libzip-dev \
+    zip \
+    unzip \
+    oniguruma-dev \
+    libxml2-dev \
+    && docker-php-ext-install \
+    pdo_mysql \
+    mbstring \
+    exif \
+    pcntl \
+    bcmath \
+    gd \
+    zip \
+    opcache
 
-# Instalar dependencias PHP.
-# --no-dev: sin dependencias de desarrollo en producción.
-# --no-update: respetar versiones del lock file para los paquetes existentes.
-# Si el lock está desincronizado con composer.json (p.ej. sentry añadido manualmente),
-# --no-update falla — usamos install sin lock para resolver todo desde composer.json.
+# Instalar Composer
+COPY --from=composer:latest /usr/bin/composer /usr/bin/composer
+
+# Copiar configuración de nginx
+COPY docker/nginx.conf /etc/nginx/nginx.conf
+COPY docker/php-fpm.conf /usr/local/etc/php-fpm.d/www.conf
+
+# Copiar manifiestos de dependencias
+COPY composer.json composer.lock ./
+
+# Instalar dependencias PHP
 RUN composer install --no-dev --optimize-autoloader --no-interaction --no-scripts --prefer-dist \
     || composer update --no-dev --optimize-autoloader --no-interaction --no-scripts --prefer-dist
 
 # Copiar el resto del código
-COPY --chown=www-data:www-data . .
+COPY . .
 
-# Regenerar autoload con el código real y descubrir paquetes (incluido Sentry)
+# Regenerar autoload
 RUN composer dump-autoload --optimize --classmap-authoritative \
     && php artisan package:discover --ansi
 
-# Script de inicio: ejecuta migraciones antes de arrancar servicios (s6-overlay)
-COPY --chown=www-data:www-data docker-entrypoint.sh /etc/cont-init.d/99-laravel-migrations
-RUN chmod +x /etc/cont-init.d/99-laravel-migrations
+# Configurar permisos
+RUN chown -R www-data:www-data /var/www/html \
+    && chmod -R 755 /var/www/html/storage \
+    && chmod -R 755 /var/www/html/bootstrap/cache
 
-# Usar el CMD por defecto de la imagen (inicia nginx + php-fpm via s6-overlay)
+# Script de inicio
+COPY docker/start.sh /start.sh
+RUN chmod +x /start.sh
+
+EXPOSE 80
+
+CMD ["/start.sh"]
