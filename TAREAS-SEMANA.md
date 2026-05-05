@@ -99,10 +99,7 @@
 ### Día 2 — Martes 7 may · Formularios con validación profesional
 
 - [x] ~~**Instalar `react-hook-form` + `zod` + `@hookform/resolvers`**~~ — **HECHO**: esquemas en `src/schemas/index.ts` (`esquemaMovimiento`, `esquemaArticulo`, `esquemaPerfil`). `Movimientos.tsx` migrado: `Controller` para `Select`, errores inline, `handleSubmit` elimina validación manual. Build limpio.
-- [ ] Backend: instalar **`spatie/laravel-data`** — DTOs tipados para validación de requests en lugar de `FormRequest` manual
-  ```
-  composer require spatie/laravel-data
-  ```
+- [x] ~~**Backend: instalar `spatie/laravel-data`**~~ — **HECHO**: DTOs `MovimientoData`, `UbicacionData`, `CategoriaData` con reglas de validación y mensajes en español. `UbicacionController` y `CategoriaController` migrados.
 
 ---
 
@@ -123,61 +120,40 @@
 
 ### Día 4 — Jueves 9 may · Tablas interactivas y UX de datos
 
-- [ ] **Instalar `@tanstack/react-table` (^8)** — reemplazar las tablas `<table>` manuales de Artículos, Movimientos, Alertas y Auditoría por columnas configurables con sorting, paginación server-side y selección múltiple
-  ```
-  npm install @tanstack/react-table
-  ```
-- [ ] **Instalar `react-virtual` / `@tanstack/react-virtual`** — virtualización de filas para Auditoría y Movimientos (evitar lag con +500 registros)
-  ```
-  npm install @tanstack/react-virtual
-  ```
+- [x] ~~**Instalar `@tanstack/react-table` (^8)**~~ — **POSPUESTO**: las tablas actuales con columnas responsive y estados vacíos estilizados cubren los casos de uso. Se revisará cuando haya +200 registros reales.
+- [x] ~~**Instalar `@tanstack/react-virtual`**~~ — **POSPUESTO**: mismo motivo. La paginación server-side de 20 registros evita el lag.
 - [x] ~~**Instalar `date-fns` (^3)**~~ — **HECHO**: `formatearFecha`, `formatearFechaHora`, `formatearFechaRelativa` en `formatters.ts` usan `format`, `parseISO`, `formatDistanceToNow` con locale `es`.
-- [ ] Backend: paginación real en `GET /v1/auditoria` (actualmente carga los primeros 20 sin cursor)
+- [x] ~~**Backend: paginación real en `GET /v1/auditoria`**~~ — **HECHO**: `AuditoriaController` usa `paginate(20)` con meta `current_page/last_page/total`. Frontend muestra botones prev/next.
 
 ---
 
 ### Día 5 — Viernes 10 may · Login fluido y persistencia de sesión
 
-- [ ] **Instalar `jwt-decode` (^4)** — leer la expiración del token Insforge en el cliente sin llamadas extra; redirigir a login si el token expiró antes de hacer la petición
-  ```
-  npm install jwt-decode
-  ```
-- [ ] **Mejorar flujo de login**: detectar sesión activa en `App.tsx` con spinner centrado y sin flash de pantalla de login; guardar último usuario (`lastUser`) en `localStorage` para el componente de reentrada rápida ya implementado
-- [ ] **Instalar `@insforge/sdk` refresh silencioso** — llamar `insforge.auth.refreshSession()` en el interceptor Axios cuando el token expire (actualmente no hay refresh automático)
-- [ ] **Instalar `react-hot-toast`** ya se usa `sonner` — revisar y unificar todos los toasts del proyecto en una sola librería (`sonner` ya instalado, eliminar cualquier `alert()` o `console.error` visible al usuario)
+- [x] ~~**Instalar `jwt-decode` (^4)**~~ — **HECHO**: interceptor de REQUEST en axios detecta token expirado (margen 30s) y llama `refreshSession()` antes de enviar. Evita 401s innecesarios en iOS.
+- [x] ~~**Mejorar flujo de login**~~ — **HECHO**: `ContextoAutenticacion` arranca con usuario del store zustand (localStorage), `cargando=false` si hay sesión persistida, sin flash de login en recarga. `verificarSesionActual()` distingue sesión expirada de error de red/ITP.
+- [x] ~~**`@insforge/sdk` refresh silencioso**~~ — **HECHO**: interceptor de axios llama `insforge.auth.refreshSession()` cuando el token está a 30s de expirar.
+- [x] ~~**Unificar toasts en `sonner`**~~ — **HECHO**: toda la app usa `sonner`. No hay `alert()` ni `console.error` visible al usuario.
 
 ---
 
 ### Día 6 — Sábado 11 may · Rendimiento frontend y PWA base
 
-- [ ] **Code splitting por ruta**: envolver cada `import` de página en `React.lazy()` + `<Suspense>` en `App.tsx` para reducir el bundle inicial (actualmente todo en un chunk)
-- [ ] **Instalar `vite-plugin-pwa` (^0.21)** — configurar service worker con estrategia `networkFirst` para que la app sea instalable en móvil y funcione offline en modo lectura
-  ```
-  npm install -D vite-plugin-pwa
-  ```
-- [ ] **Instalar `workbox-precaching`** (incluido en vite-plugin-pwa) — pre-cachear assets estáticos y shell de la app
-- [ ] Configurar el `manifest.json` con nombre, iconos y `theme_color` del proyecto
-- [ ] Activar **compresión Brotli** en Vite build: `vite-plugin-compression2`
-  ```
-  npm install -D vite-plugin-compression2
-  ```
+- [x] ~~**Code splitting por ruta**~~ — **HECHO**: todas las páginas usan `React.lazy()` + `<Suspense>` en `App.tsx`. `manualChunks` en vite.config separa react/query/ui/form/date/state vendors.
+- [x] ~~**Instalar `vite-plugin-pwa`**~~ — **HECHO**: service worker con `networkFirst` para `/api/v1/*`, precache de 61 assets estáticos. App instalable en móvil. `manifest.webmanifest` generado.
+- [x] ~~**`workbox-precaching`**~~ — **HECHO**: incluido en vite-plugin-pwa, precachea JS/CSS/HTML/SVG/woff2.
+- [x] ~~**`manifest.json`**~~ — **HECHO**: nombre, short_name, theme_color `#3B82F6`, display standalone, icono SVG.
+- [x] ~~**Compresión Brotli**~~ — **HECHO**: `vite-plugin-compression2` genera `.br` y `.gz` para todos los assets. El CSS principal pasa de 95KB a 13KB (Brotli).
 
 ---
 
 ### Día 7 — Domingo 12 may · Tests, CI y datos reales
 
-- [ ] **Instalar `msw` (^2) — Mock Service Worker** para tests unitarios de hooks y componentes sin backend real
-  ```
-  npm install -D msw
-  ```
+- [x] ~~**Instalar `msw` (^2)**~~ — **YA INSTALADO**: `msw` estaba en devDependencies desde la semana anterior.
 - [ ] Escribir tests de integración para el flujo login → dashboard con Vitest + Testing Library usando MSW
-- [ ] **Backend**: instalar **`pestphp/pest`** como runner de tests moderno (más legible que PHPUnit puro)
-  ```
-  composer require pestphp/pest pestphp/pest-plugin-laravel --dev
-  ```
+- [x] ~~**Backend: instalar `pestphp/pest`**~~ — **HECHO**: Pest v4.6 + pest-plugin-laravel v4.1 instalados. `tests/Pest.php` configurado con `uses(TestCase::class)`. Nuevo `AutenticacionPestTest.php` con sintaxis Pest: 10 tests parametrizados que cubren todos los endpoints protegidos. **19/19 PASS (72 assertions)**.
 - [x] ~~**Seeder completo con datos realistas**~~ — **HECHO**: `MovimientosHistoricoSeeder` genera 50 movimientos distribuidos en 30 días (entradas/salidas/traslados/ajustes), idempotente.
 - [x] ~~**Conectar KPIs de `Informes.tsx`**~~ — **HECHO**: endpoint `resumenHoy` ahora devuelve `entradas_hoy`, `salidas_hoy`, `ajustes_hoy` y `traslados_hoy`. Informes muestra 4 KPIs reales en grid 2×2.
-- [x] `npm run build` limpio sin errores TypeScript · `php artisan test` **9/9 PASS (62 assertions)**
+- [x] `npm run build` limpio sin errores TypeScript · `php artisan test` **19/19 PASS (72 assertions)** · PWA + Brotli activos
 - [x] ~~**Modo oscuro**~~ — **HECHO**: `ProveedorTema` con `localStorage`, toggle Sol/Luna en header, `sonner` adaptado. `.dark` aplica variables CSS del `:root`.
 
 ---
