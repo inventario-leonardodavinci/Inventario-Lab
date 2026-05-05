@@ -1,4 +1,5 @@
 import { insforge } from "./insforgeClient";
+import { apiClient } from "./clienteApi";
 
 export type CredencialesLogin = {
   email: string;
@@ -259,25 +260,18 @@ export async function logoutDeInsforge(): Promise<void> {
   await insforge.auth.signOut();
 }
 
-// Sincroniza el nombre visible del usuario con el backend Laravel
+// Sincroniza el nombre visible del usuario con el backend Laravel.
+// También envía X-Auth-User-Name para que el alta automática use el nombre real
+// en lugar de 'Usuario' (necesario en flujo OAuth Google/Apple).
 export async function sincronizarPerfil(authUserId: string, displayName: string): Promise<void> {
-  const baseUrl = import.meta.env.VITE_API_BASE_URL as string;
-  const controller = new AbortController();
-  const timeout = setTimeout(() => controller.abort(), 5000);
   try {
-    await fetch(`${baseUrl}/perfil`, {
-      method: "PATCH",
-      headers: {
-        "Content-Type": "application/json",
-        "X-Auth-User-Id": authUserId,
-      },
-      body: JSON.stringify({ nombre_visible: displayName }),
-      signal: controller.signal,
-    });
+    await apiClient(
+      "/perfil",
+      { method: "PATCH", body: JSON.stringify({ nombre_visible: displayName }) },
+      { authUserId, authUserName: displayName },
+    );
   } catch {
-    // Silencioso
-  } finally {
-    clearTimeout(timeout);
+    // Silencioso: no bloquear el login si falla la sincronización
   }
 }
 
@@ -289,8 +283,8 @@ export async function obtenerRolDesdeBackend(authUserId: string): Promise<Sesion
       headers: { "X-Auth-User-Id": authUserId },
     });
     if (!res.ok) return null;
-    const data = await res.json() as { roles?: { name: string }[] };
-    const primerRol = data.roles?.[0]?.name;
+    const json = await res.json() as { data?: { roles?: { name: string }[] } };
+    const primerRol = json.data?.roles?.[0]?.name;
     return (primerRol as SesionUsuario["role"]) ?? null;
   } catch {
     return null;
