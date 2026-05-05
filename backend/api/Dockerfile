@@ -20,8 +20,8 @@ COPY --chown=www-data:www-data . .
 RUN composer dump-autoload --optimize --classmap-authoritative \
     && php artisan package:discover --ansi
 
-# Script de arranque: ejecuta migraciones y luego inicia el servidor
-COPY --chown=www-data:www-data docker-entrypoint.sh /usr/local/bin/docker-entrypoint.sh
-RUN chmod +x /usr/local/bin/docker-entrypoint.sh
+# Script de inicio: ejecuta migraciones antes de arrancar servicios (s6-overlay)
+COPY --chown=www-data:www-data docker-entrypoint.sh /etc/cont-init.d/99-laravel-migrations
+RUN chmod +x /etc/cont-init.d/99-laravel-migrations
 
-CMD ["/usr/local/bin/docker-entrypoint.sh"]
+# Usar el CMD por defecto de la imagen (inicia nginx + php-fpm via s6-overlay)

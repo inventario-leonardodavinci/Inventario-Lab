@@ -1,14 +1,16 @@
 #!/bin/sh
 set -e
 
-# Ejecutar migraciones en cada arranque (no bloqueante para evitar que falle el healthcheck)
-php artisan migrate --force --no-interaction || echo "Migrations failed, continuing anyway..."
+# Script de inicialización para s6-overlay (ejecutado antes de nginx/php-fpm)
+# Ver: https://github.com/serversideup/docker-php
 
-# Limpiar caché de config por si las variables de entorno cambiaron
-php artisan config:clear || true
+echo "Running Laravel migrations..."
+php artisan migrate --force --no-interaction || echo "Migrations skipped (DB may not be ready yet)"
+
+echo "Caching Laravel config/routes/views..."
+php artisan config:clear 2>/dev/null || true
 php artisan config:cache || true
 php artisan route:cache || true
 php artisan view:cache || true
 
-# Arrancar el servidor (nginx + php-fpm via serversideup/php)
-exec /init
+echo "Laravel initialization complete."
