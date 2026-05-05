@@ -114,6 +114,9 @@ class MovimientoService
         if ($destinoId === null) {
             throw new RuntimeException('Se requiere ubicación destino para un ajuste.');
         }
+        if ($cantidad < 0) {
+            throw new RuntimeException('La cantidad de stock no puede ser negativa.');
+        }
         $this->establecerStock($articuloId, $destinoId, $cantidad);
     }
 
@@ -123,13 +126,23 @@ class MovimientoService
      */
     public function incrementarStock(int $articuloId, int $ubicacionId, float $cantidad): void
     {
-        $stock = NivelStock::query()->firstOrCreate(
-            ['articulo_id' => $articuloId, 'ubicacion_id' => $ubicacionId],
-            ['cantidad' => 0, 'cantidad_minima' => 0]
-        );
+        $stock = NivelStock::query()
+            ->lockForUpdate()
+            ->where('articulo_id', $articuloId)
+            ->where('ubicacion_id', $ubicacionId)
+            ->first();
 
-        $stock->cantidad = (float) $stock->cantidad + $cantidad;
-        $stock->save();
+        if ($stock) {
+            $stock->cantidad = (float) $stock->cantidad + $cantidad;
+            $stock->save();
+        } else {
+            NivelStock::query()->create([
+                'articulo_id'     => $articuloId,
+                'ubicacion_id'    => $ubicacionId,
+                'cantidad'        => $cantidad,
+                'cantidad_minima' => 0,
+            ]);
+        }
     }
 
     /**
