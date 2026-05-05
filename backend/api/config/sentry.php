@@ -17,12 +17,6 @@ return [
     // 0.1 = 10% de las peticiones. Subir en staging si se necesita más detalle.
     'traces_sample_rate' => (float) env('SENTRY_TRACES_SAMPLE_RATE', 0.1),
 
-    // Capturar queries SQL lentas (umbral en milisegundos).
-    'slow_queries' => [
-        'enabled' => true,
-        'threshold' => env('SENTRY_SLOW_QUERY_THRESHOLD_MS', 1000),
-    ],
-
     // No enviar excepciones de estos tipos a Sentry.
     // ValidationException y AuthorizationException son ruido esperado.
     'ignore_exceptions' => [
@@ -40,14 +34,5 @@ return [
 
     // Datos de contexto adicionales adjuntos a cada evento.
     'send_default_pii' => false,
-
-    // Integración con las colas de Laravel.
-    'queues_breadcrumbs' => true,
-
-    // Integración con los logs de Laravel (captura logs de nivel error+).
-    'logs' => [
-        'enabled' => true,
-        'level' => \Monolog\Level::Error,
-    ],
 
 ];
