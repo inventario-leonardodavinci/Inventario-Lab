@@ -11,4 +11,4 @@ php artisan route:cache
 php artisan view:cache
 
 # Arrancar el servidor (nginx + php-fpm via serversideup/php)
-exec /entrypoint.sh
+exec init
