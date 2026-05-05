@@ -26,5 +26,15 @@ class AppServiceProvider extends ServiceProvider
             $identity = (string) $request->header('X-Auth-User-Id', $request->ip());
             return Limit::perMinute(60)->by($identity);
         });
+
+        RateLimiter::for('login-evento', function (Request $request): Limit {
+            $identity = (string) $request->header('X-Auth-User-Id', $request->ip());
+            return Limit::perMinute(10)->by($identity);
+        });
+
+        RateLimiter::for('escritura', function (Request $request): Limit {
+            $identity = (string) $request->header('X-Auth-User-Id', $request->ip());
+            return Limit::perMinute(30)->by($identity);
+        });
     }
 }

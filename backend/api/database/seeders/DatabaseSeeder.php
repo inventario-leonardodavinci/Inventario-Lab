@@ -11,6 +11,7 @@ class DatabaseSeeder extends Seeder
         $this->call([
             RolesSeeder::class,
             InventoryCatalogSeeder::class,
+            MovimientosHistoricoSeeder::class,
         ]);
     }
 }

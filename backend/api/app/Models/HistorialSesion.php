@@ -11,6 +11,9 @@ class HistorialSesion extends Model
 
     protected $table = 'historial_sesiones';
 
+    /** Valores válidos para tipo_evento — alineados con el CHECK constraint de BD */
+    public const TIPOS_EVENTO = ['login', 'logout', 'refresh', 'oauth'];
+
     protected $fillable = [
         'usuario_id',
         'ip_address',
@@ -28,6 +31,7 @@ class HistorialSesion extends Model
     protected $casts = [
         'iniciada_en' => 'datetime',
         'exitoso'     => 'boolean',
+        'tipo_evento' => 'string',
     ];
 
     public function usuario(): BelongsTo

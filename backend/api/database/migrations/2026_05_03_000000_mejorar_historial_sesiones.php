@@ -25,8 +25,8 @@ return new class extends Migration
 
     public function down(): void
     {
-        Schema::table('historial_sesiones', function (Blueprint $table) {
-            $table->dropColumn(['tipo_evento', 'exitoso']);
-        });
+        // tipo_evento y exitoso son creados por la migración base (crear_historial_sesiones).
+        // Esta migración solo hace un ->change() de tamaño en navegador/sistema_operativo,
+        // por lo que el down() no debe eliminar columnas que no creó.
     }
 };
