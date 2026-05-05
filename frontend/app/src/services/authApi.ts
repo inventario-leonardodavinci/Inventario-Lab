@@ -249,11 +249,40 @@ export async function loginConOAuth(
 
 // ─── Sesión ───────────────────────────────────────────────────────────────────
 
+export type ResultadoSesion =
+  | { tipo: 'sesion_activa'; sesion: SesionUsuario }
+  | { tipo: 'sin_sesion' }          // sesión expirada o nunca hubo
+  | { tipo: 'error_red' };          // fallo de red / ITP de iOS — no desloguear
+
 export async function obtenerSesionActual(): Promise<SesionUsuario | null> {
   const { data, error } = await insforge.auth.getCurrentUser();
   if (error || !data?.user) return null;
-
   return extraerSesion(data.user);
+}
+
+/**
+ * Versión extendida que distingue "sin sesión" de "error de red".
+ * Usar en el arranque de la app para no desloguear al usuario por ITP de iOS.
+ */
+export async function verificarSesionActual(): Promise<ResultadoSesion> {
+  try {
+    const { data, error } = await insforge.auth.getCurrentUser();
+
+    if (error) {
+      // statusCode 0 = error de red / CORS / ITP — no es una sesión expirada
+      if (error.statusCode === 0 || error.error === 'NETWORK_ERROR') {
+        return { tipo: 'error_red' };
+      }
+      return { tipo: 'sin_sesion' };
+    }
+
+    if (!data?.user) return { tipo: 'sin_sesion' };
+
+    return { tipo: 'sesion_activa', sesion: extraerSesion(data.user) };
+  } catch {
+    // Excepción inesperada — tratar como error de red para no desloguear
+    return { tipo: 'error_red' };
+  }
 }
 
 export async function logoutDeInsforge(): Promise<void> {
@@ -281,6 +310,7 @@ export async function obtenerRolDesdeBackend(authUserId: string): Promise<Sesion
   try {
     const res = await fetch(`${baseUrl}/perfil`, {
       headers: { "X-Auth-User-Id": authUserId },
+      signal: AbortSignal.timeout(5000),
     });
     if (!res.ok) return null;
     const json = await res.json() as { data?: { roles?: { name: string }[] } };

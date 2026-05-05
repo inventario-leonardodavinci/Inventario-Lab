@@ -1,7 +1,7 @@
-import { createContext, useCallback, useContext, useEffect, useMemo, useState } from "react";
+import { createContext, useCallback, useContext, useEffect, useMemo, useRef, useState } from "react";
 import {
   loginConInsforge,
-  obtenerSesionActual,
+  verificarSesionActual,
   logoutDeInsforge,
   registrarUsuario,
   verificarEmail,
@@ -36,30 +36,61 @@ type ValorContextoAutenticacion = {
 const ContextoAutenticacion = createContext<ValorContextoAutenticacion | undefined>(undefined);
 
 export function ProveedorAutenticacion({ children }: { children: React.ReactNode }) {
-  const [user, setUser] = useState<SesionUsuario | null>(null);
-  const [cargando, setCargando] = useState(true);
-  const { setUsuario, limpiar } = useSesionStore();
+  const { usuario: usuarioPersistido, setUsuario, limpiar } = useSesionStore();
+
+  // Arrancar con el usuario del store (persiste en localStorage).
+  // Esto evita el flash de login en iOS al recargar: el usuario ya está disponible
+  // mientras el SDK verifica la sesión en background con el servidor de Insforge.
+  const [user, setUser] = useState<SesionUsuario | null>(usuarioPersistido);
+
+  // cargando = true solo si NO hay usuario persistido (primera visita o tras logout).
+  // Con usuario en el store, mostramos la app inmediatamente y verificamos en background.
+  const [cargando, setCargando] = useState(!usuarioPersistido);
+
+  // Evitar que la verificación en background sobreescriba un logout explícito del usuario
+  const logoutPendiente = useRef(false);
 
   // Sincronizar zustand store cuando cambia el usuario del contexto
   useEffect(() => {
     setUsuario(user);
   }, [user, setUsuario]);
 
+  // Verificación de sesión al montar — distingue expirada de error de red
   useEffect(() => {
-    obtenerSesionActual()
-      .then((sesion) => {
-        if (sesion) {
-          setUser(sesion);
-          // Sincronizar nombre con el backend (cubre el retorno de OAuth Google/Apple)
-          sincronizarPerfil(sesion.authUserId, sesion.displayName).catch(() => {});
-          // Actualizar rol desde el backend Laravel
-          obtenerRolDesdeBackend(sesion.authUserId).then((rol) => {
-            if (rol) setUser((prev) => prev ? { ...prev, role: rol } : prev);
-          }).catch(() => {});
+    logoutPendiente.current = false;
+
+    verificarSesionActual().then(async (resultado) => {
+      if (logoutPendiente.current) return;
+
+      if (resultado.tipo === 'sesion_activa') {
+        // SDK confirmó la sesión — actualizar con datos frescos del servidor
+        setUser(resultado.sesion);
+        // Sincronizar nombre y rol en background (no bloquea la UI)
+        sincronizarPerfil(resultado.sesion.authUserId, resultado.sesion.displayName).catch(() => {});
+        obtenerRolDesdeBackend(resultado.sesion.authUserId).then((rol) => {
+          if (logoutPendiente.current) return;
+          if (rol) setUser((prev) => prev ? { ...prev, role: rol } : prev);
+        }).catch(() => {});
+
+      } else if (resultado.tipo === 'error_red') {
+        // Fallo de red o ITP de iOS — mantener el usuario del store si existe.
+        // No deslogueamos: el usuario puede seguir con datos cacheados.
+        // Las queries de TanStack Query reintentarán cuando haya conexión.
+        // Si no había usuario en el store, simplemente no hay sesión.
+
+      } else {
+        // 'sin_sesion' — sesión realmente expirada o nunca hubo
+        if (usuarioPersistido) {
+          setUser(null);
+          limpiar();
         }
-      })
-      .catch(() => {})
-      .finally(() => setCargando(false));
+      }
+    }).finally(() => {
+      if (!logoutPendiente.current) {
+        setCargando(false);
+      }
+    });
+  // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   const login = useCallback(async (email: string, password: string) => {
@@ -68,7 +99,8 @@ export function ProveedorAutenticacion({ children }: { children: React.ReactNode
     enviarEventoLogin(sesion.authUserId).catch((err) => {
       console.warn("[historial] evento-login falló:", err);
     });
-    sincronizarPerfil(sesion.authUserId, sesion.displayName).catch(() => {});
+    // Sincronizar primero para que el usuario exista en BD antes de pedir el rol
+    await sincronizarPerfil(sesion.authUserId, sesion.displayName).catch(() => {});
     obtenerRolDesdeBackend(sesion.authUserId).then((rol) => {
       if (rol) setUser((prev) => prev ? { ...prev, role: rol } : prev);
     }).catch(() => {});
@@ -81,7 +113,7 @@ export function ProveedorAutenticacion({ children }: { children: React.ReactNode
       enviarEventoLogin(resultado.sesion.authUserId).catch((err) => {
         console.warn("[historial] evento-login falló (registro):", err);
       });
-      sincronizarPerfil(resultado.sesion.authUserId, resultado.sesion.displayName).catch(() => {});
+      await sincronizarPerfil(resultado.sesion.authUserId, resultado.sesion.displayName).catch(() => {});
       obtenerRolDesdeBackend(resultado.sesion.authUserId).then((rol) => {
         if (rol) setUser((prev) => prev ? { ...prev, role: rol } : prev);
       }).catch(() => {});
@@ -95,21 +127,22 @@ export function ProveedorAutenticacion({ children }: { children: React.ReactNode
     enviarEventoLogin(sesion.authUserId).catch((err) => {
       console.warn("[historial] evento-login falló (verificar email):", err);
     });
-    sincronizarPerfil(sesion.authUserId, sesion.displayName).catch(() => {});
+    await sincronizarPerfil(sesion.authUserId, sesion.displayName).catch(() => {});
     obtenerRolDesdeBackend(sesion.authUserId).then((rol) => {
       if (rol) setUser((prev) => prev ? { ...prev, role: rol } : prev);
     }).catch(() => {});
   }, []);
 
   const loginConOAuthFn = useCallback(async (provider: string) => {
-    // Redirigir a /login para que el retorno OAuth se maneje correctamente
     await loginConOAuth(provider, `${window.location.origin}/login`);
   }, []);
 
   const logout = useCallback(async () => {
+    logoutPendiente.current = true;
     await logoutDeInsforge();
     setUser(null);
     limpiar();
+    setCargando(false);
   }, [limpiar]);
 
   const actualizarUsuario = useCallback((cambios: Partial<SesionUsuario>) => {
@@ -131,7 +164,6 @@ export function ProveedorAutenticacion({ children }: { children: React.ReactNode
       logout,
       actualizarUsuario,
     }),
-    // Solo user y cargando cambian — las funciones son estables
     // eslint-disable-next-line react-hooks/exhaustive-deps
     [user, cargando],
   );

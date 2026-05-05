@@ -108,10 +108,7 @@
 
 ### Día 3 — Miércoles 8 may · Seguridad backend
 
-- [ ] **Instalar `spatie/laravel-permission`** — reemplazar el sistema de roles casero por una librería estándar; seeds de roles y permisos granulares (crear/editar/eliminar artículo, ver auditoría, etc.)
-  ```
-  composer require spatie/laravel-permission
-  ```
+- [x] ~~**Instalar `spatie/laravel-permission`**~~ — **HECHO**: `UsuarioApp` usa `HasRoles` con `guard_name = 'api'`. Migración `2026_05_06_000000` migra datos de `roles`/`usuario_roles` → `spatie_roles`/`spatie_model_has_roles` y elimina tablas caseras. `batches` renombrada a `lotes`. `AsegurarRol` y `AsegurarPermiso` usan `hasAnyRole`/`can`. `RolesYPermisosSeeder` crea 24 permisos granulares. Residuos eliminados: `Rol.php`, `Usuario.php`, `UserFactory.php`, `RolesSeeder.php`.
 - [ ] **Instalar `laravel/sanctum`** — añadir tokens de API con expiración (actualmente se usa solo `X-Auth-User-Id` sin firma); middleware `auth:sanctum` en rutas protegidas
   ```
   composer require laravel/sanctum
