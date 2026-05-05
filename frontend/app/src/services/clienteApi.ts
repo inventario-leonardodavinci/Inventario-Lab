@@ -1,4 +1,6 @@
 import axios, { type AxiosRequestConfig, isAxiosError } from 'axios'
+import { jwtDecode } from 'jwt-decode'
+import { insforge } from './insforgeClient'
 
 export type ApiClientOptions = {
   authUserId?: string;
@@ -33,6 +35,38 @@ export class ApiValidationError extends ApiError {
   }
 }
 
+// ─── Helpers JWT ──────────────────────────────────────────────────────────────
+
+/**
+ * Comprueba si un JWT ha expirado (con 30s de margen).
+ * Devuelve true si el token es inválido o ha expirado.
+ */
+function tokenExpirado(token: string): boolean {
+  try {
+    const { exp } = jwtDecode<{ exp?: number }>(token)
+    if (!exp) return false
+    // 30 segundos de margen para evitar race conditions
+    return Date.now() / 1000 > exp - 30
+  } catch {
+    return true
+  }
+}
+
+/**
+ * Obtiene el access token actual del SDK de Insforge.
+ * Devuelve null si no hay sesión activa.
+ */
+function obtenerTokenActual(): string | null {
+  try {
+    // El SDK expone el token via tokenManager interno
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const token = (insforge as any).http?.tokenManager?.getAccessToken?.() as string | null
+    return token ?? null
+  } catch {
+    return null
+  }
+}
+
 // ─── Instancia axios ───────────────────────────────────────────────────────────
 
 export const httpClient = axios.create({
@@ -41,7 +75,26 @@ export const httpClient = axios.create({
   headers: { 'Content-Type': 'application/json' },
 })
 
-// Interceptor de response: normalizar errores axios → ApiError / ApiValidationError
+// ── Interceptor de REQUEST: detectar token expirado antes de enviar ───────────
+// Si el token ha expirado, intenta un refresh silencioso antes de continuar.
+// Esto evita peticiones que van a fallar con 401 y mejora la UX en iOS.
+httpClient.interceptors.request.use(
+  async (config) => {
+    const token = obtenerTokenActual()
+    if (token && tokenExpirado(token)) {
+      try {
+        await insforge.auth.refreshSession()
+      } catch {
+        // Si el refresh falla, la petición continuará y recibirá 401
+        // que el interceptor de response manejará
+      }
+    }
+    return config
+  },
+  (error) => Promise.reject(error),
+)
+
+// ── Interceptor de RESPONSE: normalizar errores ───────────────────────────────
 httpClient.interceptors.response.use(
   (res) => res,
   (error) => {
@@ -95,7 +148,6 @@ export async function apiClient<T>(
   if (opciones.authUserId) headers['X-Auth-User-Id'] = opciones.authUserId
   if (opciones.authUserName) headers['X-Auth-User-Name'] = opciones.authUserName
 
-  // Mapear RequestInit → AxiosRequestConfig
   const axiosConfig: AxiosRequestConfig = {
     method: (configuracion.method as string | undefined) ?? 'GET',
     headers,

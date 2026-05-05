@@ -2,50 +2,33 @@
 
 namespace App\Http\Controllers\Api;
 
+use App\Data\UbicacionData;
 use App\Http\Controllers\Controller;
-use App\Http\Requests\UbicacionRequest;
 use App\Models\Ubicacion;
 use Illuminate\Http\JsonResponse;
 
 class UbicacionController extends Controller
 {
-    /**
-     * Lista todas las ubicaciones ordenadas por nombre.
-     */
     public function index(): JsonResponse
     {
-        $ubicaciones = Ubicacion::query()
-            ->orderBy('nombre')
-            ->get();
-
+        $ubicaciones = Ubicacion::query()->orderBy('nombre')->get();
         return response()->json(['data' => $ubicaciones]);
     }
 
-    /**
-     * Detalle de una ubicación.
-     */
     public function show(Ubicacion $ubicacion): JsonResponse
     {
         return response()->json(['data' => $ubicacion]);
     }
 
-    /**
-     * Crear una nueva ubicación (HTTP 201).
-     */
-    public function store(UbicacionRequest $request): JsonResponse
+    public function store(UbicacionData $data): JsonResponse
     {
-        $ubicacion = Ubicacion::query()->create($request->validated());
-
+        $ubicacion = Ubicacion::query()->create($data->toArray());
         return response()->json(['data' => $ubicacion], 201);
     }
 
-    /**
-     * Actualizar una ubicación existente (HTTP 200).
-     */
-    public function update(UbicacionRequest $request, Ubicacion $ubicacion): JsonResponse
+    public function update(UbicacionData $data, Ubicacion $ubicacion): JsonResponse
     {
-        $ubicacion->update($request->validated());
-
+        $ubicacion->update($data->toArray());
         return response()->json(['data' => $ubicacion]);
     }
 }
