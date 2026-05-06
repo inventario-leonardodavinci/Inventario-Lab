@@ -2,7 +2,7 @@
  * Página de movimientos de stock.
  * Requisitos: 6.8, 6.9
  */
-import { useState } from 'react'
+import { useState, useMemo } from 'react'
 import { useForm, Controller } from 'react-hook-form'
 import { zodResolver } from '@hookform/resolvers/zod'
 import { Badge } from '@/components/ui/badge'
@@ -13,7 +13,7 @@ import { Label } from '@/components/ui/label'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table'
 import { useAuth } from '@/context/ContextoAutenticacion'
-import { useMovimientos, useCrearMovimiento, useUbicaciones, useArticulos } from '@/hooks/queries'
+import { useMovimientos, useCrearMovimiento, useUbicaciones, useArticulos, useArticulo } from '@/hooks/queries'
 import { formatearTipoMovimiento, formatearFechaHora } from '@/utils/formatters'
 import { esquemaMovimiento, type EntradaMovimientoForm } from '@/schemas'
 import type { TipoMovimiento } from '@/types'
@@ -39,8 +39,13 @@ export default function Movimientos() {
   })
 
   const tipoActual = watch('tipo')
+  const articuloIdActual = watch('articulo_id')
   const mostrarOrigen = tipoActual === 'salida' || tipoActual === 'traslado'
   const mostrarDestino = tipoActual === 'entrada' || tipoActual === 'traslado'
+
+  // Obtener detalle del artículo seleccionado para conocer stock por ubicación
+  const { data: articuloDetalle } = useArticulo(articuloIdActual ? Number(articuloIdActual) : 0)
+  const nivelesStock = articuloDetalle?.data?.niveles_stock ?? []
 
   // ─── Filtro del historial ─────────────────────────────────────────────────
   const [filtroTipo, setFiltroTipo] = useState<FiltroTipo>('todos')
@@ -52,6 +57,14 @@ export default function Movimientos() {
   const rows = data?.data ?? []
   const ubicaciones = ubicacionesData?.data ?? []
   const articulos = articulosData?.data ?? []
+
+  // Ubicaciones con stock > 0 para el origen
+  const ubicacionesConStock = useMemo(() => {
+    return ubicaciones.filter(ub => {
+      const nivel = nivelesStock.find(n => n.ubicacion_id === ub.id)
+      return (nivel?.cantidad ?? 0) > 0
+    })
+  }, [ubicaciones, nivelesStock])
 
   const crearMutation = useCrearMovimiento()
 
@@ -169,11 +182,27 @@ export default function Movimientos() {
                         <SelectValue placeholder="Seleccionar ubicación origen" />
                       </SelectTrigger>
                       <SelectContent>
-                        {ubicaciones.map((ub) => (
-                          <SelectItem key={ub.id} value={String(ub.id)}>
-                            {ub.nombre}
+                        {articuloIdActual ? (
+                          ubicacionesConStock.length > 0 ? (
+                            ubicacionesConStock.map((ub) => {
+                              const nivel = nivelesStock.find(n => n.ubicacion_id === ub.id)
+                              const cantidad = nivel?.cantidad ?? 0
+                              return (
+                                <SelectItem key={ub.id} value={String(ub.id)}>
+                                  {ub.nombre} (Stock: {cantidad})
+                                </SelectItem>
+                              )
+                            })
+                          ) : (
+                            <SelectItem value="" disabled>
+                              No hay stock disponible para este artículo
+                            </SelectItem>
+                          )
+                        ) : (
+                          <SelectItem value="" disabled>
+                            Selecciona un artículo primero
                           </SelectItem>
-                        ))}
+                        )}
                       </SelectContent>
                     </Select>
                   )}

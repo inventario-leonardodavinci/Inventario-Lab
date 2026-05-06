@@ -1,5 +1,5 @@
-import { NavLink } from 'react-router-dom'
-import { FileText, FolderOpen, LayoutDashboard, MapPin, Package, Shield, User, Users, Wrench } from 'lucide-react'
+import { NavLink, useLocation } from 'react-router-dom'
+import { Bell, FileText, FolderOpen, LayoutDashboard, MapPin, Package, Shield, User, Users, Wrench } from 'lucide-react'
 import { useAuth } from '@/context/ContextoAutenticacion'
 import { GuardRol } from '@/components/auth/GuardRol'
 import { formatearRol } from '@/utils/formatters'
@@ -24,6 +24,7 @@ import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar'
 const menuItems = [
   { title: 'Panel', url: '/', icon: LayoutDashboard },
   { title: 'Artículos', url: '/articulos', icon: Package },
+  { title: 'Alertas', url: '/alertas', icon: Bell },
   { title: 'Informes', url: '/informes', icon: FileText },
   { title: 'Mantenimiento', url: '/mantenimiento', icon: Wrench },
   { title: 'Ubicaciones', url: '/ubicaciones', icon: MapPin },
@@ -34,9 +35,18 @@ function iniciales(nombre: string): string {
   return nombre.split(' ').slice(0, 2).map((p) => p[0]?.toUpperCase() ?? '').join('')
 }
 
+function useRutaActiva(url: string, end = false): boolean {
+  const { pathname } = useLocation()
+  if (end) {
+    return pathname === url
+  }
+  return pathname === url || pathname.startsWith(`${url}/`)
+}
+
 export function BarraLateralAplicacion() {
   const { user } = useAuth()
   const { data: alertasData } = useAlertas({ estado: 'abierta' })
+  // Solo contar alertas pendientes (estado abierta)
   const alertasAbiertas = alertasData?.data?.length ?? 0
 
   return (
@@ -57,39 +67,31 @@ export function BarraLateralAplicacion() {
           <SidebarGroupLabel>Menú Principal</SidebarGroupLabel>
           <SidebarGroupContent>
             <SidebarMenu>
-              {menuItems.map((item) => (
-                <SidebarMenuItem key={item.title}>
-                  <SidebarMenuButton asChild>
-                    <NavLink
-                      to={item.url}
-                      end={item.url === '/'}
-                      className={({ isActive }) =>
-                        isActive ? 'bg-sidebar-accent text-sidebar-accent-foreground' : undefined
-                      }
-                    >
-                      <item.icon />
-                      <span className="flex-1">{item.title}</span>
-                      {/* Badge de alertas abiertas en el item de Artículos */}
-                      {item.url === '/articulos' && alertasAbiertas > 0 && (
-                        <span className="ml-auto flex size-5 items-center justify-center rounded-full bg-destructive text-[10px] font-bold text-destructive-foreground">
-                          {alertasAbiertas > 9 ? '9+' : alertasAbiertas}
-                        </span>
-                      )}
-                    </NavLink>
-                  </SidebarMenuButton>
-                </SidebarMenuItem>
-              ))}
+              {menuItems.map((item) => {
+                const activo = useRutaActiva(item.url, item.url === '/')
+                return (
+                  <SidebarMenuItem key={item.title}>
+                    <SidebarMenuButton asChild isActive={activo}>
+                      <NavLink to={item.url}>
+                        <item.icon />
+                        <span className="flex-1">{item.title}</span>
+                        {/* Badge de alertas abiertas en el item de Alertas */}
+                        {item.url === '/alertas' && alertasAbiertas > 0 && (
+                          <span className="ml-auto flex size-5 items-center justify-center rounded-full bg-destructive text-[10px] font-bold text-destructive-foreground">
+                            {alertasAbiertas > 9 ? '9+' : alertasAbiertas}
+                          </span>
+                        )}
+                      </NavLink>
+                    </SidebarMenuButton>
+                  </SidebarMenuItem>
+                )
+              })}
 
               {/* Auditoría — solo administrador */}
               <GuardRol roles={['administrador']}>
                 <SidebarMenuItem>
-                  <SidebarMenuButton asChild>
-                    <NavLink
-                      to="/auditoria"
-                      className={({ isActive }) =>
-                        isActive ? 'bg-sidebar-accent text-sidebar-accent-foreground' : undefined
-                      }
-                    >
+                  <SidebarMenuButton asChild isActive={useRutaActiva('/auditoria')}>
+                    <NavLink to="/auditoria">
                       <Shield />
                       <span>Auditoría</span>
                     </NavLink>
@@ -100,13 +102,8 @@ export function BarraLateralAplicacion() {
               {/* Usuarios — solo administrador */}
               <GuardRol roles={['administrador']}>
                 <SidebarMenuItem>
-                  <SidebarMenuButton asChild>
-                    <NavLink
-                      to="/usuarios"
-                      className={({ isActive }) =>
-                        isActive ? 'bg-sidebar-accent text-sidebar-accent-foreground' : undefined
-                      }
-                    >
+                  <SidebarMenuButton asChild isActive={useRutaActiva('/usuarios')}>
+                    <NavLink to="/usuarios">
                       <Users />
                       <span>Usuarios</span>
                     </NavLink>
@@ -122,11 +119,8 @@ export function BarraLateralAplicacion() {
         <SidebarFooter className="border-t p-3">
           <SidebarMenu>
             <SidebarMenuItem>
-              <SidebarMenuButton asChild className="h-auto rounded-lg px-3 py-2.5 hover:bg-sidebar-accent">
-                <NavLink
-                  to="/perfil"
-                  className="group [&[aria-current='page']]:bg-sidebar-accent"
-                >
+              <SidebarMenuButton asChild isActive={useRutaActiva('/perfil')} className="h-auto rounded-lg px-3 py-2.5 hover:bg-sidebar-accent">
+                <NavLink to="/perfil" className="group">
                   <Avatar className="size-8 shrink-0 ring-2 ring-primary/20 transition-all group-hover:ring-primary/40">
                     <AvatarImage src={user.avatarUrl} alt={user.displayName} />
                     <AvatarFallback className="bg-primary/10 text-xs font-bold text-primary">

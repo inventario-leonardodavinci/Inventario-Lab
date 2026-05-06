@@ -6,6 +6,7 @@ import { SkeletonTabla } from './components/ui/PageSkeleton'
 
 const PanelPrincipal = lazy(() => import('./pages/PanelPrincipal'))
 const Articulos = lazy(() => import('./pages/Articulos'))
+const Alertas = lazy(() => import('./pages/Alertas'))
 const InicioSesion = lazy(() => import('./pages/InicioSesion'))
 const Mantenimiento = lazy(() => import('./pages/Mantenimiento'))
 const Informes = lazy(() => import('./pages/Informes'))
@@ -35,7 +36,7 @@ function App() {
                     <Route path="/inventario" element={<Navigate to="/articulos" replace />} />
                     <Route path="/articulos" element={<Articulos />} />
                     <Route path="/movimientos" element={<Navigate to="/articulos" replace />} />
-                    <Route path="/alertas" element={<Navigate to="/articulos" replace />} />
+                    <Route path="/alertas" element={<Alertas />} />
                     <Route path="/informes" element={<Informes />} />
                     <Route path="/mantenimiento" element={<Mantenimiento />} />
                     <Route path="/perfil" element={<Perfil />} />

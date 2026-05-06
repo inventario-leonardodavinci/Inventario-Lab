@@ -5,12 +5,51 @@
 import { apiClient } from './clienteApi'
 import type { Movimiento, Paginado, TipoMovimiento, FiltrosMovimiento } from '@/types'
 
+// Tipo base para crear movimiento
 export type EntradaCrearMovimiento = {
   tipo: TipoMovimiento
   motivo?: string
   ubicacion_origen_id?: number
   ubicacion_destino_id?: number
   lineas: Array<{ articulo_id: number; cantidad: number }>
+}
+
+// Validación helper para verificar que los datos cumplen las reglas del backend
+export function validarMovimiento(datos: EntradaCrearMovimiento): string | null {
+  switch (datos.tipo) {
+    case 'entrada':
+      if (!datos.ubicacion_destino_id) {
+        return 'Se requiere ubicación destino para una entrada'
+      }
+      break
+    case 'salida':
+      if (!datos.ubicacion_origen_id) {
+        return 'Se requiere ubicación origen para una salida'
+      }
+      break
+    case 'traslado':
+      if (!datos.ubicacion_origen_id || !datos.ubicacion_destino_id) {
+        return 'Se requieren ubicación origen y destino para un traslado'
+      }
+      break
+    case 'ajuste':
+      if (!datos.ubicacion_destino_id) {
+        return 'Se requiere ubicación destino para un ajuste'
+      }
+      break
+  }
+  
+  if (!datos.lineas || datos.lineas.length === 0) {
+    return 'Debe incluir al menos una línea de movimiento'
+  }
+  
+  for (const linea of datos.lineas) {
+    if (!linea.articulo_id || linea.cantidad <= 0) {
+      return 'Cada línea debe tener artículo y cantidad mayor que cero'
+    }
+  }
+  
+  return null
 }
 
 export type ResumenHoy = {

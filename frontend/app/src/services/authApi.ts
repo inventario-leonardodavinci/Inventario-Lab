@@ -318,7 +318,7 @@ export async function sincronizarPerfil(authUserId: string, displayName: string,
 /**
  * Versión para el callback OAuth: reintenta obtener el perfil hasta que
  * el proveedor (Apple/Google) haya propagado el nombre real.
- * Insforge puede tardar 1-3 segundos en poblar profile.name tras el redirect.
+ * Optimizado: solo 1 reintento rápido para reducir tiempo de carga.
  */
 export async function sincronizarPerfilOAuth(authUserId: string, sesionInicial: SesionUsuario): Promise<SesionUsuario> {
   // Si ya tenemos un nombre real, sincronizar directamente
@@ -327,15 +327,11 @@ export async function sincronizarPerfilOAuth(authUserId: string, sesionInicial: 
     return sesionInicial;
   }
 
-  // El nombre es el fallback — reintentar hasta 4 veces con backoff
-  const intentos = [800, 1500, 2500, 4000];
+  // Solo 1 reintento rápido después de 1 segundo (en vez de 4 reintentos lentos)
+  await new Promise((r) => setTimeout(r, 1000));
 
-  for (const espera of intentos) {
-    await new Promise((r) => setTimeout(r, espera));
-
-    const { data } = await insforge.auth.getCurrentUser();
-    if (!data?.user) break;
-
+  const { data } = await insforge.auth.getCurrentUser();
+  if (data?.user) {
     const sesionFresca = extraerSesion(data.user);
     if (sesionFresca.displayName && sesionFresca.displayName !== 'Usuario') {
       // Nombre real disponible — sincronizar y devolver sesión actualizada

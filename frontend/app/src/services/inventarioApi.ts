@@ -21,14 +21,28 @@ export type EntradaActualizarArticulo = Partial<EntradaCrearArticulo>
 
 export function getArticulos(
   authUserId: string,
-  search = '',
-  pagina = 1,
-  activo?: boolean,
+  filtros?: {
+    search?: string
+    pagina?: number
+    per_page?: number
+    activo?: boolean
+    categoria_id?: number
+    ubicacion_id?: number
+    estado_stock?: 'critico' | 'ok'
+    order_by?: 'nombre' | 'codigo' | 'stock_total' | 'categoria' | 'created_at'
+    order_dir?: 'asc' | 'desc'
+  },
 ) {
   const params = new URLSearchParams()
-  if (search) params.set('search', search)
-  if (pagina > 1) params.set('page', String(pagina))
-  if (activo !== undefined) params.set('activo', String(activo))
+  if (filtros?.search) params.set('search', filtros.search)
+  if (filtros?.pagina && filtros.pagina > 1) params.set('page', String(filtros.pagina))
+  if (filtros?.per_page) params.set('per_page', String(filtros.per_page))
+  if (filtros?.activo !== undefined) params.set('activo', String(filtros.activo))
+  if (filtros?.categoria_id) params.set('categoria_id', String(filtros.categoria_id))
+  if (filtros?.ubicacion_id) params.set('ubicacion_id', String(filtros.ubicacion_id))
+  if (filtros?.estado_stock) params.set('estado_stock', filtros.estado_stock)
+  if (filtros?.order_by) params.set('order_by', filtros.order_by)
+  if (filtros?.order_dir) params.set('order_dir', filtros.order_dir)
   const qs = params.toString() ? `?${params.toString()}` : ''
   return apiClient<Paginado<Articulo>>(`/articulos${qs}`, {}, { authUserId })
 }
@@ -69,7 +83,7 @@ export function desactivarArticulo(authUserId: string, id: number) {
 
 /** @deprecated Usar getArticulos en su lugar */
 export function getInventario(authUserId: string, search = '') {
-  return getArticulos(authUserId, search)
+  return getArticulos(authUserId, { search })
 }
 
 /** @deprecated Usar crearArticulo en su lugar */

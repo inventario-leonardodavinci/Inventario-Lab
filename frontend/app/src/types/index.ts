@@ -42,6 +42,11 @@ export interface Articulo {
   estado_stock: 'critico' | 'ok'
   created_at: string
   updated_at: string
+  // Campos opcionales que pueden existir en BD
+  numero_serie?: string | null
+  tipo_material?: string | null
+  capacidad_ml?: number | null
+  fecha_caducidad?: string | null
 }
 
 export interface NivelStock {
@@ -95,13 +100,14 @@ export interface Alerta {
   severidad: Severidad
   estado: EstadoAlerta
   articulo_id: number | null
-  articulo: { id: number; nombre: string } | null
+  articulo: { id: number; nombre: string; categoria?: { id: number; nombre: string } | null } | null
   datos_json: Record<string, unknown> | null
   generada_en: string
   confirmada_por_id: number | null
   confirmada_en: string | null
   resuelta_por_id: number | null
   resuelta_en: string | null
+  notas_resolucion: string | null
 }
 
 export interface RegistroAuditoria {
@@ -144,10 +150,19 @@ export interface ActivoMantenimiento {
 
 // ─── Filtros para queries ─────────────────────────────────────────────────────
 
+export type OrdenarArticuloPor = 'nombre' | 'codigo' | 'stock_total' | 'categoria' | 'created_at'
+export type DireccionOrden = 'asc' | 'desc'
+
 export interface FiltrosArticulos {
   search?: string
   pagina?: number
+  per_page?: number
   activo?: boolean
+  categoria_id?: number
+  ubicacion_id?: number
+  estado_stock?: 'critico' | 'ok'
+  order_by?: OrdenarArticuloPor
+  order_dir?: DireccionOrden
 }
 
 export interface FiltrosMovimiento {

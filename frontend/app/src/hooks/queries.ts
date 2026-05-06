@@ -7,8 +7,17 @@
  */
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import { useAuth } from '@/context/ContextoAutenticacion'
-
-import { getArticulos, getArticulo, crearArticulo, actualizarArticulo, desactivarArticulo } from '@/services/inventarioApi'
+import { useSesionStore } from '@/stores/useSesionStore'
+import {
+  obtenerRolDesdeBackend,
+} from '@/services/authApi'
+import {
+  getArticulos,
+  getArticulo,
+  crearArticulo,
+  actualizarArticulo,
+  desactivarArticulo,
+} from '@/services/inventarioApi'
 import { getMovimientos, getResumenHoy, crearMovimiento } from '@/services/movimientosApi'
 import { getUbicaciones, crearUbicacion, actualizarUbicacion } from '@/services/ubicacionesApi'
 import { getCategorias, crearCategoria, actualizarCategoria, eliminarCategoria } from '@/services/categoriasApi'
@@ -17,6 +26,13 @@ import { getUsuarios, actualizarRolUsuario, actualizarEstadoUsuario, eliminarUsu
 import { getAuditoria } from '@/services/auditoriaApi'
 import { getNotificaciones } from '@/services/notificacionesApi'
 import { apiClient } from '@/services/clienteApi'
+import {
+  STALE_TIME_MS,
+  STALE_TIME_LONG_MS,
+  GC_TIME_MS,
+  RETRY_COUNT,
+  RETRY_DELAY_MAX_MS,
+} from '@/constants'
 
 import type {
   FiltrosArticulos,
@@ -34,10 +50,23 @@ import type { EntradaCrearCategoria, EntradaActualizarCategoria } from '@/servic
 // ─── Query keys ───────────────────────────────────────────────────────────────
 
 export const queryKeys = {
-  articulos: (search?: string, pagina?: number, activo?: boolean) =>
-    ['articulos', search ?? '', pagina ?? 1, activo] as const,
+  articulos: (
+    search?: string,
+    pagina?: number,
+    activo?: boolean,
+    categoria_id?: number,
+    ubicacion_id?: number,
+    estado_stock?: 'critico' | 'ok',
+    order_by?: string,
+    order_dir?: string,
+  ) =>
+    ['articulos', search ?? '', pagina ?? 1, activo, categoria_id, ubicacion_id, estado_stock, order_by, order_dir] as const,
   articulo: (id: number) =>
     ['articulos', id] as const,
+  perfil: () =>
+    ['perfil'] as const,
+  userRole: (authUserId?: string) =>
+    ['userRole', authUserId ?? ''] as const,
   ubicaciones: () =>
     ['ubicaciones'] as const,
   categorias: () =>
@@ -54,8 +83,6 @@ export const queryKeys = {
     ['mantenimiento'] as const,
   resumenHoy: () =>
     ['resumen-hoy'] as const,
-  perfil: () =>
-    ['perfil'] as const,
   notificaciones: () =>
     ['notificaciones'] as const,
 }
@@ -65,9 +92,20 @@ export const queryKeys = {
 export function useArticulos(filtros?: FiltrosArticulos) {
   const { user } = useAuth()
   return useQuery({
-    queryKey: queryKeys.articulos(filtros?.search, filtros?.pagina, filtros?.activo),
-    queryFn: () => getArticulos(user!.authUserId, filtros?.search, filtros?.pagina, filtros?.activo),
+    queryKey: queryKeys.articulos(
+      filtros?.search,
+      filtros?.pagina,
+      filtros?.activo,
+      filtros?.categoria_id,
+      filtros?.ubicacion_id,
+      filtros?.estado_stock,
+      filtros?.order_by,
+      filtros?.order_dir,
+    ),
+    queryFn: () => getArticulos(user!.authUserId, filtros),
     enabled: !!user,
+    placeholderData: (previousData) => previousData, // Mantener datos anteriores mientras carga
+    staleTime: STALE_TIME_MS,
   })
 }
 
@@ -249,7 +287,12 @@ export function useConfirmarAlerta() {
   const { user } = useAuth()
   const queryClient = useQueryClient()
   return useMutation({
-    mutationFn: (id: number) => confirmarAlerta(user!.authUserId, id),
+    mutationFn: (id: number) => {
+      if (!id || isNaN(Number(id))) {
+        throw new Error('ID de alerta inválido')
+      }
+      return confirmarAlerta(user!.authUserId, Number(id))
+    },
     onSuccess: () => {
       void queryClient.invalidateQueries({ queryKey: ['alertas'] })
     },
@@ -260,7 +303,12 @@ export function useResolverAlerta() {
   const { user } = useAuth()
   const queryClient = useQueryClient()
   return useMutation({
-    mutationFn: (id: number) => resolverAlerta(user!.authUserId, id),
+    mutationFn: ({ id, notas }: { id: number; notas?: string }) => {
+      if (!id || isNaN(Number(id))) {
+        throw new Error('ID de alerta inválido')
+      }
+      return resolverAlerta(user!.authUserId, Number(id), notas)
+    },
     onSuccess: () => {
       void queryClient.invalidateQueries({ queryKey: ['alertas'] })
     },
@@ -333,6 +381,9 @@ export function usePerfil() {
     queryKey: queryKeys.perfil(),
     queryFn: () => getPerfil(user!.authUserId),
     enabled: !!user,
+    staleTime: STALE_TIME_LONG_MS,
+    gcTime: GC_TIME_MS,
+    refetchOnWindowFocus: false,
   })
 }
 
@@ -345,6 +396,42 @@ export function useActualizarPerfil() {
     onSuccess: () => {
       void queryClient.invalidateQueries({ queryKey: queryKeys.perfil() })
     },
+  })
+}
+
+// ─── Rol de Usuario (con caché y retry) ──────────────────────────────────────
+
+export function useUserRole() {
+  const { user } = useAuth()
+  const queryClient = useQueryClient()
+
+  // Precargar el rol desde el store de Zustand para evitar flash de "sin rol"
+  const rolInicial = useSesionStore((state) => state.rol)
+
+  // Verificar si ya hay datos en caché
+  const datosEnCache = queryClient.getQueryData<string>(queryKeys.userRole(user?.authUserId))
+
+  // Si hay datos en caché o en el store, no hacer petición inicial
+  const shouldFetch = !!user && !datosEnCache && !rolInicial
+
+  return useQuery({
+    queryKey: queryKeys.userRole(user?.authUserId),
+    queryFn: async () => {
+      console.log('[useUserRole] Fetching rol desde backend...')
+      const rol = await obtenerRolDesdeBackend(user!.authUserId)
+      return rol
+    },
+    enabled: shouldFetch,
+    // Usar el rol del store como datos iniciales (evita petición si ya tenemos el rol)
+    initialData: rolInicial || datosEnCache || undefined,
+    staleTime: STALE_TIME_LONG_MS,
+    gcTime: GC_TIME_MS,
+    retry: RETRY_COUNT,
+    retryDelay: (attemptIndex) => Math.min(1000 * 2 ** attemptIndex, RETRY_DELAY_MAX_MS),
+    // Solo refetch en background, no en foco (evita peticiones al cambiar tabs)
+    refetchOnWindowFocus: false,
+    // Refetch al reconectar (útil si cambió el rol mientras estaba offline)
+    refetchOnReconnect: true,
   })
 }
 
@@ -413,7 +500,7 @@ export function useInventario(authUserId?: string | undefined, search = '') {
   const uid = authUserId ?? user?.authUserId
   return useQuery({
     queryKey: ['inventario', uid ?? '', search],
-    queryFn: () => getArticulos(uid!, search),
+    queryFn: () => getArticulos(uid!, { search }),
     enabled: !!uid,
   })
 }

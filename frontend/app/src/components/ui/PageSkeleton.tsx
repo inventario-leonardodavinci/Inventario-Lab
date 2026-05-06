@@ -6,7 +6,7 @@ import { Skeleton } from '@/components/ui/skeleton'
 
 // ─── Bloques reutilizables ────────────────────────────────────────────────────
 
-function SkeletonCard({ children, className = '' }: { children: React.ReactNode; className?: string }) {
+export function SkeletonCard({ children, className = '' }: { children?: React.ReactNode; className?: string }) {
   return (
     <div className={`rounded-xl border bg-card p-4 shadow-sm ${className}`}>
       {children}

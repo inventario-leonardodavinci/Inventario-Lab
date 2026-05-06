@@ -1,4 +1,5 @@
 import { createContext, useCallback, useContext, useEffect, useMemo, useRef, useState } from "react";
+import { QueryClient } from '@tanstack/react-query'
 import {
   loginConInsforge,
   verificarSesionActual,
@@ -18,6 +19,14 @@ import {
 } from "@/services/authApi";
 import { enviarEventoLogin } from "@/services/notificacionesApi";
 import { useSesionStore } from "@/stores/useSesionStore";
+import { UserRoleSync } from "@/components/auth/UserRoleSync";
+
+// QueryClient para precargar el rol
+const queryClient = new QueryClient()
+
+// Variable global para evitar múltiples verificaciones por StrictMode
+let verificacionGlobalEnProgreso = false
+let verificacionGlobalCompletada = false
 
 type ValorContextoAutenticacion = {
   user: SesionUsuario | null;
@@ -38,7 +47,7 @@ type ValorContextoAutenticacion = {
 const ContextoAutenticacion = createContext<ValorContextoAutenticacion | undefined>(undefined);
 
 export function ProveedorAutenticacion({ children }: { children: React.ReactNode }) {
-  const { usuario: usuarioPersistido, setUsuario, limpiar } = useSesionStore();
+  const { usuario: usuarioPersistido, rol: rolPersistido, setUsuario, limpiar } = useSesionStore();
 
   // Arrancar con el usuario del store (persiste en localStorage).
   // Esto evita el flash de login en iOS al recargar: el usuario ya está disponible
@@ -65,64 +74,119 @@ export function ProveedorAutenticacion({ children }: { children: React.ReactNode
 
   // Evitar que la verificación en background sobreescriba un logout explícito del usuario
   const logoutPendiente = useRef(false);
+  const verificandoSesion = useRef(false);
+  const abortControllerRef = useRef<AbortController | null>(null);
 
   // Sincronizar zustand store cuando cambia el usuario del contexto
   useEffect(() => {
     setUsuario(user);
   }, [user, setUsuario]);
 
-  // Verificación de sesión al montar — distingue expirada de error de red
+  // Sincronizar rol persistido con el usuario (al recargar página)
   useEffect(() => {
+    if (user && rolPersistido && user.role !== rolPersistido) {
+      setUser((prev) => prev ? { ...prev, role: rolPersistido as SesionUsuario['role'] } : prev);
+    }
+  }, [user, rolPersistido]);
+
+  // Verificación de sesión al montar — UNA SOLA VEZ con control de concurrencia global
+  useEffect(() => {
+    // Control global para StrictMode - evita múltiples verificaciones
+    if (verificacionGlobalCompletada) {
+      console.log('[Auth] Verificación global ya completada, ignorando...');
+      setCargando(false);
+      return;
+    }
+
+    if (verificacionGlobalEnProgreso) {
+      console.log('[Auth] Verificación global en progreso, esperando...');
+      return;
+    }
+
+    // Evitar múltiples ejecuciones simultáneas
+    if (verificandoSesion.current) {
+      console.log('[Auth] Verificación ya en progreso (local), ignorando...');
+      return;
+    }
+
+    // Cancelar petición anterior si existe
+    if (abortControllerRef.current) {
+      abortControllerRef.current.abort();
+    }
+    abortControllerRef.current = new AbortController();
+
     logoutPendiente.current = false;
+    verificandoSesion.current = true;
+    verificacionGlobalEnProgreso = true;
+    console.log('[Auth] Iniciando verificación de sesión...');
 
-    verificarSesionActual().then(async (resultado) => {
-      if (logoutPendiente.current) return;
-
-      if (resultado.tipo === 'sesion_activa') {
-        // SDK confirmó la sesión — actualizar con datos frescos del servidor
-        setUser(resultado.sesion);
-        setProcesandoOAuth(false);
-
-        // Si venimos de un callback OAuth, el proveedor puede no haber propagado
-        // el nombre todavía. Usar sincronizarPerfilOAuth que reintenta con backoff.
-        const eraOAuth = procesandoOAuth;
-        const sincronizar = eraOAuth
-          ? sincronizarPerfilOAuth(resultado.sesion.authUserId, resultado.sesion)
-          : sincronizarPerfil(resultado.sesion.authUserId, resultado.sesion.displayName).then(() => resultado.sesion);
-
-        sincronizar.then((sesionFinal) => {
-          if (logoutPendiente.current) return;
-          // Actualizar el nombre si cambió durante el reintento OAuth
-          if (sesionFinal.displayName !== resultado.sesion.displayName) {
-            setUser((prev) => prev ? { ...prev, displayName: sesionFinal.displayName, avatarUrl: sesionFinal.avatarUrl } : prev);
-          }
-        }).catch(() => {});
-
-        obtenerRolDesdeBackend(resultado.sesion.authUserId).then((rol) => {
-          if (logoutPendiente.current) return;
-          if (rol) setUser((prev) => prev ? { ...prev, role: rol } : prev);
-        }).catch(() => {});
-
-      } else if (resultado.tipo === 'error_red') {
-        // Fallo de red o ITP de iOS — mantener el usuario del store si existe.
-        // No deslogueamos: el usuario puede seguir con datos cacheados.
-        // Las queries de TanStack Query reintentarán cuando haya conexión.
-        // Si no había usuario en el store, simplemente no hay sesión.
-        setProcesandoOAuth(false);
-
-      } else {
-        // 'sin_sesion' — sesión realmente expirada o nunca hubo
-        setProcesandoOAuth(false);
-        if (usuarioPersistido) {
-          setUser(null);
-          limpiar();
+    const verificar = async () => {
+      try {
+        const resultado = await verificarSesionActual();
+        
+        if (logoutPendiente.current || abortControllerRef.current?.signal.aborted) {
+          console.log('[Auth] Verificación cancelada');
+          return;
         }
+
+        if (resultado.tipo === 'sesion_activa') {
+          console.log('[Auth] Sesión activa detectada');
+          setUser(resultado.sesion);
+          setProcesandoOAuth(false);
+
+          // NOTA: El rol se obtiene via UserRoleSync component (una sola vez)
+          // No llamar obtenerRolDesdeBackend aquí para evitar duplicados
+
+          // Sincronizar perfil (solo nombre/avatar, no volver a pedir rol)
+          const eraOAuth = procesandoOAuth;
+          try {
+            const sincronizar = eraOAuth
+              ? sincronizarPerfilOAuth(resultado.sesion.authUserId, resultado.sesion)
+              : sincronizarPerfil(resultado.sesion.authUserId, resultado.sesion.displayName).then(() => resultado.sesion);
+
+            const sesionFinal = await sincronizar;
+            if (!logoutPendiente.current && !abortControllerRef.current?.signal.aborted) {
+              if (sesionFinal.displayName !== resultado.sesion.displayName) {
+                setUser((prev) => prev ? { ...prev, displayName: sesionFinal.displayName, avatarUrl: sesionFinal.avatarUrl } : prev);
+              }
+            }
+          } catch (err) {
+            console.error('[Auth] Error sincronizando perfil:', err);
+          }
+
+        } else if (resultado.tipo === 'error_red') {
+          console.log('[Auth] Error de red, manteniendo sesión cacheada');
+          setProcesandoOAuth(false);
+        } else {
+          console.log('[Auth] Sin sesión activa');
+          setProcesandoOAuth(false);
+          if (usuarioPersistido) {
+            setUser(null);
+            limpiar();
+          }
+        }
+      } catch (err) {
+        console.error('[Auth] Error en verificación:', err);
+      } finally {
+        if (!logoutPendiente.current) {
+          setCargando(false);
+        }
+        verificandoSesion.current = false;
+        verificacionGlobalEnProgreso = false;
+        verificacionGlobalCompletada = true;
+        abortControllerRef.current = null;
       }
-    }).finally(() => {
-      if (!logoutPendiente.current) {
-        setCargando(false);
+    };
+
+    verificar();
+
+    // Cleanup: cancelar peticiones al desmontar (StrictMode)
+    return () => {
+      if (abortControllerRef.current) {
+        abortControllerRef.current.abort();
+        abortControllerRef.current = null;
       }
-    });
+    };
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
@@ -132,11 +196,21 @@ export function ProveedorAutenticacion({ children }: { children: React.ReactNode
     enviarEventoLogin(sesion.authUserId).catch((err) => {
       console.warn("[historial] evento-login falló:", err);
     });
-    // Sincronizar primero para que el usuario exista en BD antes de pedir el rol
-    await sincronizarPerfil(sesion.authUserId, sesion.displayName, sesion.email).catch(() => {});
-    obtenerRolDesdeBackend(sesion.authUserId).then((rol) => {
-      if (rol) setUser((prev) => prev ? { ...prev, role: rol } : prev);
-    }).catch(() => {});
+    
+    // Sincronizar perfil y obtener rol UNA sola vez
+    try {
+      await sincronizarPerfil(sesion.authUserId, sesion.displayName, sesion.email);
+      const rol = await obtenerRolDesdeBackend(sesion.authUserId);
+      if (rol) {
+        console.log('[Auth] Login - Rol obtenido:', rol);
+        useSesionStore.getState().setRol(rol);
+        queryClient.setQueryData(['userRole', sesion.authUserId], rol);
+        // Actualizar usuario con rol
+        setUser((prev) => prev ? { ...prev, role: rol } : prev);
+      }
+    } catch (err) {
+      console.error('[Auth] Error en login sincronizando perfil:', err);
+    }
   }, []);
 
   const registro = useCallback(async (email: string, password: string, displayName: string): Promise<ResultadoRegistro> => {
@@ -146,10 +220,20 @@ export function ProveedorAutenticacion({ children }: { children: React.ReactNode
       enviarEventoLogin(resultado.sesion.authUserId).catch((err) => {
         console.warn("[historial] evento-login falló (registro):", err);
       });
-      await sincronizarPerfil(resultado.sesion.authUserId, resultado.sesion.displayName, resultado.sesion.email).catch(() => {});
-      obtenerRolDesdeBackend(resultado.sesion.authUserId).then((rol) => {
-        if (rol) setUser((prev) => prev ? { ...prev, role: rol } : prev);
-      }).catch(() => {});
+      
+      // Sincronizar perfil y obtener rol UNA sola vez
+      try {
+        await sincronizarPerfil(resultado.sesion.authUserId, resultado.sesion.displayName, resultado.sesion.email);
+        const rol = await obtenerRolDesdeBackend(resultado.sesion.authUserId);
+        if (rol) {
+          console.log('[Auth] Registro - Rol obtenido:', rol);
+          useSesionStore.getState().setRol(rol);
+          queryClient.setQueryData(['userRole', resultado.sesion.authUserId], rol);
+          setUser((prev) => prev ? { ...prev, role: rol } : prev);
+        }
+      } catch (err) {
+        console.error('[Auth] Error en registro sincronizando perfil:', err);
+      }
     }
     return resultado;
   }, []);
@@ -157,13 +241,20 @@ export function ProveedorAutenticacion({ children }: { children: React.ReactNode
   const verificarEmailFn = useCallback(async (email: string, otp: string) => {
     const sesion = await verificarEmail(email, otp);
     setUser(sesion);
-    enviarEventoLogin(sesion.authUserId).catch((err) => {
-      console.warn("[historial] evento-login falló (verificar email):", err);
-    });
-    await sincronizarPerfil(sesion.authUserId, sesion.displayName, sesion.email).catch(() => {});
-    obtenerRolDesdeBackend(sesion.authUserId).then((rol) => {
-      if (rol) setUser((prev) => prev ? { ...prev, role: rol } : prev);
-    }).catch(() => {});
+    
+    // Sincronizar perfil y obtener rol UNA sola vez
+    try {
+      await sincronizarPerfil(sesion.authUserId, sesion.displayName, sesion.email);
+      const rol = await obtenerRolDesdeBackend(sesion.authUserId);
+      if (rol) {
+        console.log('[Auth] VerificarEmail - Rol obtenido:', rol);
+        useSesionStore.getState().setRol(rol);
+        queryClient.setQueryData(['userRole', sesion.authUserId], rol);
+        setUser((prev) => prev ? { ...prev, role: rol } : prev);
+      }
+    } catch (err) {
+      console.error('[Auth] Error en verificarEmail sincronizando perfil:', err);
+    }
   }, []);
 
   const loginConOAuthFn = useCallback(async (provider: string) => {
@@ -204,6 +295,8 @@ export function ProveedorAutenticacion({ children }: { children: React.ReactNode
 
   return (
     <ContextoAutenticacion.Provider value={value}>
+      {/* UserRoleSync se monta una sola vez aquí, fuera de las rutas */}
+      {user && <UserRoleSync />}
       {children}
     </ContextoAutenticacion.Provider>
   );

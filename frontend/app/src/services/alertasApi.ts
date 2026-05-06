@@ -21,10 +21,13 @@ export function confirmarAlerta(authUserId: string, id: number) {
   )
 }
 
-export function resolverAlerta(authUserId: string, id: number) {
+export function resolverAlerta(authUserId: string, id: number, notasResolucion?: string) {
   return apiClient<{ data: Alerta }>(
     `/alertas/${id}/resolver`,
-    { method: 'POST' },
+    {
+      method: 'POST',
+      body: notasResolucion ? JSON.stringify({ notas_resolucion: notasResolucion }) : undefined,
+    },
     { authUserId },
   )
 }

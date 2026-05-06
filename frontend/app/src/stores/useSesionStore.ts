@@ -12,7 +12,9 @@ import type { SesionUsuario } from '@/services/authApi'
 
 type SesionStore = {
   usuario: SesionUsuario | null
+  rol: string | null
   setUsuario: (u: SesionUsuario | null) => void
+  setRol: (rol: string | null) => void
   actualizarUsuario: (cambios: Partial<SesionUsuario>) => void
   limpiar: () => void
 }
@@ -21,19 +23,21 @@ export const useSesionStore = create<SesionStore>()(
   persist(
     (set) => ({
       usuario: null,
+      rol: null,
 
       setUsuario: (u) => set({ usuario: u }),
+      setRol: (rol) => set({ rol }),
 
       actualizarUsuario: (cambios) =>
         set((state) =>
           state.usuario ? { usuario: { ...state.usuario, ...cambios } } : state,
         ),
 
-      limpiar: () => set({ usuario: null }),
+      limpiar: () => set({ usuario: null, rol: null }),
     }),
     {
       name: 'inventario-sesion',
-      partialize: (state) => ({ usuario: state.usuario }),
+      partialize: (state) => ({ usuario: state.usuario, rol: state.rol }),
     },
   ),
 )
