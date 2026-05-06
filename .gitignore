@@ -64,13 +64,27 @@ windows-*-ca-*.pem
 # Notas internas de trabajo (no van al repo)
 PLAN-REESTRUCTURACION.md
 TAREAS-SEMANA.md
+AGENTS.md
 skills-lock.json
 backend/README.md
+frontend/app/CHECKLIST_PRUEBAS.md
 docs/06-matriz-cambios-bd.md
 docs/07-bd-operacion-mcp-checklist.md
 docs/12-convencion-idioma-es.md
 docs/13-inventario-espanolizacion.md
 docs/14-reporte-cierre-espanolizacion.md
+
+# Auditorías y reportes temporales de trabajo (no van al repo)
+docs/AUDITORIA_CODIGO_COMPLETA.md
+docs/AUDITORIA_PROFUNDIDAD_v2.md
+docs/AUDITORIA_PROGRESO.md
+docs/AUDITORIA_RESUMEN_FINAL.md
+docs/PLAN_PRUEBAS_ALERTAS.md
+docs/SPATIE_RESUMEN.md
+docs/reset-alertas.sql
+
+# Datos de ejemplo / importación (ficheros Excel de laboratorio)
+Data/
 
 # SQLs históricos de evolución de BD (las migraciones Laravel son la fuente de verdad)
 docs/database/
