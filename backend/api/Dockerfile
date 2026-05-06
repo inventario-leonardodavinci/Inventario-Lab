@@ -6,6 +6,7 @@ WORKDIR /var/www/html
 RUN apk add --no-cache \
     nginx \
     supervisor \
+    gettext \
     curl \
     libpng-dev \
     libzip-dev \
@@ -62,6 +63,6 @@ RUN mkdir -p /var/log/nginx \
 COPY docker/start.sh /start.sh
 RUN chmod +x /start.sh
 
-EXPOSE 80
+EXPOSE ${PORT:-80}
 
 CMD ["/start.sh"]
