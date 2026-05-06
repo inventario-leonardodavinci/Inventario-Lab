@@ -15,12 +15,12 @@ class MovimientoRequest extends FormRequest
     {
         return [
             'tipo'                        => ['required', 'string', 'in:entrada,salida,traslado,ajuste'],
-            'motivo'                      => ['nullable', 'string', 'max:255'],
+            'motivo'                      => ['nullable', 'string', 'max:' . config('constantes.nombre_max_length')],
             'ubicacion_origen_id'         => ['nullable', 'integer', 'exists:ubicaciones,id'],
             'ubicacion_destino_id'        => ['nullable', 'integer', 'exists:ubicaciones,id'],
             'lineas'                      => ['required', 'array', 'min:1'],
             'lineas.*.articulo_id'        => ['required', 'integer', 'exists:articulos,id'],
-            'lineas.*.cantidad'           => ['required', 'numeric', 'gt:0'],
+            'lineas.*.cantidad'           => ['required', 'numeric', 'gt:' . config('constantes.cantidad_minima_movimiento')],
         ];
     }
 

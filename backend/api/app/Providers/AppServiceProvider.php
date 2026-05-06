@@ -24,17 +24,17 @@ class AppServiceProvider extends ServiceProvider
     {
         RateLimiter::for('api', function (Request $request): Limit {
             $identity = (string) $request->header('X-Auth-User-Id', $request->ip());
-            return Limit::perMinute(60)->by($identity);
+            return Limit::perMinute(config('constantes.api_rate_limit_per_minute'))->by($identity);
         });
 
         RateLimiter::for('login-evento', function (Request $request): Limit {
             $identity = (string) $request->header('X-Auth-User-Id', $request->ip());
-            return Limit::perMinute(10)->by($identity);
+            return Limit::perMinute(config('constantes.login_rate_limit_per_minute'))->by($identity);
         });
 
         RateLimiter::for('escritura', function (Request $request): Limit {
             $identity = (string) $request->header('X-Auth-User-Id', $request->ip());
-            return Limit::perMinute(30)->by($identity);
+            return Limit::perMinute(config('constantes.write_rate_limit_per_minute'))->by($identity);
         });
     }
 }

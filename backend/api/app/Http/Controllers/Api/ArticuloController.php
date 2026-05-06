@@ -27,7 +27,7 @@ class ArticuloController extends Controller
             'notas'        => $articulo->notas,
             'activo'       => $articulo->activo,
             'stock_total'  => $stockTotal,
-            'estado_stock' => ($cantidadMinima > 0 && $stockTotal <= $cantidadMinima) ? 'critico' : 'ok',
+            'estado_stock' => ($cantidadMinima > 0 && $stockTotal < $cantidadMinima) ? 'critico' : 'ok',
             'created_at'   => $articulo->created_at,
             'updated_at'   => $articulo->updated_at,
         ];
@@ -35,13 +35,26 @@ class ArticuloController extends Controller
 
     /**
      * Lista paginada de artículos con categoría resuelta y stock total.
+     * Filtros: search, activo, categoria_id, ubicacion_id, estado_stock, order_by, order_dir
      */
     public function index(Request $request): JsonResponse
     {
         $busqueda = trim((string) $request->query('search', ''));
         $activo = $request->query('activo');
+        $categoriaId = $request->query('categoria_id');
+        $ubicacionId = $request->query('ubicacion_id');
+        $estadoStock = $request->query('estado_stock');
+        $orderBy = $request->query('order_by', 'nombre');
+        $orderDir = $request->query('order_dir', 'asc');
 
-        $articulos = Articulo::query()
+        // Validar campos de ordenamiento permitidos
+        $orderByPermitidos = ['nombre', 'codigo', 'stock_total', 'categoria', 'created_at'];
+        if (!in_array($orderBy, $orderByPermitidos, true)) {
+            $orderBy = 'nombre';
+        }
+        $orderDir = strtolower($orderDir) === 'desc' ? 'desc' : 'asc';
+
+        $articulosQuery = Articulo::query()
             ->with('categoria:id,nombre')
             ->when($busqueda !== '', function ($query) use ($busqueda): void {
                 $query->where(function ($q) use ($busqueda): void {
@@ -52,8 +65,23 @@ class ArticuloController extends Controller
             ->when($activo !== null, function ($query) use ($activo): void {
                 $query->where('activo', filter_var($activo, FILTER_VALIDATE_BOOLEAN));
             })
-            ->orderBy('nombre')
-            ->paginate((int) $request->query('per_page', 20));
+            ->when($categoriaId !== null, function ($query) use ($categoriaId): void {
+                $query->where('categoria_id', (int) $categoriaId);
+            });
+
+        // Filtro por ubicación requiere join con niveles_stock
+        if ($ubicacionId !== null) {
+            $articulosQuery->whereExists(function ($query) use ($ubicacionId): void {
+                $query->selectRaw('1')
+                    ->from('niveles_stock')
+                    ->whereColumn('niveles_stock.articulo_id', 'articulos.id')
+                    ->where('niveles_stock.ubicacion_id', (int) $ubicacionId);
+            });
+        }
+
+        $articulos = $articulosQuery
+            ->orderBy($orderBy === 'categoria' ? 'categoria_id' : $orderBy, $orderDir)
+            ->paginate((int) $request->query('per_page', 100));
 
         $articuloIds = $articulos->getCollection()->pluck('id');
 
@@ -72,12 +100,17 @@ class ArticuloController extends Controller
             return $this->serializar($articulo, $cantidad, $cantidadMinima);
         });
 
+        // Filtrar por estado_stock si se solicita
+        if ($estadoStock !== null) {
+            $filas = $filas->filter(fn ($fila) => $fila['estado_stock'] === $estadoStock);
+        }
+
         return response()->json([
-            'data' => $filas,
+            'data' => $filas->values(),
             'meta' => [
                 'current_page' => $articulos->currentPage(),
                 'last_page' => $articulos->lastPage(),
-                'total' => $articulos->total(),
+                'total' => $estadoStock !== null ? $filas->count() : $articulos->total(),
             ],
         ]);
     }

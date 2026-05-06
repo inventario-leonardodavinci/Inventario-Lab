@@ -2,12 +2,23 @@
 
 namespace App\Http\Middleware;
 
+use App\Http\Helpers\ApiResponse;
 use App\Models\UsuarioApp;
 use Closure;
-use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Symfony\Component\HttpFoundation\Response;
 
+/**
+ * Middleware de autorización por roles.
+ *
+ * ⚠️ Este middleware usa Spatie (laravel-permission) via UsuarioApp->hasAnyRole().
+ * Verifica contra tablas: spatie_roles, spatie_model_has_roles
+ *
+ * NOTA: No usar tablas legacy (roles, usuario_roles).
+ * Ver docs/SISTEMA_ROLES.md para más información.
+ *
+ * Uso en rutas: ->middleware(['role:administrador,profesor'])
+ */
 class AsegurarRol
 {
     public function handle(Request $request, Closure $next, string ...$roles): Response
@@ -16,14 +27,11 @@ class AsegurarRol
         $usuarioApp = $request->attributes->get('app_user');
 
         if (! $usuarioApp) {
-            return new JsonResponse(['message' => 'No autorizado'], Response::HTTP_UNAUTHORIZED);
+            return ApiResponse::unauthorized();
         }
 
         if (! $usuarioApp->hasAnyRole($roles)) {
-            return new JsonResponse(
-                ['message' => 'No tienes permiso para realizar esta acción.'],
-                Response::HTTP_FORBIDDEN
-            );
+            return ApiResponse::forbidden();
         }
 
         return $next($request);

@@ -9,6 +9,7 @@
         "php": "^8.3",
         "laravel/framework": "^13.0",
         "laravel/tinker": "^3.0",
+        "phpoffice/phpspreadsheet": "^5.7",
         "sentry/sentry-laravel": "^4.14",
         "spatie/laravel-data": "^4.22",
         "spatie/laravel-permission": "^6.16"
@@ -83,7 +84,8 @@
         "allow-plugins": {
             "pestphp/pest-plugin": true,
             "php-http/discovery": true
-        }
+        },
+        "disable-tls": false
     },
     "minimum-stability": "stable",
     "prefer-stable": true

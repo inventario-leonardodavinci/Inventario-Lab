@@ -21,14 +21,14 @@ class ArticuloRequest extends FormRequest
             'codigo' => [
                 'nullable',
                 'string',
-                'max:100',
+                'max:' . config('constantes.codigo_max_length'),
                 Rule::unique('articulos', 'codigo')->ignore($articuloId),
             ],
-            'nombre'       => [$esCreacion ? 'required' : 'sometimes', 'string', 'max:180'],
-            'descripcion'  => ['nullable', 'string'],
+            'nombre'       => [$esCreacion ? 'required' : 'sometimes', 'string', 'max:' . config('constantes.nombre_max_length')],
+            'descripcion'  => ['nullable', 'string', 'max:' . config('constantes.notas_max_length')],
             'categoria_id' => [$esCreacion ? 'required' : 'sometimes', 'integer', 'exists:categorias,id'],
             'unidad'       => ['nullable', 'string', 'max:40'],
-            'notas'        => ['nullable', 'string'],
+            'notas'        => ['nullable', 'string', 'max:' . config('constantes.notas_max_length')],
             'activo'       => ['nullable', 'boolean'],
         ];
     }
@@ -37,10 +37,10 @@ class ArticuloRequest extends FormRequest
     {
         return [
             'codigo.unique' => 'Ya existe un artículo con ese código.',
-            'codigo.max' => 'El código no puede superar los 100 caracteres.',
+            'codigo.max' => 'El código no puede superar los ' . config('constantes.codigo_max_length') . ' caracteres.',
             'nombre.required' => 'El nombre del artículo es obligatorio.',
             'nombre.string' => 'El nombre debe ser una cadena de texto.',
-            'nombre.max' => 'El nombre no puede superar los 180 caracteres.',
+            'nombre.max' => 'El nombre no puede superar los ' . config('constantes.nombre_max_length') . ' caracteres.',
             'descripcion.string' => 'La descripción debe ser una cadena de texto.',
             'categoria_id.required' => 'La categoría es obligatoria.',
             'categoria_id.integer' => 'El identificador de categoría debe ser un número entero.',

@@ -24,7 +24,7 @@ class InventarioController extends Controller
                 });
             })
             ->orderBy('nombre')
-            ->paginate((int) $request->query('per_page', 20));
+            ->paginate((int) $request->query('per_page', config('constantes.default_per_page')));
 
         $articuloIds = $articulos->getCollection()->pluck('id');
         $stockPorArticulo = NivelStock::query()

@@ -20,7 +20,7 @@ class CategoriaRequest extends FormRequest
             'nombre' => [
                 'required',
                 'string',
-                'max:100',
+                'max:' . config('constantes.nombre_max_length'),
                 Rule::unique('categorias', 'nombre')->ignore($categoriaId),
             ],
         ];
@@ -31,7 +31,7 @@ class CategoriaRequest extends FormRequest
         return [
             'nombre.required' => 'El nombre de la categoría es obligatorio.',
             'nombre.string' => 'El nombre debe ser una cadena de texto.',
-            'nombre.max' => 'El nombre no puede superar los 100 caracteres.',
+            'nombre.max' => 'El nombre no puede superar los ' . config('constantes.nombre_max_length') . ' caracteres.',
             'nombre.unique' => 'Ya existe una categoría con ese nombre.',
         ];
     }

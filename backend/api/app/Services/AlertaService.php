@@ -10,42 +10,120 @@ use Illuminate\Support\Facades\DB;
 class AlertaService
 {
     /**
-     * Evalúa si el stock de un artículo está por debajo del mínimo
-     * y genera una alerta si no existe ya una abierta del mismo tipo.
+     * Evalúa el stock de un artículo:
+     * - Genera alerta si está por debajo del mínimo
+     * - Resuelve alertas automáticamente si el stock volvió a niveles normales
      */
     public function evaluarStockBajo(int $articuloId): void
     {
-        $niveles = NivelStock::query()
-            ->where('articulo_id', $articuloId)
-            ->get();
+        $niveles = $this->obtenerNivelesStock($articuloId);
 
         foreach ($niveles as $nivel) {
-            if ((float) $nivel->cantidad_minima > 0 && (float) $nivel->cantidad <= (float) $nivel->cantidad_minima) {
-                // Comprobar si ya existe una alerta abierta de tipo stock_bajo para este artículo
-                $existeAlerta = Alerta::query()
-                    ->where('tipo', 'stock_bajo')
-                    ->where('estado', 'abierta')
-                    ->where('articulo_id', $articuloId)
-                    ->exists();
-
-                if (! $existeAlerta) {
-                    $this->generarAlerta([
-                        'tipo'         => 'stock_bajo',
-                        'articulo_id'  => $articuloId,
-                        'ubicacion_id' => $nivel->ubicacion_id,
-                        'datos_json'   => [
-                            'cantidad_actual'  => (float) $nivel->cantidad,
-                            'cantidad_minima'  => (float) $nivel->cantidad_minima,
-                            'ubicacion_id'     => $nivel->ubicacion_id,
-                        ],
-                        'severidad' => $this->calcularSeveridad(
-                            (float) $nivel->cantidad,
-                            (float) $nivel->cantidad_minima
-                        ),
-                    ]);
-                }
-            }
+            $this->procesarNivelStock($articuloId, $nivel);
         }
+    }
+
+    /**
+     * Obtiene los niveles de stock para un artículo.
+     */
+    private function obtenerNivelesStock(int $articuloId): \Illuminate\Support\Collection
+    {
+        return NivelStock::query()
+            ->where('articulo_id', $articuloId)
+            ->get();
+    }
+
+    /**
+     * Procesa un nivel de stock individual: evalúa si necesita alerta o resolución.
+     */
+    private function procesarNivelStock(int $articuloId, NivelStock $nivel): void
+    {
+        $cantidad = (float) $nivel->cantidad;
+        $cantidadMinima = (float) $nivel->cantidad_minima;
+
+        if (! $this->debeEvaluarNivel($cantidadMinima)) {
+            return;
+        }
+
+        $alertaAbierta = $this->buscarAlertaAbierta($articuloId, $nivel->ubicacion_id);
+
+        if ($cantidad < $cantidadMinima) {
+            $this->crearAlertaStockBajo($articuloId, $nivel, $cantidad, $cantidadMinima, $alertaAbierta);
+        } else {
+            $this->resolverAlertaSiExiste($alertaAbierta);
+        }
+    }
+
+    /**
+     * Determina si un nivel debe ser evaluado (requiere stock mínimo configurado).
+     */
+    private function debeEvaluarNivel(float $cantidadMinima): bool
+    {
+        return $cantidadMinima > 0;
+    }
+
+    /**
+     * Busca una alerta abierta para un artículo y ubicación específicos.
+     */
+    private function buscarAlertaAbierta(int $articuloId, int $ubicacionId): ?Alerta
+    {
+        return Alerta::query()
+            ->where('tipo', 'stock_bajo')
+            ->where('estado', 'abierta')
+            ->where('articulo_id', $articuloId)
+            ->where('ubicacion_id', $ubicacionId)
+            ->first();
+    }
+
+    /**
+     * Crea alerta de stock bajo si no existe una abierta.
+     */
+    private function crearAlertaStockBajo(
+        int $articuloId,
+        NivelStock $nivel,
+        float $cantidad,
+        float $cantidadMinima,
+        ?Alerta $alertaAbierta
+    ): void {
+        if ($alertaAbierta) {
+            return;
+        }
+
+        $this->generarAlerta([
+            'tipo'         => 'stock_bajo',
+            'articulo_id'  => $articuloId,
+            'ubicacion_id' => $nivel->ubicacion_id,
+            'datos_json'   => [
+                'cantidad_actual'  => $cantidad,
+                'cantidad_minima'  => $cantidadMinima,
+                'ubicacion_id'     => $nivel->ubicacion_id,
+            ],
+            'severidad' => $this->calcularSeveridad($cantidad, $cantidadMinima),
+        ]);
+    }
+
+    /**
+     * Resuelve alerta automáticamente si existe.
+     */
+    private function resolverAlertaSiExiste(?Alerta $alertaAbierta): void
+    {
+        if (! $alertaAbierta) {
+            return;
+        }
+
+        $this->resolverAlertaAutomaticamente($alertaAbierta, 'Stock normalizado automáticamente');
+    }
+
+    /**
+     * Resuelve una alerta automáticamente por el sistema (sin usuario específico).
+     */
+    private function resolverAlertaAutomaticamente(Alerta $alerta, string $notas): void
+    {
+        $alerta->estado           = 'resuelta';
+        $alerta->resuelta_por_id  = null; // Resuelto por el sistema
+        $alerta->resuelta_en      = now();
+        $alerta->notas_resolucion = $notas;
+        $alerta->save();
     }
 
     /**
@@ -117,13 +195,14 @@ class AlertaService
 
     /**
      * Resuelve una alerta: cambia su estado a 'resuelta' y registra
-     * el usuario y la fecha de resolución.
+     * el usuario, la fecha de resolución y notas de resolución.
      */
-    public function resolverAlerta(Alerta $alerta, UsuarioApp $usuario): Alerta
+    public function resolverAlerta(Alerta $alerta, UsuarioApp $usuario, ?string $notas = null): Alerta
     {
-        $alerta->estado          = 'resuelta';
-        $alerta->resuelta_por_id = $usuario->id;
-        $alerta->resuelta_en     = now();
+        $alerta->estado           = 'resuelta';
+        $alerta->resuelta_por_id  = $usuario->id;
+        $alerta->resuelta_en      = now();
+        $alerta->notas_resolucion = $notas;
         $alerta->save();
 
         return $alerta;

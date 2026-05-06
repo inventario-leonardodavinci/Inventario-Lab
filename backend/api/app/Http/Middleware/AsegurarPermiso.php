@@ -2,14 +2,22 @@
 
 namespace App\Http\Middleware;
 
+use App\Http\Helpers\ApiResponse;
 use App\Models\UsuarioApp;
 use Closure;
-use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Symfony\Component\HttpFoundation\Response;
 
 /**
- * Verifica permisos granulares usando spatie/laravel-permission.
+ * Middleware de autorización por permisos.
+ *
+ * ⚠️ Este middleware usa Spatie (laravel-permission) via UsuarioApp->can().
+ * Verifica contra tablas: spatie_permissions, spatie_model_has_permissions
+ *
+ * NOTA: No usar tablas legacy (permisos, rol_permisos).
+ * Ver docs/SISTEMA_ROLES.md para más información.
+ *
+ * Uso en rutas: ->middleware(['permiso:crear articulos,editar articulos'])
  */
 class AsegurarPermiso
 {
@@ -19,10 +27,7 @@ class AsegurarPermiso
         $usuarioApp = $request->attributes->get('app_user');
 
         if (! $usuarioApp) {
-            return new JsonResponse(
-                ['message' => 'No autorizado. Inicia sesión primero.'],
-                Response::HTTP_UNAUTHORIZED
-            );
+            return ApiResponse::unauthorized();
         }
 
         foreach ($permisos as $permiso) {
@@ -31,12 +36,6 @@ class AsegurarPermiso
             }
         }
 
-        return new JsonResponse(
-            [
-                'message'              => 'No tienes permiso para realizar esta acción.',
-                'permisos_requeridos'  => $permisos,
-            ],
-            Response::HTTP_FORBIDDEN
-        );
+        return ApiResponse::forbidden($permisos);
     }
 }

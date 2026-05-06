@@ -46,7 +46,7 @@ class MovimientoController extends Controller
                 'lineas.articulo:id,nombre',
             ])
             ->latest('id')
-            ->paginate((int) $request->query('per_page', 20));
+            ->paginate((int) $request->query('per_page', config('constantes.default_per_page')));
 
         $filas = $paginacion->getCollection()->map(function (Movimiento $movimiento): array {
             return [
