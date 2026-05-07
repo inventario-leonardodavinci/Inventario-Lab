@@ -12,7 +12,7 @@ return [
 
     // ── Paginación ─────────────────────────────────────────────────────────
     'default_per_page' => 20,
-    'max_per_page' => 100,
+    'max_per_page' => 500,
 
     // ── Movimientos ────────────────────────────────────────────────────────
     'tipos_movimiento' => ['entrada', 'salida', 'traslado', 'ajuste'],
