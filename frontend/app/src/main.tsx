@@ -19,6 +19,8 @@ document.title = 'Inventario Salud Ambiental'
 if (import.meta.env.VITE_SENTRY_DSN) {
   Sentry.init({
     dsn: import.meta.env.VITE_SENTRY_DSN as string,
+    sendDefaultPii: true,
+    tunnel: '/sentry-tunnel',
     environment: import.meta.env.MODE,
     // Capturar el 100% de errores, 10% de trazas de performance
     tracesSampleRate: import.meta.env.PROD ? 0.1 : 0,

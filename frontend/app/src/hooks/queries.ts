@@ -21,11 +21,12 @@ import {
 import { getMovimientos, getResumenHoy, crearMovimiento } from '@/services/movimientosApi'
 import { getUbicaciones, crearUbicacion, actualizarUbicacion } from '@/services/ubicacionesApi'
 import { getCategorias, crearCategoria, actualizarCategoria, eliminarCategoria } from '@/services/categoriasApi'
-import { getAlertas, confirmarAlerta, resolverAlerta } from '@/services/alertasApi'
-import { getUsuarios, actualizarRolUsuario, actualizarEstadoUsuario, eliminarUsuario, getPerfil, actualizarPerfil, getHistorialSesiones } from '@/services/usuariosApi'
+import { getUsuarios, actualizarRolUsuario, actualizarEstadoUsuario, eliminarUsuario, getPerfil, actualizarPerfil, getHistorialSesiones, eliminarSesion } from '@/services/usuariosApi'
 import { getAuditoria } from '@/services/auditoriaApi'
+import { resolverAlerta, confirmarAlerta } from '@/services/alertasApi'
 import { getNotificaciones } from '@/services/notificacionesApi'
 import { apiClient } from '@/services/clienteApi'
+import { insforge } from '@/services/insforgeClient'
 import {
   STALE_TIME_MS,
   STALE_TIME_LONG_MS,
@@ -37,7 +38,6 @@ import {
 import type {
   FiltrosArticulos,
   FiltrosMovimiento,
-  FiltrosAlerta,
   FiltrosAuditoria,
   ActivoMantenimiento,
   Rol,
@@ -73,8 +73,6 @@ export const queryKeys = {
     ['categorias'] as const,
   movimientos: (filtros?: FiltrosMovimiento) =>
     ['movimientos', filtros] as const,
-  alertas: (filtros?: FiltrosAlerta) =>
-    ['alertas', filtros] as const,
   auditoria: (filtros?: FiltrosAuditoria) =>
     ['auditoria', filtros?.entidad_tipo, filtros?.tipo_evento, filtros?.desde, filtros?.hasta, filtros?.pagina] as const,
   usuarios: () =>
@@ -272,49 +270,6 @@ export function useResumenHoy() {
   })
 }
 
-// ─── Alertas ──────────────────────────────────────────────────────────────────
-
-export function useAlertas(filtros?: FiltrosAlerta) {
-  const { user } = useAuth()
-  return useQuery({
-    queryKey: queryKeys.alertas(filtros),
-    queryFn: () => getAlertas(user!.authUserId, filtros),
-    enabled: !!user,
-  })
-}
-
-export function useConfirmarAlerta() {
-  const { user } = useAuth()
-  const queryClient = useQueryClient()
-  return useMutation({
-    mutationFn: (id: number) => {
-      if (!id || isNaN(Number(id))) {
-        throw new Error('ID de alerta inválido')
-      }
-      return confirmarAlerta(user!.authUserId, Number(id))
-    },
-    onSuccess: () => {
-      void queryClient.invalidateQueries({ queryKey: ['alertas'] })
-    },
-  })
-}
-
-export function useResolverAlerta() {
-  const { user } = useAuth()
-  const queryClient = useQueryClient()
-  return useMutation({
-    mutationFn: ({ id, notas }: { id: number; notas?: string }) => {
-      if (!id || isNaN(Number(id))) {
-        throw new Error('ID de alerta inválido')
-      }
-      return resolverAlerta(user!.authUserId, Number(id), notas)
-    },
-    onSuccess: () => {
-      void queryClient.invalidateQueries({ queryKey: ['alertas'] })
-    },
-  })
-}
-
 // ─── Auditoría ────────────────────────────────────────────────────────────────
 
 export function useAuditoria(filtros?: FiltrosAuditoria) {
@@ -332,7 +287,24 @@ export function useUsuarios() {
   const { user } = useAuth()
   return useQuery({
     queryKey: queryKeys.usuarios(),
-    queryFn: () => getUsuarios(user!.authUserId),
+    queryFn: async () => {
+      const res = await getUsuarios(user!.authUserId)
+      const usuarios = res.data ?? []
+      const enriquecidos = await Promise.all(
+        usuarios.map(async (u) => {
+          const { data: perfil } = await insforge.auth.getProfile(u.auth_user_id)
+          const p = perfil as Record<string, unknown> | null
+          return {
+            ...u,
+            email: (p?.email as string | null) ?? null,
+            emailVerified: (p?.emailVerified as boolean | undefined) ?? false,
+            providers: (p?.providers as string[] | undefined) ?? [],
+            avatar_url: (p?.avatar_url as string | null) ?? ((p?.profile as Record<string, unknown> | undefined)?.avatar_url as string | null) ?? u.avatar_url ?? null,
+          }
+        })
+      )
+      return { ...res, data: enriquecidos }
+    },
     enabled: !!user,
   })
 }
@@ -488,6 +460,20 @@ export function useHistorialSesiones() {
   })
 }
 
+export function useEliminarSesion() {
+  const { user } = useAuth()
+  const queryClient = useQueryClient()
+  return useMutation({
+    mutationFn: (sesionId: number) => eliminarSesion(user!.authUserId, sesionId),
+    onSuccess: () => {
+      void queryClient.invalidateQueries({ queryKey: ['historial-sesiones'] })
+    },
+    onError: () => {
+      // El componente puede mostrar su propio toast si lo necesita
+    },
+  })
+}
+
 // ─── Compatibilidad con código anterior ──────────────────────────────────────
 
 /**
@@ -502,5 +488,26 @@ export function useInventario(authUserId?: string | undefined, search = '') {
     queryKey: ['inventario', uid ?? '', search],
     queryFn: () => getArticulos(uid!, { search }),
     enabled: !!uid,
+  })
+}
+
+// ─── Alertas ──────────────────────────────────────────────────────────────────
+
+export function useResolverAlerta() {
+  const { user } = useAuth()
+  const queryClient = useQueryClient()
+  return useMutation({
+    mutationFn: ({ id, notas }: { id: number; notas?: string }) =>
+      resolverAlerta(user!.authUserId, id, notas),
+    onSuccess: () => queryClient.invalidateQueries({ queryKey: ['alertas'] }),
+  })
+}
+
+export function useConfirmarAlerta() {
+  const { user } = useAuth()
+  const queryClient = useQueryClient()
+  return useMutation({
+    mutationFn: (id: number) => confirmarAlerta(user!.authUserId, id),
+    onSuccess: () => queryClient.invalidateQueries({ queryKey: ['alertas'] }),
   })
 }

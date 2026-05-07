@@ -4,11 +4,20 @@ import tailwindcss from '@tailwindcss/vite'
 import path from 'path'
 import { compression } from 'vite-plugin-compression2'
 import { VitePWA } from 'vite-plugin-pwa'
+import { sentryVitePlugin } from '@sentry/vite-plugin'
 
 export default defineConfig({
   plugins: [
     react(),
     tailwindcss(),
+
+    // ── Sentry ────────────────────────────────────────────────────────────────
+    sentryVitePlugin({
+      org: 'said-oudrhich',
+      project: 'javascript-react',
+      telemetry: false,
+      bundleSizeOptimizations: { excludeDebugStatements: true },
+    }),
 
     // ── Compresión Brotli + gzip ──────────────────────────────────────────────
     compression({ algorithms: ['brotliCompress'], exclude: [/\.(br)$/, /\.(gz)$/] }),
@@ -56,6 +65,19 @@ export default defineConfig({
       },
     }),
   ],
+  server: {
+    proxy: {
+      '/sentry-tunnel': {
+        target: 'https://o4511061111144448.ingest.de.sentry.io',
+        changeOrigin: true,
+        rewrite: () => '/api/4511339315200080/envelope/',
+        secure: true,
+        configure: (proxy) => {
+          proxy.on('error', (err) => console.error('[sentry-tunnel]', err))
+        },
+      },
+    },
+  },
   resolve: {
     alias: {
       '@': path.resolve(__dirname, './src'),
