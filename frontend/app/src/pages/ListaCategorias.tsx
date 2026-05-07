@@ -56,8 +56,8 @@ export default function ListaCategorias() {
   }
 
   return (
-    <main className="flex flex-1 flex-col gap-6 bg-muted/20 p-4 lg:p-6">
-      <div className="flex flex-col items-start justify-between gap-4 md:flex-row md:items-center">
+    <main className="animate-page-enter flex flex-1 flex-col gap-6 bg-muted/20 p-4 lg:p-6">
+      <div className="page-section flex flex-col items-start justify-between gap-4 md:flex-row md:items-center">
         <div className="flex flex-col gap-1">
           <h2 className="text-2xl font-semibold tracking-tight">Categorías</h2>
           <p className="text-sm text-muted-foreground">

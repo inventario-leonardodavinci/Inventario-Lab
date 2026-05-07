@@ -3,6 +3,7 @@
  * Requisitos: 6.8, 6.9
  */
 import { useState, useMemo } from 'react'
+import { Loader2 } from 'lucide-react'
 import { useForm, Controller } from 'react-hook-form'
 import { zodResolver } from '@hookform/resolvers/zod'
 import { Badge } from '@/components/ui/badge'
@@ -251,7 +252,8 @@ export default function Movimientos() {
               <Button type="button" variant="outline" onClick={() => void refetch()} disabled={isFetching}>
                 {isFetching ? 'Cargando...' : 'Refrescar'}
               </Button>
-              <Button type="submit" disabled={isSubmitting || crearMutation.isPending}>
+              <Button type="submit" disabled={isSubmitting || crearMutation.isPending} className="gap-2">
+                {(isSubmitting || crearMutation.isPending) && <Loader2 className="size-4 animate-spin" />}
                 {isSubmitting || crearMutation.isPending ? 'Guardando...' : 'Guardar movimiento'}
               </Button>
             </div>

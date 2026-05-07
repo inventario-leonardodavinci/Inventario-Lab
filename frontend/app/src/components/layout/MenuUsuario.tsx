@@ -9,7 +9,7 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
-import { LogOut, Settings, User } from "lucide-react";
+import { LogOut, Settings, Shield, User } from "lucide-react";
 
 function iniciales(nombre: string): string {
   return nombre
@@ -50,53 +50,82 @@ export function MenuUsuario() {
     <DropdownMenu>
       <DropdownMenuTrigger asChild>
         <button
-          className="flex items-center gap-2 rounded-lg px-2 py-1 text-sm transition-colors hover:bg-muted focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+          className="relative flex items-center gap-2 rounded-full p-0.5 transition-all hover:ring-2 hover:ring-border focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
           aria-label="Menú de usuario"
         >
-          <Avatar className="size-7">
+          <Avatar className="size-8">
             <AvatarImage src={user.avatarUrl} alt={user.displayName} />
-            <AvatarFallback className="text-xs font-medium">
+            <AvatarFallback className="bg-primary/10 text-xs font-bold text-primary">
               {iniciales(user.displayName)}
             </AvatarFallback>
           </Avatar>
-          <span className="hidden max-w-[120px] truncate text-sm font-medium md:block">
-            {user.displayName}
-          </span>
+          {/* Indicador de estado online */}
+          <span className="absolute bottom-0 right-0 size-2.5 rounded-full bg-green-500 ring-2 ring-background" aria-hidden />
         </button>
       </DropdownMenuTrigger>
 
-      <DropdownMenuContent align="end" className="w-56">
-        <DropdownMenuLabel className="font-normal">
-          <div className="flex flex-col gap-1">
-            <p className="truncate font-medium">{user.displayName}</p>
-            <span
-              className={`w-fit rounded-full px-2 py-0.5 text-xs font-medium ${colorRol}`}
-            >
-              {etiquetaRol}
-            </span>
+      <DropdownMenuContent align="end" className="w-64 p-1.5">
+        {/* Cabecera de identidad */}
+        <DropdownMenuLabel className="font-normal p-0 mb-1">
+          <div className="flex items-center gap-3 rounded-lg bg-muted/50 px-3 py-2.5">
+            <Avatar className="size-10 shrink-0">
+              <AvatarImage src={user.avatarUrl} alt={user.displayName} />
+              <AvatarFallback className="bg-primary/10 text-sm font-bold text-primary">
+                {iniciales(user.displayName)}
+              </AvatarFallback>
+            </Avatar>
+            <div className="flex min-w-0 flex-col gap-0.5">
+              <p className="truncate text-sm font-semibold leading-none">{user.displayName}</p>
+              <span className={`w-fit rounded-full px-1.5 py-0.5 text-[10px] font-medium ${colorRol}`}>
+                {etiquetaRol}
+              </span>
+            </div>
           </div>
         </DropdownMenuLabel>
 
         <DropdownMenuSeparator />
 
-        <DropdownMenuItem onClick={() => navigate("/perfil")}>
-          <User className="mr-2 size-4" />
-          Mi perfil
+        <DropdownMenuItem onClick={() => navigate("/perfil")} className="gap-3 rounded-lg px-3 py-2">
+          <div className="flex size-7 shrink-0 items-center justify-center rounded-md bg-muted">
+            <User className="size-3.5" />
+          </div>
+          <div className="flex flex-col">
+            <span className="text-sm">Mi perfil</span>
+            <span className="text-[11px] text-muted-foreground">Foto, nombre y datos</span>
+          </div>
         </DropdownMenuItem>
 
-        <DropdownMenuItem onClick={() => navigate("/perfil?tab=seguridad")}>
-          <Settings className="mr-2 size-4" />
-          Seguridad
+        <DropdownMenuItem onClick={() => navigate("/perfil?tab=seguridad")} className="gap-3 rounded-lg px-3 py-2">
+          <div className="flex size-7 shrink-0 items-center justify-center rounded-md bg-muted">
+            <Settings className="size-3.5" />
+          </div>
+          <div className="flex flex-col">
+            <span className="text-sm">Seguridad</span>
+            <span className="text-[11px] text-muted-foreground">Contraseña y sesiones</span>
+          </div>
+        </DropdownMenuItem>
+
+        <DropdownMenuItem onClick={() => navigate("/perfil?tab=historial")} className="gap-3 rounded-lg px-3 py-2">
+          <div className="flex size-7 shrink-0 items-center justify-center rounded-md bg-muted">
+            <Shield className="size-3.5" />
+          </div>
+          <div className="flex flex-col">
+            <span className="text-sm">Accesos</span>
+            <span className="text-[11px] text-muted-foreground">Historial de sesiones</span>
+          </div>
         </DropdownMenuItem>
 
         <DropdownMenuSeparator />
 
         <DropdownMenuItem
-          className="text-destructive focus:text-destructive"
+          variant="destructive"
           onClick={() => void logout()}
+          className="gap-3 rounded-lg px-3 py-2"
         >
-          <LogOut className="mr-2 size-4" />
-          Cerrar sesión
+          <div className="flex size-7 shrink-0 items-center justify-center rounded-md bg-destructive/10">
+            <LogOut className="size-3.5 text-destructive" />
+          </div>
+          <span className="text-sm">Cerrar sesión</span>
         </DropdownMenuItem>
       </DropdownMenuContent>
     </DropdownMenu>

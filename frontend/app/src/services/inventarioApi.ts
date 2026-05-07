@@ -15,6 +15,10 @@ export type EntradaCrearArticulo = {
   stock_inicial?: number
   stock_minimo?: number
   ubicacion_id?: number
+  serial_number?: string
+  material_type?: string
+  capacity_ml?: number
+  expiration_date?: string
 }
 
 export type EntradaActualizarArticulo = Partial<EntradaCrearArticulo>

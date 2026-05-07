@@ -139,6 +139,11 @@ export function ProveedorAutenticacion({ children }: { children: React.ReactNode
 
           // Sincronizar perfil (solo nombre/avatar, no volver a pedir rol)
           const eraOAuth = procesandoOAuth;
+          if (eraOAuth) {
+            enviarEventoLogin(resultado.sesion.authUserId, 'oauth').catch((err) => {
+              console.warn("[historial] evento-login falló (oauth):", err);
+            });
+          }
           try {
             const sincronizar = eraOAuth
               ? sincronizarPerfilOAuth(resultado.sesion.authUserId, resultado.sesion)
@@ -241,6 +246,9 @@ export function ProveedorAutenticacion({ children }: { children: React.ReactNode
   const verificarEmailFn = useCallback(async (email: string, otp: string) => {
     const sesion = await verificarEmail(email, otp);
     setUser(sesion);
+    enviarEventoLogin(sesion.authUserId).catch((err) => {
+      console.warn("[historial] evento-login falló (verificarEmail):", err);
+    });
     
     // Sincronizar perfil y obtener rol UNA sola vez
     try {

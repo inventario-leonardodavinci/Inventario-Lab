@@ -17,10 +17,16 @@ export function getNotificaciones(authUserId: string) {
   return apiClient<RespuestaNotificaciones>("/notificaciones", {}, { authUserId });
 }
 
-export function enviarEventoLogin(authUserId: string) {
+export function enviarEventoLogin(
+  authUserId: string,
+  tipoEvento: 'login' | 'oauth' = 'login',
+) {
   return apiClient<{ message: string }>(
     "/notificaciones/evento-login",
-    { method: "POST" },
+    {
+      method: "POST",
+      body: JSON.stringify({ tipo_evento: tipoEvento }),
+    },
     { authUserId },
   );
 }

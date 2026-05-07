@@ -84,8 +84,8 @@ export default function ListaUbicaciones() {
   }
 
   return (
-    <main className="flex flex-1 flex-col gap-6 bg-muted/20 p-4 lg:p-6">
-      <div className="flex flex-col items-start justify-between gap-4 md:flex-row md:items-center">
+    <main className="animate-page-enter flex flex-1 flex-col gap-6 bg-muted/20 p-4 lg:p-6">
+      <div className="page-section flex flex-col items-start justify-between gap-4 md:flex-row md:items-center">
         <div className="flex flex-col gap-1">
           <h2 className="text-2xl font-semibold tracking-tight">Ubicaciones</h2>
           <p className="text-sm text-muted-foreground">
@@ -97,7 +97,7 @@ export default function ListaUbicaciones() {
         </GuardRol>
       </div>
 
-      <Card>
+      <Card className="page-section">
         <CardHeader>
           <CardTitle className="flex items-center gap-2 text-base">
             <div className="flex size-7 items-center justify-center rounded-lg bg-primary/10">

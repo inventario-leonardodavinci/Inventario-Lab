@@ -1,4 +1,4 @@
-import { useState, useMemo, useEffect } from 'react'
+import { useState, useMemo, useEffect, useRef } from 'react'
 import { Plus, Minus, ArrowRightLeft, RotateCcw, Package, AlertCircle, Loader2 } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
@@ -27,9 +27,11 @@ interface PanelAccionRapidaProps {
   nivelesStock: NivelStock[] // Stock del artículo por ubicación
   isLoadingUbicaciones?: boolean
   isLoadingStock?: boolean
+  isPending?: boolean
   open: boolean
   onCantidadChange: (cantidad: number) => void
   onSubmit: (tipo: TipoMovimiento, cantidad: number, ubicacionOrigenId?: string, ubicacionDestinoId?: string) => void
+  onSuccess?: () => void
   onCancel: () => void
 }
 
@@ -41,9 +43,11 @@ export function PanelAccionRapida({
   nivelesStock,
   isLoadingUbicaciones = false,
   isLoadingStock = false,
+  isPending = false,
   open,
   onCantidadChange,
   onSubmit,
+  onSuccess,
   onCancel,
 }: PanelAccionRapidaProps) {
   const [isInicializando, setIsInicializando] = useState(true)
@@ -61,12 +65,29 @@ export function PanelAccionRapida({
     })
   }, [ubicaciones, nivelesStock, articulo])
 
+  const reset = () => {
+    setStep('tipo')
+    setUbicacionOrigen('')
+    setUbicacionDestino('')
+  }
+
   // Forzar estado de carga inicial visible durante 300ms
   useEffect(() => {
     setIsInicializando(true)
     const timer = setTimeout(() => setIsInicializando(false), 300)
     return () => clearTimeout(timer)
   }, [articulo?.id])
+
+  // Cuando isPending pasa de true → false: la petición terminó
+  // El reset del step lo maneja el useEffect de tipo/open (tipo=null → step='tipo')
+  // Aqui solo notificamos al padre vía onSuccess
+  const prevIsPendingRef = useRef(false)
+  useEffect(() => {
+    if (prevIsPendingRef.current && !isPending) {
+      onSuccess?.()
+    }
+    prevIsPendingRef.current = isPending
+  }, [isPending])
 
   // Resetear selecciones cuando cambia el artículo o se abre/cierra el modal
   useEffect(() => {
@@ -134,26 +155,12 @@ export function PanelAccionRapida({
     const tipoFinal = tipo || 'entrada'
     
     if (tipoFinal === 'entrada') {
-      // Enviar ubicación destino
       onSubmit(tipoFinal, cantidad, undefined, ubicacionDestino)
     } else if (tipoFinal === 'salida') {
-      // Enviar ubicación origen
       onSubmit(tipoFinal, cantidad, ubicacionOrigen, undefined)
     } else if (tipoFinal === 'traslado') {
-      // Enviar ambas
       onSubmit(tipoFinal, cantidad, ubicacionOrigen, ubicacionDestino)
     }
-    
-    // Reset
-    setStep('tipo')
-    setUbicacionOrigen('')
-    setUbicacionDestino('')
-  }
-  
-  const reset = () => {
-    setStep('tipo')
-    setUbicacionOrigen('')
-    setUbicacionDestino('')
   }
 
   const handleCancel = () => {
@@ -174,10 +181,7 @@ export function PanelAccionRapida({
               <DialogDescription className="text-xs flex items-center gap-1">
                 Stock actual:{" "}
                 {isLoadingStock ? (
-                  <span className="flex items-center gap-1">
-                    <Loader2 className="size-3 animate-spin" />
-                    Cargando...
-                  </span>
+                  <span className="inline-block h-3.5 w-10 rounded bg-muted animate-pulse align-middle" />
                 ) : (
                   <span className="font-mono font-medium">{articulo.stock_total}</span>
                 )}
@@ -189,7 +193,7 @@ export function PanelAccionRapida({
         {/* Contenido según paso */}
         <div className="space-y-4">
         {step === 'tipo' && (
-          <div className="flex gap-2">
+          <div className="animate-fade-in-up flex gap-2">
             <Button
               variant={tipo === 'entrada' ? 'default' : 'outline'}
               className="flex-1 h-12 gap-2"
@@ -220,7 +224,7 @@ export function PanelAccionRapida({
         )}
         
         {step === 'cantidad' && (
-          <div className="space-y-4">
+          <div className="animate-fade-in-up space-y-4">
             <div>
               <Label className="text-xs mb-2 font-medium">Cantidad</Label>
               <div className="flex items-center justify-center gap-3">
@@ -255,17 +259,18 @@ export function PanelAccionRapida({
                 <RotateCcw className="size-4 mr-1" />
                 Cambiar
               </Button>
-              <Button onClick={handleSubmit} className="flex-1 gap-2">
-                {tipo === 'entrada' && <Plus className="size-4" />}
-                {tipo === 'salida' && <Minus className="size-4" />}
-                Confirmar {tipo}
+              <Button onClick={handleSubmit} className="flex-1 gap-2" disabled={isPending}>
+                {isPending ? <Loader2 className="size-4 animate-spin" /> : (
+                  <>{tipo === 'entrada' && <Plus className="size-4" />}{tipo === 'salida' && <Minus className="size-4" />}</>
+                )}
+                {isPending ? 'Procesando...' : `Confirmar ${tipo}`}
               </Button>
             </div>
           </div>
         )}
         
         {step === 'ubicacion' && (
-          <div className="space-y-3">
+          <div className="animate-fade-in-up space-y-3">
             {/* Selector según tipo */}
             {tipo === 'entrada' && (
               <div className="space-y-4">
@@ -276,10 +281,7 @@ export function PanelAccionRapida({
                   <Select value={ubicacionDestino} onValueChange={setUbicacionDestino} disabled={isLoadingUbicaciones}>
                     <SelectTrigger className="w-full h-11">
                       {isLoadingUbicaciones ? (
-                        <span className="text-muted-foreground flex items-center gap-2">
-                          <Loader2 className="size-4 animate-spin" />
-                          Cargando ubicaciones...
-                        </span>
+                        <span className="h-4 w-32 rounded bg-muted animate-pulse" />
                       ) : (
                         <SelectValue placeholder="Seleccionar almacén..." />
                       )}
@@ -344,11 +346,11 @@ export function PanelAccionRapida({
                   </Button>
                   <Button
                     onClick={handleSubmit}
-                    disabled={!ubicacionDestino}
+                    disabled={!ubicacionDestino || isPending}
                     className="flex-1 gap-2"
                   >
-                    <Plus className="size-4" />
-                    Confirmar entrada
+                    {isPending ? <Loader2 className="size-4 animate-spin" /> : <Plus className="size-4" />}
+                    {isPending ? 'Procesando...' : 'Confirmar entrada'}
                   </Button>
                 </div>
               </div>
@@ -363,10 +365,7 @@ export function PanelAccionRapida({
                   <Select value={ubicacionOrigen} onValueChange={setUbicacionOrigen} disabled={isLoading}>
                     <SelectTrigger className="w-full h-11">
                       {isLoading ? (
-                        <span className="text-muted-foreground flex items-center gap-2">
-                          <Loader2 className="size-4 animate-spin" />
-                          Cargando...
-                        </span>
+                        <span className="h-4 w-32 rounded bg-muted animate-pulse" />
                       ) : (
                         <SelectValue placeholder="Seleccionar almacén..." />
                       )}
@@ -429,11 +428,11 @@ export function PanelAccionRapida({
                   </Button>
                   <Button
                     onClick={handleSubmit}
-                    disabled={!ubicacionOrigen}
+                    disabled={!ubicacionOrigen || isPending}
                     className="flex-1 gap-2"
                   >
-                    <Minus className="size-4" />
-                    Confirmar salida
+                    {isPending ? <Loader2 className="size-4 animate-spin" /> : <Minus className="size-4" />}
+                    {isPending ? 'Procesando...' : 'Confirmar salida'}
                   </Button>
                 </div>
               </div>
@@ -458,10 +457,7 @@ export function PanelAccionRapida({
                     >
                       <SelectTrigger className="w-full h-11">
                         {isLoading ? (
-                          <span className="text-muted-foreground flex items-center gap-2">
-                            <Loader2 className="size-4 animate-spin" />
-                            Cargando...
-                          </span>
+                          <span className="h-4 w-32 rounded bg-muted animate-pulse" />
                         ) : (
                           <SelectValue placeholder="Seleccionar..." />
                         )}
@@ -485,10 +481,7 @@ export function PanelAccionRapida({
                     <Select value={ubicacionDestino} onValueChange={setUbicacionDestino} disabled={isLoading}>
                       <SelectTrigger className="w-full h-11">
                         {isLoading ? (
-                          <span className="text-muted-foreground flex items-center gap-2">
-                            <Loader2 className="size-4 animate-spin" />
-                            Cargando...
-                          </span>
+                          <span className="h-4 w-32 rounded bg-muted animate-pulse" />
                         ) : (
                           <SelectValue placeholder="Seleccionar..." />
                         )}
@@ -550,11 +543,11 @@ export function PanelAccionRapida({
                   </Button>
                   <Button
                     onClick={handleSubmit}
-                    disabled={!ubicacionOrigen || !ubicacionDestino}
+                    disabled={!ubicacionOrigen || !ubicacionDestino || isPending}
                     className="flex-1 gap-2"
                   >
-                    <ArrowRightLeft className="size-4" />
-                    Confirmar traslado
+                    {isPending ? <Loader2 className="size-4 animate-spin" /> : <ArrowRightLeft className="size-4" />}
+                    {isPending ? 'Procesando...' : 'Confirmar traslado'}
                   </Button>
                 </div>
               </div>

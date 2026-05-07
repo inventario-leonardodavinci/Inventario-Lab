@@ -63,15 +63,24 @@ export type RegistroSesion = {
   sistema_operativo: string | null
   pais: string | null
   ciudad: string | null
-  tipo_evento: 'login' | 'logout' | 'refresh'
+  tipo_evento: 'login' | 'logout' | 'refresh' | 'oauth'
   exitoso: boolean
   iniciada_en: string
+  user_agent: string | null
 }
 
 export function getHistorialSesiones(authUserId: string) {
   return apiClient<{ data: RegistroSesion[] }>(
     '/perfil/historial-sesiones',
     {},
+    { authUserId },
+  )
+}
+
+export function eliminarSesion(authUserId: string, sesionId: number) {
+  return apiClient<{ message: string }>(
+    `/perfil/sesiones/${sesionId}`,
+    { method: 'DELETE' },
     { authUserId },
   )
 }
