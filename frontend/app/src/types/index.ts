@@ -11,6 +11,7 @@ export type Severidad = 'baja' | 'media' | 'alta' | 'critica'
 export type EstadoAlerta = 'abierta' | 'confirmada' | 'resuelta' | 'ignorada'
 export type EstadoActivo = 'operativo' | 'mantenimiento_pendiente' | 'en_mantenimiento' | 'fuera_servicio' | 'retirado'
 export type Rol = 'administrador' | 'profesor' | 'consultor'
+export type RolLegado = 'admin' | 'tecnico' | 'consulta'
 export type TipoUbicacion = 'armario' | 'nevera' | 'estanteria' | 'cajon' | 'vitrina' | 'otro'
 
 // ─── Paginación ───────────────────────────────────────────────────────────────
@@ -39,6 +40,7 @@ export interface Articulo {
   notas: string | null
   activo: boolean
   stock_total: number
+  stock_minimo: number
   estado_stock: 'critico' | 'ok'
   created_at: string
   updated_at: string
@@ -119,6 +121,8 @@ export interface RegistroAuditoria {
   entidad_id: number | null
   antes_json: Record<string, unknown> | null
   despues_json: Record<string, unknown> | null
+  ip_address: string | null
+  user_agent: string | null
   created_at: string
 }
 
@@ -130,8 +134,11 @@ export interface UsuarioApp {
   roles: Array<{ id: number; name: string }>
   created_at: string
   updated_at: string
-  // avatar_url viene de Insforge Auth (no se guarda en nuestra BD)
+  // Campos enriquecidos desde InsForge Auth (getProfile)
   avatar_url?: string | null
+  email?: string | null
+  emailVerified?: boolean
+  providers?: string[]
 }
 
 export interface ActivoMantenimiento {

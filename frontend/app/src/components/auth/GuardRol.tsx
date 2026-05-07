@@ -25,22 +25,7 @@ export function GuardRol({ roles, children, fallback = null }: GuardRolProps) {
 
   if (!user) return <>{fallback}</>
 
-  // El rol del usuario viene del contexto de autenticación como user.role
-  // Los roles del nuevo esquema son: 'administrador' | 'profesor' | 'consultor'
-  // El esquema anterior usaba: 'admin' | 'tecnico' | 'consulta'
-  // Mapeamos ambos para compatibilidad durante la transición
-  const rolActual = user.role as string
-
-  const tieneRol = roles.some((rol) => {
-    if (rolActual === rol) return true
-    // Compatibilidad con roles del esquema anterior
-    const mapaLegado: Record<string, string> = {
-      admin: 'administrador',
-      tecnico: 'profesor',
-      consulta: 'consultor',
-    }
-    return mapaLegado[rolActual] === rol
-  })
+  const tieneRol = roles.includes(user.role)
 
   if (!tieneRol) return <>{fallback}</>
 

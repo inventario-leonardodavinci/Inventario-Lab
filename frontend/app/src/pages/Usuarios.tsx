@@ -40,6 +40,10 @@ import {
   UserX,
   Users,
   Crown,
+  Mail,
+  CheckCircle2,
+  XCircle,
+  Globe,
 } from 'lucide-react'
 import { toast } from 'sonner'
 import { SkeletonUsuarios } from '@/components/ui/PageSkeleton'
@@ -152,26 +156,58 @@ function ModalDetalleUsuario({
           </div>
         </div>
 
-        {/* Datos */}
-        <div className="grid grid-cols-2 gap-x-4 gap-y-2 text-sm border rounded-lg p-3 bg-muted/30">
-          <span className="text-muted-foreground">ID interno</span>
-          <span className="font-mono text-xs">{usuario.id}</span>
+        {/* Datos de Auth */}
+        <div className="rounded-lg border bg-muted/30 divide-y text-sm">
+          {usuario.email && (
+            <div className="flex items-center gap-3 px-3 py-2.5">
+              <Mail className="size-3.5 shrink-0 text-muted-foreground" />
+              <span className="text-muted-foreground text-xs w-24 shrink-0">Email</span>
+              <span className="font-medium truncate">{usuario.email}</span>
+              {usuario.emailVerified ? (
+                <CheckCircle2 className="size-3.5 shrink-0 text-green-600" />
+              ) : (
+                <XCircle className="size-3.5 shrink-0 text-amber-500" />
+              )}
+            </div>
+          )}
 
-          <span className="text-muted-foreground">Auth ID</span>
-          <span className="font-mono text-xs truncate" title={usuario.auth_user_id}>
-            {usuario.auth_user_id.slice(0, 16)}…
-          </span>
+          {usuario.providers && usuario.providers.length > 0 && (
+            <div className="flex items-center gap-3 px-3 py-2.5">
+              <Globe className="size-3.5 shrink-0 text-muted-foreground" />
+              <span className="text-muted-foreground text-xs w-24 shrink-0">Proveedor</span>
+              <div className="flex gap-1.5 flex-wrap">
+                {usuario.providers.map((p) => (
+                  <Badge key={p} variant="secondary" className="text-xs">
+                    {p}
+                  </Badge>
+                ))}
+              </div>
+            </div>
+          )}
 
-          <span className="text-muted-foreground">Registrado</span>
-          <span>{formatearFecha(usuario.created_at)}</span>
+          <div className="flex items-center gap-3 px-3 py-2.5">
+            <span className="text-muted-foreground text-xs w-24 shrink-0">Registrado</span>
+            <span>{formatearFecha(usuario.created_at)}</span>
+          </div>
 
-          <span className="text-muted-foreground">Última actividad</span>
-          <span>{formatearFechaRelativa(usuario.updated_at ?? usuario.created_at)}</span>
+          <div className="flex items-center gap-3 px-3 py-2.5">
+            <span className="text-muted-foreground text-xs w-24 shrink-0">Últ. actividad</span>
+            <span>{formatearFechaRelativa(usuario.updated_at ?? usuario.created_at)}</span>
+          </div>
 
-          <span className="text-muted-foreground">Estado</span>
-          <span className={usuario.activo ? 'text-green-600 font-medium' : 'text-destructive font-medium'}>
-            {usuario.activo ? 'Activo' : 'Desactivado'}
-          </span>
+          <div className="flex items-center gap-3 px-3 py-2.5">
+            <span className="text-muted-foreground text-xs w-24 shrink-0">Estado</span>
+            <span className={usuario.activo ? 'text-green-600 font-medium' : 'text-destructive font-medium'}>
+              {usuario.activo ? 'Activo' : 'Desactivado'}
+            </span>
+          </div>
+
+          <div className="flex items-center gap-3 px-3 py-2.5">
+            <span className="text-muted-foreground text-xs w-24 shrink-0">Auth ID</span>
+            <span className="font-mono text-xs truncate text-muted-foreground" title={usuario.auth_user_id}>
+              {usuario.auth_user_id.slice(0, 20)}…
+            </span>
+          </div>
         </div>
 
         {/* Acciones (solo si no es el propio usuario) */}
@@ -281,7 +317,7 @@ export default function Usuarios() {
   const perfilActual = perfilData?.data
   const cargandoPerfil = perfilData === undefined
 
-  const esAdmin = user?.role === 'admin' || (user?.role as string) === 'administrador'
+  const esAdmin = user?.role === 'administrador'
   const pendiente =
     actualizarRolMutation.isPending ||
     actualizarEstadoMutation.isPending ||
@@ -291,12 +327,18 @@ export default function Usuarios() {
 
   if (!esAdmin) {
     return (
-      <main className="flex flex-1 flex-col items-center justify-center gap-4 bg-muted/20 p-4 lg:p-6">
-        <Shield className="size-12 text-muted-foreground" />
-        <h2 className="text-xl font-semibold">Acceso restringido</h2>
-        <p className="text-sm text-muted-foreground">
-          Esta sección solo está disponible para administradores del sistema.
-        </p>
+      <main className="flex flex-1 flex-col items-center justify-center bg-muted/20 p-4 lg:p-6">
+        <Card className="w-full max-w-sm text-center shadow-sm">
+          <CardHeader className="pb-3">
+            <div className="mx-auto mb-3 flex size-14 items-center justify-center rounded-full bg-destructive/10">
+              <Shield className="size-7 text-destructive" />
+            </div>
+            <CardTitle>Acceso restringido</CardTitle>
+            <CardDescription>
+              Esta sección solo está disponible para administradores del sistema.
+            </CardDescription>
+          </CardHeader>
+        </Card>
       </main>
     )
   }
@@ -345,9 +387,9 @@ export default function Usuarios() {
   const admins = usuarios.filter((u) => extraerRol(u.roles) === 'administrador').length
 
   return (
-    <main className="flex flex-1 flex-col gap-6 bg-muted/20 p-4 lg:p-6">
+    <main className="animate-page-enter flex flex-1 flex-col gap-6 bg-muted/20 p-4 lg:p-6">
       {/* Cabecera */}
-      <div className="flex flex-col gap-1">
+      <div className="page-section flex flex-col gap-1">
         <h2 className="text-2xl font-semibold tracking-tight">Usuarios</h2>
         <p className="text-sm text-muted-foreground">
           Gestión de usuarios y roles del sistema.
@@ -355,8 +397,8 @@ export default function Usuarios() {
       </div>
 
       {/* KPIs */}
-      <div className="grid grid-cols-2 gap-3 sm:grid-cols-3">
-        <Card className="p-4">
+      <div className="page-section grid grid-cols-2 gap-3 sm:grid-cols-3">
+        <Card className="stat-card stagger-row p-4">
           <div className="flex items-center gap-3">
             <div className="rounded-lg bg-primary/10 p-2">
               <Users className="size-4 text-primary" />
@@ -367,7 +409,7 @@ export default function Usuarios() {
             </div>
           </div>
         </Card>
-        <Card className="p-4">
+        <Card className="stat-card stagger-row p-4">
           <div className="flex items-center gap-3">
             <div className="rounded-lg bg-green-500/10 p-2">
               <UserCheck className="size-4 text-green-600" />
@@ -378,7 +420,7 @@ export default function Usuarios() {
             </div>
           </div>
         </Card>
-        <Card className="p-4 col-span-2 sm:col-span-1">
+        <Card className="stat-card stagger-row p-4 col-span-2 sm:col-span-1">
           <div className="flex items-center gap-3">
             <div className="rounded-lg bg-amber-500/10 p-2">
               <Crown className="size-4 text-amber-600" />
@@ -414,17 +456,20 @@ export default function Usuarios() {
                 return (
                   <div
                     key={usuario.id}
-                    className="flex items-center gap-3 px-4 py-3 hover:bg-muted/40 transition-colors"
+                    className="flex items-center gap-3 px-4 py-3 hover:bg-muted/40 transition-colors cursor-pointer"
+                    onClick={() => setUsuarioDetalle(usuario)}
+                    role="button"
+                    tabIndex={0}
+                    onKeyDown={(e) => e.key === 'Enter' && setUsuarioDetalle(usuario)}
+                    aria-label={`Ver detalle de ${usuario.nombre_visible ?? 'usuario'}`}
                   >
                     {/* Avatar */}
-                    <button
-                      type="button"
-                      onClick={() => setUsuarioDetalle(usuario)}
-                      className="shrink-0 rounded-full focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
-                      aria-label={`Ver detalle de ${usuario.nombre_visible ?? 'usuario'}`}
+                    <div
+                      className="shrink-0"
+                      onClick={(e) => e.stopPropagation()}
                     >
                       <AvatarUsuario usuario={usuario} size="md" />
-                    </button>
+                    </div>
 
                     {/* Nombre y estado */}
                     <div className="flex flex-col min-w-0 flex-1">
@@ -448,19 +493,26 @@ export default function Usuarios() {
                           {rolActual === 'administrador' && <Crown className="size-2.5 mr-1" />}
                           {formatearRol(rolActual)}
                         </Badge>
-                        <span className="text-xs text-muted-foreground hidden sm:inline">
-                          Desde {formatearFecha(usuario.created_at)}
-                        </span>
+                        {usuario.email && (
+                          <span className="text-xs text-muted-foreground hidden sm:inline truncate max-w-[180px]">
+                            {usuario.email}
+                          </span>
+                        )}
+                        {!usuario.email && (
+                          <span className="text-xs text-muted-foreground hidden sm:inline">
+                            Desde {formatearFecha(usuario.created_at)}
+                          </span>
+                        )}
                       </div>
                     </div>
 
                     {/* Selector de rol rápido (solo en desktop, no para sí mismo) */}
                     {!esPropioUsuario && (
-                      <div className="hidden md:block shrink-0">
+                      <div className="hidden md:block shrink-0" onClick={(e) => e.stopPropagation()}>
                         <Select
                           value={rolActual}
                           onValueChange={(v) => void handleCambiarRol(usuario.id, v as Rol)}
-                          disabled={pendiente || cargandoPerfil}
+                          disabled={pendiente}
                         >
                           <SelectTrigger className="w-[150px] h-8 text-xs">
                             <SelectValue />
@@ -478,13 +530,14 @@ export default function Usuarios() {
 
                     {/* Menú de acciones */}
                     {!esPropioUsuario ? (
+                      <div onClick={(e) => e.stopPropagation()}>
                       <DropdownMenu>
                         <DropdownMenuTrigger asChild>
                           <Button
                             variant="ghost"
                             size="icon"
                             className="size-8 shrink-0"
-                            disabled={pendiente || cargandoPerfil}
+                            disabled={pendiente}
                             aria-label="Más acciones"
                           >
                             <MoreHorizontal className="size-4" />
@@ -513,6 +566,7 @@ export default function Usuarios() {
                           </DropdownMenuItem>
                         </DropdownMenuContent>
                       </DropdownMenu>
+                      </div>
                     ) : (
                       <div className="size-8 shrink-0" />
                     )}

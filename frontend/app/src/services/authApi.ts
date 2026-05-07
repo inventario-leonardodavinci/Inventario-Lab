@@ -12,7 +12,7 @@ export type SesionUsuario = {
   emailVerified: boolean;
   displayName: string;
   avatarUrl?: string;
-  role: "administrador" | "profesor" | "consultor" | "admin" | "tecnico" | "consulta";
+  role: "administrador" | "profesor" | "consultor";
   createdAt: string;
   metadata: Record<string, unknown>;
 };

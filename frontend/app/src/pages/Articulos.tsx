@@ -2,10 +2,11 @@
  * Página unificada de Artículos - Vista Kanban/Grid
  * Apple/Meta style: Todo integrado sin tabs, acciones rápidas, UI minimalista
  */
-import { useMemo, useState, useEffect } from 'react'
-import { Plus, ArrowRightLeft, Bell } from 'lucide-react'
+import { useMemo } from 'react'
+import { Plus, ArrowRightLeft } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { useAuth } from '@/context/ContextoAutenticacion'
+import { GuardRol } from '@/components/auth/GuardRol'
 import {
   useArticulos,
   useCategorias,
@@ -16,7 +17,6 @@ import {
   useCrearMovimiento,
   useMovimientos,
   useArticulo,
-  useAlertas,
 } from '@/hooks/queries'
 import { useArticulosView } from './articulos/hooks/useArticulosView'
 import { FiltrosBar } from './articulos/components/FiltrosBar'
@@ -24,25 +24,15 @@ import type { TipoMovimiento } from '@/types'
 import { ArticulosGrid } from './articulos/components/ArticulosGrid'
 import { PanelAccionRapida } from './articulos/components/PanelAccionRapida'
 import { ArticuloDrawer } from './articulos/components/ArticuloDrawer'
-import { ArticuloFormSheet } from './articulos/components/ArticuloFormSheet'
+import { ArticuloFormSheet, type DatosFormArticulo } from './articulos/components/ArticuloFormSheet'
 import { validarMovimiento } from '@/services/movimientosApi'
 import { toast } from 'sonner'
 import { DEBOUNCE_DELAY_MS } from '@/constants'
-
-// Hook personalizado para debounce
-function useDebounce<T>(value: T, delay: number): T {
-  const [debouncedValue, setDebouncedValue] = useState(value)
-  
-  useEffect(() => {
-    const timer = setTimeout(() => setDebouncedValue(value), delay)
-    return () => clearTimeout(timer)
-  }, [value, delay])
-  
-  return debouncedValue
-}
+import { useDebounce } from '@/hooks/useDebounce'
 
 export default function Articulos() {
-  useAuth()
+  const { user } = useAuth()
+  const esEscritor = user?.role === 'administrador' || user?.role === 'profesor'
   const view = useArticulosView()
   
   // Debounce para la búsqueda
@@ -60,9 +50,8 @@ export default function Articulos() {
   
   const { data: categoriasData, isLoading: _isLoadingCategorias } = useCategorias()
   const { data: ubicacionesData, isLoading: isLoadingUbicaciones } = useUbicaciones()
-  const { data: alertasData, isLoading: _isLoadingAlertas } = useAlertas({ estado: 'abierta' })
   const { data: movimientosData } = useMovimientos({ per_page: 50 })
-  const { data: articuloDetalle } = useArticulo(view.articuloDetalle?.id ?? 0)
+  const { data: articuloDetalle, isLoading: isLoadingDetalle } = useArticulo(view.articuloDetalle?.id ?? 0)
   // Query para obtener stock del artículo seleccionado en panel de acción
   const { data: articuloPanelDetalle, isLoading: isLoadingPanelDetalle } = useArticulo(view.articuloSeleccionado?.id ?? 0)
   
@@ -76,26 +65,14 @@ export default function Articulos() {
   const articulos = articulosData?.data ?? []
   const categorias = categoriasData?.data ?? []
   const ubicaciones = ubicacionesData?.data ?? []
-  const alertasAbiertas = alertasData?.data?.length ?? 0
   const movimientos = movimientosData?.data ?? []
-  
-  // Filtrado adicional para alertas
-  const articulosFiltrados = useMemo(() => {
-    if (view.filtro !== 'alertas') return articulos
-    
-    // Artículos que tienen alertas abiertas
-    const alertas = alertasData?.data ?? []
-    const articulosConAlerta = new Set(alertas.map((a) => a.articulo_id))
-    return articulos.filter((a) => articulosConAlerta.has(a.id))
-  }, [articulos, alertasData, view.filtro])
   
   // Contadores para filtros
   const contadores = useMemo(() => ({
     todos: articulosData?.meta?.total ?? articulos.length,
     critico: articulos.filter((a) => a.estado_stock === 'critico' && a.activo).length,
-    alertas: alertasAbiertas,
     inactivos: articulos.filter((a) => !a.activo).length,
-  }), [articulos, articulosData, alertasAbiertas])
+  }), [articulos, articulosData])
   
   // Movimientos del artículo seleccionado
   const movimientosArticulo = useMemo(() => {
@@ -106,14 +83,7 @@ export default function Articulos() {
   }, [movimientos, view.articuloDetalle])
   
   // Handlers
-  const handleCrearArticulo = async (datos: {
-    nombre: string
-    codigo?: string
-    descripcion?: string
-    categoria_id: number
-    unidad?: string
-    notas?: string
-  }) => {
+  const handleCrearArticulo = async (datos: DatosFormArticulo) => {
     try {
       await crearArticulo.mutateAsync(datos)
       toast.success('Artículo creado correctamente')
@@ -123,14 +93,7 @@ export default function Articulos() {
     }
   }
   
-  const handleActualizarArticulo = async (datos: {
-    nombre: string
-    codigo?: string
-    descripcion?: string
-    categoria_id: number
-    unidad?: string
-    notas?: string
-  }) => {
+  const handleActualizarArticulo = async (datos: DatosFormArticulo) => {
     if (!view.articuloEditando) return
     try {
       await actualizarArticulo.mutateAsync({
@@ -196,10 +159,9 @@ export default function Articulos() {
     
     try {
       await crearMovimiento.mutateAsync(datosMovimiento)
-      
       toast.success(`${view.articuloSeleccionado.nombre}: ${tipo} de ${cantidad} unidades`)
-      view.setMostrarPanelAccion(false)
       view.setCantidad(1)
+      view.setTipoMovimiento(null)
     } catch (error) {
       toast.error(error instanceof Error ? error.message : 'Error al registrar movimiento')
     }
@@ -222,13 +184,13 @@ export default function Articulos() {
   }
   
   return (
-    <main className="flex flex-1 flex-col gap-6 bg-muted/20 p-4 lg:p-6">
-      <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
+    <main className="animate-page-enter flex flex-1 flex-col gap-6 bg-muted/20 p-4 lg:p-6">
+      <div className="page-section flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
         <div className="flex items-center gap-3">
           <div>
             <h1 className="text-2xl font-semibold tracking-tight">Inventario</h1>
             <p className="text-sm text-muted-foreground">
-              {articulos.length} artículos · {alertasAbiertas} alertas
+              {articulos.length} artículos
             </p>
           </div>
           {/* Indicador sutil de carga (solo refetch, no carga inicial) */}
@@ -245,24 +207,16 @@ export default function Articulos() {
             <ArrowRightLeft className="size-4 mr-2" />
             Historial
           </Button>
-          {alertasAbiertas > 0 && (
-            <Button 
-              variant="outline" 
-              size="sm" 
-              className="text-destructive border-destructive/50"
-              onClick={() => view.setFiltro('alertas')}
-            >
-              <Bell className="size-4 mr-2" />
-              {alertasAbiertas} alertas
+          <GuardRol roles={['administrador', 'profesor']}>
+            <Button size="sm" onClick={view.abrirCrear}>
+              <Plus className="size-4 mr-2" />
+              Nuevo artículo
             </Button>
-          )}
-          <Button size="sm" onClick={view.abrirCrear}>
-            <Plus className="size-4 mr-2" />
-            Nuevo artículo
-          </Button>
+          </GuardRol>
         </div>
       </div>
       
+      <div className="page-section">
       <FiltrosBar
         filtro={view.filtro}
         busqueda={view.busqueda}
@@ -270,6 +224,7 @@ export default function Articulos() {
         ubicacionId={view.ubicacionId}
         modo={view.modo}
         filtrosActivos={!!view.filtrosActivos}
+        isFetching={isFetching}
         contadores={contadores}
         categorias={categorias}
         ubicaciones={ubicaciones}
@@ -280,9 +235,11 @@ export default function Articulos() {
         onModoChange={view.setModo}
         onLimpiar={view.limpiarFiltros}
       />
+      </div>
       
+      <div className="page-section">
       <ArticulosGrid
-        articulos={articulosFiltrados}
+        articulos={articulos}
         modo={view.modo}
         onEntrada={(art) => {
           view.seleccionarArticulo(art, 'entrada')
@@ -297,9 +254,10 @@ export default function Articulos() {
           view.setTipoMovimiento('traslado')
         }}
         onVerDetalle={view.abrirDetalle}
-        onEditar={view.abrirEditar}
+        onEditar={esEscritor ? view.abrirEditar : undefined}
         onCrear={view.abrirCrear}
       />
+      </div>
       
       <PanelAccionRapida
         articulo={view.articuloSeleccionado}
@@ -309,6 +267,7 @@ export default function Articulos() {
         nivelesStock={articuloPanelDetalle?.data?.niveles_stock ?? []}
         isLoadingUbicaciones={isLoadingUbicaciones}
         isLoadingStock={isLoadingPanelDetalle}
+        isPending={crearMovimiento.isPending}
         open={view.mostrarPanelAccion && !!view.articuloSeleccionado}
         onCantidadChange={view.setCantidad}
         onSubmit={handleMovimiento}
@@ -319,6 +278,7 @@ export default function Articulos() {
         articulo={view.articuloDetalle}
         movimientos={movimientosArticulo}
         nivelesStock={articuloDetalle?.data?.niveles_stock ?? []}
+        isLoadingStock={isLoadingDetalle}
         open={view.drawerAbierto}
         onClose={view.cerrarDetalle}
         onEditar={() => {
@@ -340,7 +300,9 @@ export default function Articulos() {
       <ArticuloFormSheet
         articulo={view.articuloEditando}
         categorias={categorias}
+        ubicaciones={ubicaciones}
         open={view.formAbierto}
+        isPending={view.articuloEditando ? actualizarArticulo.isPending : crearArticulo.isPending}
         onClose={view.cerrarForm}
         onSubmit={view.articuloEditando ? handleActualizarArticulo : handleCrearArticulo}
       />

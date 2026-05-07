@@ -1,7 +1,7 @@
 import { Package, Plus } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { ArticuloCard } from './ArticuloCard'
-import { cn } from '@/lib/utils'
+import { ArticulosTabla } from './ArticulosTabla'
 import type { Articulo } from '@/types'
 
 interface ArticulosGridProps {
@@ -11,7 +11,7 @@ interface ArticulosGridProps {
   onSalida: (articulo: Articulo) => void
   onTraslado: (articulo: Articulo) => void
   onVerDetalle: (articulo: Articulo) => void
-  onEditar: (articulo: Articulo) => void
+  onEditar?: (articulo: Articulo) => void
   onCrear: () => void
 }
 
@@ -27,7 +27,7 @@ export function ArticulosGrid({
 }: ArticulosGridProps) {
   if (articulos.length === 0) {
     return (
-      <div className="flex flex-col items-center justify-center gap-4 py-16 text-center">
+      <div className="animate-fade-in-up flex flex-col items-center justify-center gap-4 py-16 text-center">
         <div className="flex size-16 items-center justify-center rounded-full bg-muted">
           <Package className="size-8 text-muted-foreground" />
         </div>
@@ -45,25 +45,32 @@ export function ArticulosGrid({
     )
   }
 
+  if (modo === 'lista') {
+    return (
+      <ArticulosTabla
+        articulos={articulos}
+        onEntrada={onEntrada}
+        onSalida={onSalida}
+        onTraslado={onTraslado}
+        onVerDetalle={onVerDetalle}
+        onEditar={onEditar}
+      />
+    )
+  }
+
   return (
-    <div
-      className={cn(
-        "grid gap-4",
-        modo === 'grid' 
-          ? "grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 2xl:grid-cols-5" 
-          : "grid-cols-1"
-      )}
-    >
+    <div className="grid gap-4 grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 2xl:grid-cols-5">
       {articulos.map((articulo) => (
-        <ArticuloCard
-          key={articulo.id}
-          articulo={articulo}
-          onEntrada={onEntrada}
-          onSalida={onSalida}
-          onTraslado={onTraslado}
-          onVerDetalle={onVerDetalle}
-          onEditar={onEditar}
-        />
+        <div key={articulo.id} className="stagger-row">
+          <ArticuloCard
+            articulo={articulo}
+            onEntrada={onEntrada}
+            onSalida={onSalida}
+            onTraslado={onTraslado}
+            onVerDetalle={onVerDetalle}
+            onEditar={onEditar}
+          />
+        </div>
       ))}
     </div>
   )

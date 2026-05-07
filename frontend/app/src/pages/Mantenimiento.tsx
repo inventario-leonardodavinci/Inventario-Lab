@@ -5,6 +5,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { Input } from '@/components/ui/input'
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table'
 import { useMantenimiento, useCrearActivo } from '@/hooks/queries'
+import { GuardRol } from '@/components/auth/GuardRol'
 import { toast } from 'sonner'
 import type { ActivoMantenimiento } from '@/types'
 import { SkeletonMantenimiento } from '@/components/ui/PageSkeleton'
@@ -44,8 +45,8 @@ export default function Mantenimiento() {
   }
 
   return (
-    <main className="flex flex-1 flex-col gap-6 bg-muted/20 p-4 lg:p-6">
-      <div className="flex flex-col items-start justify-between gap-4 md:flex-row md:items-center">
+    <main className="animate-page-enter flex flex-1 flex-col gap-6 bg-muted/20 p-4 lg:p-6">
+      <div className="page-section flex flex-col items-start justify-between gap-4 md:flex-row md:items-center">
         <div className="flex flex-col gap-1">
           <h2 className="text-2xl font-semibold tracking-tight">Mantenimiento</h2>
           <p className="text-sm text-muted-foreground">Gestión de activos y estado operativo del laboratorio.</p>
@@ -55,31 +56,33 @@ export default function Mantenimiento() {
         )}
       </div>
 
-      {/* Alta rápida */}
-      <Card>
-        <CardHeader>
-          <CardTitle className="flex items-center gap-2 text-base">
-            <div className="flex size-7 items-center justify-center rounded-lg bg-primary/10">
-              <Plus className="size-4 text-primary" />
-            </div>
-            Alta rápida de activo
-          </CardTitle>
-          <CardDescription>Registra un nuevo activo con su código identificador.</CardDescription>
-        </CardHeader>
-        <CardContent className="flex gap-2">
-          <Input
-            placeholder="Código de activo (ej. EQ-001)"
-            value={assetCode}
-            onChange={(e) => setAssetCode(e.target.value)}
-            onKeyDown={(e) => { if (e.key === 'Enter') void createAsset() }}
-            className="max-w-sm"
-          />
-          <Button onClick={createAsset} disabled={crearMutation.isPending || !assetCode.trim()} className="gap-1.5">
-            <Plus className="size-4" />
-            {crearMutation.isPending ? 'Creando...' : 'Crear'}
-          </Button>
-        </CardContent>
-      </Card>
+      {/* Alta rápida — solo administrador y profesor */}
+      <GuardRol roles={['administrador', 'profesor']}>
+        <Card className="page-section">
+          <CardHeader>
+            <CardTitle className="flex items-center gap-2 text-base">
+              <div className="flex size-7 items-center justify-center rounded-lg bg-primary/10">
+                <Plus className="size-4 text-primary" />
+              </div>
+              Alta rápida de activo
+            </CardTitle>
+            <CardDescription>Registra un nuevo activo con su código identificador.</CardDescription>
+          </CardHeader>
+          <CardContent className="flex gap-2">
+            <Input
+              placeholder="Código de activo (ej. EQ-001)"
+              value={assetCode}
+              onChange={(e) => setAssetCode(e.target.value)}
+              onKeyDown={(e) => { if (e.key === 'Enter') void createAsset() }}
+              className="max-w-sm"
+            />
+            <Button onClick={createAsset} disabled={crearMutation.isPending || !assetCode.trim()} className="gap-1.5">
+              <Plus className="size-4" />
+              {crearMutation.isPending ? 'Creando...' : 'Crear'}
+            </Button>
+          </CardContent>
+        </Card>
+      </GuardRol>
 
       {/* Tabla de activos */}
       <Card>
