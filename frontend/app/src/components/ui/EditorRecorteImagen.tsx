@@ -1,4 +1,5 @@
 import { useState, useCallback } from "react";
+import { createPortal } from "react-dom";
 import Cropper, { type Area } from "react-easy-crop";
 import { X, ZoomIn, RotateCw, Check, Upload, Trash2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
@@ -114,7 +115,7 @@ export function EditorRecorteImagen({
 
   if (!abierto) return null;
 
-  return (
+  return createPortal(
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/80 backdrop-blur-sm">
       <div className="relative flex w-full max-w-2xl flex-col rounded-xl bg-background shadow-2xl">
         <div className="flex items-center justify-between border-b px-6 py-4">
@@ -207,6 +208,7 @@ export function EditorRecorteImagen({
           </div>
         </div>
       </div>
-    </div>
+    </div>,
+    document.body
   );
 }
