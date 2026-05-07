@@ -1,38 +1,40 @@
 /**
  * Componente de sincronización de rol
- * 
- * Este componente utiliza useUserRole (con caché de TanStack Query)
- * para obtener el rol del usuario y sincronizarlo con el store de Zustand.
- * 
- * Esto asegura que:
- * 1. Solo se hace UNA petición al backend para obtener el rol
- * 2. El rol se cachea por 5 minutos (staleTime)
- * 3. El rol se persiste en localStorage para sobrevivir recargas
- * 4. Si hay un rol cacheado en Zustand, se usa mientras carga el nuevo
+ *
+ * Obtiene el rol real desde el backend (vía TanStack Query con caché)
+ * y lo sincroniza tanto en el store de Zustand como en el contexto de
+ * autenticación (user.role). Así todos los checks de rol en el frontend
+ * usan el valor actualizado de la BD, no el de la sesión cacheada.
  */
 
 import { useEffect, useRef } from 'react'
 import { useUserRole } from '@/hooks/queries'
 import { useSesionStore } from '@/stores/useSesionStore'
+import { useAuth } from '@/context/ContextoAutenticacion'
+import type { SesionUsuario } from '@/services/authApi'
 
 export function UserRoleSync() {
   const { data: rolBackend, isLoading, error } = useUserRole()
+  const { actualizarUsuario } = useAuth()
   const setRol = useSesionStore((state) => state.setRol)
   const rolPersistido = useSesionStore((state) => state.rol)
-  
+
   // Ref para evitar actualizaciones innecesarias
   const ultimoRol = useRef<string | null>(rolPersistido)
 
   useEffect(() => {
-    // Si hay un rol nuevo del backend y es diferente al último conocido
     if (rolBackend && typeof rolBackend === 'string') {
       if (rolBackend !== ultimoRol.current) {
         console.log('[UserRoleSync] Actualizando rol:', rolBackend)
         ultimoRol.current = rolBackend
+        // Actualizar store persistido
         setRol(rolBackend)
+        // Actualizar user.role en el contexto de autenticación
+        // para que todos los checks de rol en la UI sean correctos
+        actualizarUsuario({ role: rolBackend as SesionUsuario['role'] })
       }
     }
-  }, [rolBackend, setRol])
+  }, [rolBackend, setRol, actualizarUsuario])
 
   // Log de debugging (solo en desarrollo)
   useEffect(() => {
@@ -46,6 +48,5 @@ export function UserRoleSync() {
     }
   }, [rolPersistido, rolBackend, isLoading, error])
 
-  // Este componente no renderiza nada visual
   return null
 }

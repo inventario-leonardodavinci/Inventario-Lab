@@ -1,5 +1,5 @@
 import { createContext, useCallback, useContext, useEffect, useMemo, useRef, useState } from "react";
-import { QueryClient } from '@tanstack/react-query'
+import { useQueryClient } from '@tanstack/react-query'
 import {
   loginConInsforge,
   verificarSesionActual,
@@ -20,9 +20,6 @@ import {
 import { enviarEventoLogin } from "@/services/notificacionesApi";
 import { useSesionStore } from "@/stores/useSesionStore";
 import { UserRoleSync } from "@/components/auth/UserRoleSync";
-
-// QueryClient para precargar el rol
-const queryClient = new QueryClient()
 
 // Variable global para evitar múltiples verificaciones por StrictMode
 let verificacionGlobalEnProgreso = false
@@ -46,7 +43,25 @@ type ValorContextoAutenticacion = {
 
 const ContextoAutenticacion = createContext<ValorContextoAutenticacion | undefined>(undefined);
 
+async function verificarSesionConReintento(
+  tieneSesionPersistida: boolean,
+): Promise<Awaited<ReturnType<typeof verificarSesionActual>>> {
+  const primerResultado = await verificarSesionActual();
+
+  // En móviles (sobre todo iOS), tras recargar puede haber una ventana corta
+  // donde el SDK reporta "sin sesión" aunque el token aún sea válido.
+  if (!tieneSesionPersistida || primerResultado.tipo !== "sin_sesion") {
+    return primerResultado;
+  }
+
+  await new Promise((resolve) => setTimeout(resolve, 700));
+  const segundoResultado = await verificarSesionActual();
+
+  return segundoResultado;
+}
+
 export function ProveedorAutenticacion({ children }: { children: React.ReactNode }) {
+  const queryClient = useQueryClient();
   const { usuario: usuarioPersistido, rol: rolPersistido, setUsuario, limpiar } = useSesionStore();
 
   // Arrancar con el usuario del store (persiste en localStorage).
@@ -82,9 +97,9 @@ export function ProveedorAutenticacion({ children }: { children: React.ReactNode
     setUsuario(user);
   }, [user, setUsuario]);
 
-  // Sincronizar rol persistido con el usuario (al recargar página)
+  // Sincronizar rol persistido con el usuario solo si no hay rol en sesión actual.
   useEffect(() => {
-    if (user && rolPersistido && user.role !== rolPersistido) {
+    if (user && rolPersistido && !user.role) {
       setUser((prev) => prev ? { ...prev, role: rolPersistido as SesionUsuario['role'] } : prev);
     }
   }, [user, rolPersistido]);
@@ -122,7 +137,7 @@ export function ProveedorAutenticacion({ children }: { children: React.ReactNode
 
     const verificar = async () => {
       try {
-        const resultado = await verificarSesionActual();
+        const resultado = await verificarSesionConReintento(!!usuarioPersistido);
         
         if (logoutPendiente.current || abortControllerRef.current?.signal.aborted) {
           console.log('[Auth] Verificación cancelada');
@@ -193,19 +208,25 @@ export function ProveedorAutenticacion({ children }: { children: React.ReactNode
       }
     };
   // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []);
+  }, [queryClient]);
 
   const login = useCallback(async (email: string, password: string) => {
     const sesion = await loginConInsforge({ email, password });
+    // Limpiar el rol cacheado del usuario anterior ANTES de montar UserRoleSync
+    queryClient.removeQueries({ queryKey: ['userRole'] });
+    useSesionStore.getState().setRol(null);
     setUser(sesion);
+    await queryClient.invalidateQueries({ queryKey: ['perfil'] });
+    await queryClient.invalidateQueries({ queryKey: ['notificaciones'] });
+    await queryClient.invalidateQueries({ queryKey: ['historial-sesiones'] });
     enviarEventoLogin(sesion.authUserId).catch((err) => {
       console.warn("[historial] evento-login falló:", err);
     });
     
     // Sincronizar perfil y obtener rol UNA sola vez
     try {
-      await sincronizarPerfil(sesion.authUserId, sesion.displayName, sesion.email);
-      const rol = await obtenerRolDesdeBackend(sesion.authUserId);
+      await sincronizarPerfil(sesion.authUserId, sesion.displayName, sesion.email, sesion.role);
+      const rol = await obtenerRolDesdeBackend(sesion.authUserId, sesion.role, sesion.email);
       if (rol) {
         console.log('[Auth] Login - Rol obtenido:', rol);
         useSesionStore.getState().setRol(rol);
@@ -216,20 +237,23 @@ export function ProveedorAutenticacion({ children }: { children: React.ReactNode
     } catch (err) {
       console.error('[Auth] Error en login sincronizando perfil:', err);
     }
-  }, []);
+  }, [queryClient]);
 
   const registro = useCallback(async (email: string, password: string, displayName: string): Promise<ResultadoRegistro> => {
     const resultado = await registrarUsuario(email, password, displayName);
     if (resultado.tipo === "sesion_iniciada") {
       setUser(resultado.sesion);
+      await queryClient.invalidateQueries({ queryKey: ['perfil'] });
+      await queryClient.invalidateQueries({ queryKey: ['notificaciones'] });
+      await queryClient.invalidateQueries({ queryKey: ['historial-sesiones'] });
       enviarEventoLogin(resultado.sesion.authUserId).catch((err) => {
         console.warn("[historial] evento-login falló (registro):", err);
       });
       
       // Sincronizar perfil y obtener rol UNA sola vez
       try {
-        await sincronizarPerfil(resultado.sesion.authUserId, resultado.sesion.displayName, resultado.sesion.email);
-        const rol = await obtenerRolDesdeBackend(resultado.sesion.authUserId);
+        await sincronizarPerfil(resultado.sesion.authUserId, resultado.sesion.displayName, resultado.sesion.email, resultado.sesion.role);
+        const rol = await obtenerRolDesdeBackend(resultado.sesion.authUserId, resultado.sesion.role, resultado.sesion.email);
         if (rol) {
           console.log('[Auth] Registro - Rol obtenido:', rol);
           useSesionStore.getState().setRol(rol);
@@ -241,19 +265,22 @@ export function ProveedorAutenticacion({ children }: { children: React.ReactNode
       }
     }
     return resultado;
-  }, []);
+  }, [queryClient]);
 
   const verificarEmailFn = useCallback(async (email: string, otp: string) => {
     const sesion = await verificarEmail(email, otp);
     setUser(sesion);
+    await queryClient.invalidateQueries({ queryKey: ['perfil'] });
+    await queryClient.invalidateQueries({ queryKey: ['notificaciones'] });
+    await queryClient.invalidateQueries({ queryKey: ['historial-sesiones'] });
     enviarEventoLogin(sesion.authUserId).catch((err) => {
       console.warn("[historial] evento-login falló (verificarEmail):", err);
     });
     
     // Sincronizar perfil y obtener rol UNA sola vez
     try {
-      await sincronizarPerfil(sesion.authUserId, sesion.displayName, sesion.email);
-      const rol = await obtenerRolDesdeBackend(sesion.authUserId);
+      await sincronizarPerfil(sesion.authUserId, sesion.displayName, sesion.email, sesion.role);
+      const rol = await obtenerRolDesdeBackend(sesion.authUserId, sesion.role, sesion.email);
       if (rol) {
         console.log('[Auth] VerificarEmail - Rol obtenido:', rol);
         useSesionStore.getState().setRol(rol);
@@ -272,10 +299,14 @@ export function ProveedorAutenticacion({ children }: { children: React.ReactNode
   const logout = useCallback(async () => {
     logoutPendiente.current = true;
     await logoutDeInsforge();
+    queryClient.clear();
     setUser(null);
     limpiar();
     setCargando(false);
-  }, [limpiar]);
+    // Resetear flags para que el próximo login verifique la sesión correctamente
+    verificacionGlobalCompletada = false;
+    verificacionGlobalEnProgreso = false;
+  }, [limpiar, queryClient]);
 
   const actualizarUsuario = useCallback((cambios: Partial<SesionUsuario>) => {
     setUser((prev) => prev ? { ...prev, ...cambios } : prev);

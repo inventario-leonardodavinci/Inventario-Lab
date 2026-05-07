@@ -300,7 +300,7 @@ export async function logoutDeInsforge(): Promise<void> {
 // use el nombre real en lugar de 'Usuario' (necesario en flujo OAuth Google/Apple).
 // No sincroniza si el nombre es el fallback genérico — evita sobreescribir
 // un nombre real ya guardado en BD con el placeholder.
-export async function sincronizarPerfil(authUserId: string, displayName: string, email?: string): Promise<void> {
+export async function sincronizarPerfil(authUserId: string, displayName: string, email?: string, insforgeRole?: string): Promise<void> {
   // No sincronizar el fallback genérico: podría sobreescribir un nombre real en BD
   if (!displayName || displayName === 'Usuario') return;
 
@@ -308,7 +308,7 @@ export async function sincronizarPerfil(authUserId: string, displayName: string,
     await apiClient(
       "/perfil",
       { method: "PATCH", body: JSON.stringify({ nombre_visible: displayName }) },
-      { authUserId, authUserName: displayName, authUserEmail: email },
+      { authUserId, authUserName: displayName, authUserEmail: email, authUserRole: insforgeRole },
     );
   } catch {
     // Silencioso: no bloquear el login si falla la sincronización
@@ -353,13 +353,18 @@ export async function sincronizarPerfilOAuth(authUserId: string, sesionInicial: 
   return sesionInicial;
 }
 
-// Obtiene el rol real del usuario desde el backend Laravel
-export async function obtenerRolDesdeBackend(authUserId: string): Promise<SesionUsuario["role"] | null> {
+// Obtiene el rol real del usuario desde el backend Laravel.
+// Si se pasa insforgeRole (administrador/profesor), el backend lo sincroniza antes de responder.
+// Si se pasa email, el backend puede auto-promover según ADMIN_EMAILS en .env.
+export async function obtenerRolDesdeBackend(authUserId: string, insforgeRole?: string, email?: string): Promise<SesionUsuario["role"] | null> {
   const baseUrl = import.meta.env.VITE_API_BASE_URL as string;
   try {
+    const headers: Record<string, string> = { "X-Auth-User-Id": authUserId };
+    if (insforgeRole) headers["X-Auth-User-Role"] = insforgeRole;
+    if (email) headers["X-Auth-User-Email"] = email;
     const res = await fetch(`${baseUrl}/perfil`, {
-      headers: { "X-Auth-User-Id": authUserId },
-      signal: AbortSignal.timeout(5000),
+      headers,
+      signal: AbortSignal.timeout(12_000), // 12s: margen para latencia del backend remoto
     });
     if (!res.ok) return null;
     const json = await res.json() as { data?: { roles?: { name: string }[] } };

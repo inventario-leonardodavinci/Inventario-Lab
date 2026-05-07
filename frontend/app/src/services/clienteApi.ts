@@ -6,6 +6,7 @@ export type ApiClientOptions = {
   authUserId?: string;
   authUserName?: string;
   authUserEmail?: string;
+  authUserRole?: string;
 };
 
 const API_BASE_URL = import.meta.env.VITE_API_BASE_URL;
@@ -142,18 +143,35 @@ export async function apiClient<T>(
   configuracion: RequestInit = {},
   opciones: ApiClientOptions = {},
 ): Promise<T> {
-  const headers: Record<string, string> = {
-    'Content-Type': 'application/json',
+  const headers: Record<string, string> = {}
+
+  const headersEntrada = configuracion.headers
+  if (headersEntrada instanceof Headers) {
+    headersEntrada.forEach((value, key) => {
+      headers[key] = value
+    })
+  } else if (Array.isArray(headersEntrada)) {
+    for (const [key, value] of headersEntrada) {
+      headers[key] = value
+    }
+  } else if (headersEntrada && typeof headersEntrada === 'object') {
+    Object.assign(headers, headersEntrada as Record<string, string>)
+  }
+
+  if (!('Content-Type' in headers) && configuracion.body !== undefined) {
+    headers['Content-Type'] = 'application/json'
   }
 
   if (opciones.authUserId) headers['X-Auth-User-Id'] = opciones.authUserId
   if (opciones.authUserName) headers['X-Auth-User-Name'] = opciones.authUserName
   if (opciones.authUserEmail) headers['X-Auth-User-Email'] = opciones.authUserEmail
+  if (opciones.authUserRole) headers['X-Auth-User-Role'] = opciones.authUserRole
 
   const axiosConfig: AxiosRequestConfig = {
     method: (configuracion.method as string | undefined) ?? 'GET',
     headers,
     data: configuracion.body,
+    signal: configuracion.signal as AbortSignal | undefined,
   }
 
   const { data } = await httpClient.request<T>({

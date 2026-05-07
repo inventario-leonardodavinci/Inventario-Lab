@@ -23,10 +23,11 @@ import { getUbicaciones, crearUbicacion, actualizarUbicacion } from '@/services/
 import { getCategorias, crearCategoria, actualizarCategoria, eliminarCategoria } from '@/services/categoriasApi'
 import { getUsuarios, actualizarRolUsuario, actualizarEstadoUsuario, eliminarUsuario, getPerfil, actualizarPerfil, getHistorialSesiones, eliminarSesion } from '@/services/usuariosApi'
 import { getAuditoria } from '@/services/auditoriaApi'
-import { resolverAlerta, confirmarAlerta } from '@/services/alertasApi'
+import { getAlertas, resolverAlerta, confirmarAlerta } from '@/services/alertasApi'
 import { getNotificaciones } from '@/services/notificacionesApi'
 import { apiClient } from '@/services/clienteApi'
 import { insforge } from '@/services/insforgeClient'
+import { unwrapPaginated } from '@/services/apiUtils'
 import {
   STALE_TIME_MS,
   STALE_TIME_LONG_MS,
@@ -39,6 +40,7 @@ import type {
   FiltrosArticulos,
   FiltrosMovimiento,
   FiltrosAuditoria,
+  FiltrosAlerta,
   ActivoMantenimiento,
   Rol,
 } from '@/types'
@@ -46,6 +48,51 @@ import type { EntradaCrearArticulo, EntradaActualizarArticulo } from '@/services
 import type { EntradaCrearMovimiento } from '@/services/movimientosApi'
 import type { EntradaCrearUbicacion, EntradaActualizarUbicacion } from '@/services/ubicacionesApi'
 import type { EntradaCrearCategoria, EntradaActualizarCategoria } from '@/services/categoriasApi'
+
+const PERFIL_AUTH_CACHE_TTL_MS = 5 * 60 * 1000
+const perfilAuthCache = new Map<
+  string,
+  {
+    updatedAt: number
+    data: {
+      email: string | null
+      emailVerified: boolean
+      providers: string[]
+      avatar_url: string | null
+    }
+  }
+>()
+
+async function getProfileEnriquecido(authUserId: string): Promise<{
+  email: string | null
+  emailVerified: boolean
+  providers: string[]
+  avatar_url: string | null
+}> {
+  const cached = perfilAuthCache.get(authUserId)
+  if (cached && Date.now() - cached.updatedAt < PERFIL_AUTH_CACHE_TTL_MS) {
+    return cached.data
+  }
+
+  const { data: perfil } = await insforge.auth.getProfile(authUserId)
+  const p = perfil as Record<string, unknown> | null
+  const profileData = {
+    email: (p?.email as string | null) ?? null,
+    emailVerified: (p?.emailVerified as boolean | undefined) ?? false,
+    providers: (p?.providers as string[] | undefined) ?? [],
+    avatar_url:
+      (p?.avatar_url as string | null) ??
+      ((p?.profile as Record<string, unknown> | undefined)?.avatar_url as string | null) ??
+      null,
+  }
+
+  perfilAuthCache.set(authUserId, {
+    updatedAt: Date.now(),
+    data: profileData,
+  })
+
+  return profileData
+}
 
 // ─── Query keys ───────────────────────────────────────────────────────────────
 
@@ -63,8 +110,8 @@ export const queryKeys = {
     ['articulos', search ?? '', pagina ?? 1, activo, categoria_id, ubicacion_id, estado_stock, order_by, order_dir] as const,
   articulo: (id: number) =>
     ['articulos', id] as const,
-  perfil: () =>
-    ['perfil'] as const,
+  perfil: (authUserId?: string) =>
+    ['perfil', authUserId ?? ''] as const,
   userRole: (authUserId?: string) =>
     ['userRole', authUserId ?? ''] as const,
   ubicaciones: () =>
@@ -75,14 +122,18 @@ export const queryKeys = {
     ['movimientos', filtros] as const,
   auditoria: (filtros?: FiltrosAuditoria) =>
     ['auditoria', filtros?.entidad_tipo, filtros?.tipo_evento, filtros?.desde, filtros?.hasta, filtros?.pagina] as const,
-  usuarios: () =>
-    ['usuarios'] as const,
+  usuarios: (authUserId?: string) =>
+    ['usuarios', authUserId ?? ''] as const,
   mantenimiento: () =>
     ['mantenimiento'] as const,
   resumenHoy: () =>
     ['resumen-hoy'] as const,
-  notificaciones: () =>
-    ['notificaciones'] as const,
+  alertas: (filtros?: FiltrosAlerta) =>
+    ['alertas', filtros] as const,
+  notificaciones: (authUserId?: string) =>
+    ['notificaciones', authUserId ?? ''] as const,
+  historialSesiones: (authUserId?: string) =>
+    ['historial-sesiones', authUserId ?? ''] as const,
 }
 
 // ─── Artículos ────────────────────────────────────────────────────────────────
@@ -286,20 +337,19 @@ export function useAuditoria(filtros?: FiltrosAuditoria) {
 export function useUsuarios() {
   const { user } = useAuth()
   return useQuery({
-    queryKey: queryKeys.usuarios(),
+    queryKey: queryKeys.usuarios(user?.authUserId),
     queryFn: async () => {
       const res = await getUsuarios(user!.authUserId)
       const usuarios = res.data ?? []
       const enriquecidos = await Promise.all(
         usuarios.map(async (u) => {
-          const { data: perfil } = await insforge.auth.getProfile(u.auth_user_id)
-          const p = perfil as Record<string, unknown> | null
+          const perfil = await getProfileEnriquecido(u.auth_user_id)
           return {
             ...u,
-            email: (p?.email as string | null) ?? null,
-            emailVerified: (p?.emailVerified as boolean | undefined) ?? false,
-            providers: (p?.providers as string[] | undefined) ?? [],
-            avatar_url: (p?.avatar_url as string | null) ?? ((p?.profile as Record<string, unknown> | undefined)?.avatar_url as string | null) ?? u.avatar_url ?? null,
+            email: perfil.email,
+            emailVerified: perfil.emailVerified,
+            providers: perfil.providers,
+            avatar_url: perfil.avatar_url ?? u.avatar_url ?? null,
           }
         })
       )
@@ -316,7 +366,7 @@ export function useActualizarRolUsuario() {
     mutationFn: ({ usuarioId, rol }: { usuarioId: number; rol: Rol }) =>
       actualizarRolUsuario(user!.authUserId, usuarioId, rol),
     onSuccess: () => {
-      void queryClient.invalidateQueries({ queryKey: queryKeys.usuarios() })
+      void queryClient.invalidateQueries({ queryKey: queryKeys.usuarios(user?.authUserId) })
     },
   })
 }
@@ -328,7 +378,7 @@ export function useActualizarEstadoUsuario() {
     mutationFn: ({ usuarioId, activo }: { usuarioId: number; activo: boolean }) =>
       actualizarEstadoUsuario(user!.authUserId, usuarioId, activo),
     onSuccess: () => {
-      void queryClient.invalidateQueries({ queryKey: queryKeys.usuarios() })
+      void queryClient.invalidateQueries({ queryKey: queryKeys.usuarios(user?.authUserId) })
     },
   })
 }
@@ -340,7 +390,7 @@ export function useEliminarUsuario() {
     mutationFn: (usuarioId: number) =>
       eliminarUsuario(user!.authUserId, usuarioId),
     onSuccess: () => {
-      void queryClient.invalidateQueries({ queryKey: queryKeys.usuarios() })
+      void queryClient.invalidateQueries({ queryKey: queryKeys.usuarios(user?.authUserId) })
     },
   })
 }
@@ -350,7 +400,7 @@ export function useEliminarUsuario() {
 export function usePerfil() {
   const { user } = useAuth()
   return useQuery({
-    queryKey: queryKeys.perfil(),
+    queryKey: queryKeys.perfil(user?.authUserId),
     queryFn: () => getPerfil(user!.authUserId),
     enabled: !!user,
     staleTime: STALE_TIME_LONG_MS,
@@ -366,7 +416,7 @@ export function useActualizarPerfil() {
     mutationFn: (datos: { nombre_visible?: string }) =>
       actualizarPerfil(user!.authUserId, datos),
     onSuccess: () => {
-      void queryClient.invalidateQueries({ queryKey: queryKeys.perfil() })
+      void queryClient.invalidateQueries({ queryKey: queryKeys.perfil(user?.authUserId) })
     },
   })
 }
@@ -375,34 +425,27 @@ export function useActualizarPerfil() {
 
 export function useUserRole() {
   const { user } = useAuth()
-  const queryClient = useQueryClient()
-
-  // Precargar el rol desde el store de Zustand para evitar flash de "sin rol"
-  const rolInicial = useSesionStore((state) => state.rol)
-
-  // Verificar si ya hay datos en caché
-  const datosEnCache = queryClient.getQueryData<string>(queryKeys.userRole(user?.authUserId))
-
-  // Si hay datos en caché o en el store, no hacer petición inicial
-  const shouldFetch = !!user && !datosEnCache && !rolInicial
+  const rolStore = useSesionStore((state) => state.rol)
+  // rolStore tiene prioridad sobre user.role: fue verificado por el backend,
+  // mientras que user.role puede ser el valor por defecto de insforge ('consultor')
+  // incluso cuando el usuario ya fue promovido en BD.
+  const rolInicial = rolStore ?? user?.role
 
   return useQuery({
     queryKey: queryKeys.userRole(user?.authUserId),
     queryFn: async () => {
-      console.log('[useUserRole] Fetching rol desde backend...')
-      const rol = await obtenerRolDesdeBackend(user!.authUserId)
-      return rol
+      const rol = await obtenerRolDesdeBackend(user!.authUserId, user!.role, user!.email)
+      // Si el backend no devuelve rol (error/null), usar el rol persistido para no sobreescribir
+      return rol ?? rolStore ?? null
     },
-    enabled: shouldFetch,
-    // Usar el rol del store como datos iniciales (evita petición si ya tenemos el rol)
-    initialData: rolInicial || datosEnCache || undefined,
+    enabled: !!user,
+    // placeholderData muestra el rol cacheado mientras carga, pero siempre lanza la petición
+    placeholderData: rolInicial ?? undefined,
     staleTime: STALE_TIME_LONG_MS,
     gcTime: GC_TIME_MS,
-    retry: RETRY_COUNT,
-    retryDelay: (attemptIndex) => Math.min(1000 * 2 ** attemptIndex, RETRY_DELAY_MAX_MS),
-    // Solo refetch en background, no en foco (evita peticiones al cambiar tabs)
+    retry: 1,
+    retryDelay: 2000,
     refetchOnWindowFocus: false,
-    // Refetch al reconectar (útil si cambió el rol mientras estaba offline)
     refetchOnReconnect: true,
   })
 }
@@ -414,11 +457,11 @@ export function useMantenimiento() {
   return useQuery({
     queryKey: queryKeys.mantenimiento(),
     queryFn: () =>
-      apiClient<{ data: ActivoMantenimiento[] }>(
+      apiClient<{ data: ActivoMantenimiento[]; meta: { current_page: number; last_page: number; total: number } }>(
         '/mantenimiento/activos',
         {},
         { authUserId: user!.authUserId },
-      ),
+      ).then(unwrapPaginated),
     enabled: !!user,
   })
 }
@@ -443,7 +486,7 @@ export function useCrearActivo() {
 export function useNotificaciones() {
   const { user } = useAuth()
   return useQuery({
-    queryKey: queryKeys.notificaciones(),
+    queryKey: queryKeys.notificaciones(user?.authUserId),
     queryFn: () => getNotificaciones(user!.authUserId),
     enabled: !!user,
   })
@@ -454,7 +497,7 @@ export function useNotificaciones() {
 export function useHistorialSesiones() {
   const { user } = useAuth()
   return useQuery({
-    queryKey: ['historial-sesiones'],
+    queryKey: queryKeys.historialSesiones(user?.authUserId),
     queryFn: () => getHistorialSesiones(user!.authUserId),
     enabled: !!user,
   })
@@ -466,7 +509,7 @@ export function useEliminarSesion() {
   return useMutation({
     mutationFn: (sesionId: number) => eliminarSesion(user!.authUserId, sesionId),
     onSuccess: () => {
-      void queryClient.invalidateQueries({ queryKey: ['historial-sesiones'] })
+      void queryClient.invalidateQueries({ queryKey: queryKeys.historialSesiones(user?.authUserId) })
     },
     onError: () => {
       // El componente puede mostrar su propio toast si lo necesita
@@ -492,6 +535,15 @@ export function useInventario(authUserId?: string | undefined, search = '') {
 }
 
 // ─── Alertas ──────────────────────────────────────────────────────────────────
+
+export function useAlertas(filtros?: FiltrosAlerta) {
+  const { user } = useAuth()
+  return useQuery({
+    queryKey: queryKeys.alertas(filtros),
+    queryFn: () => getAlertas(user!.authUserId, filtros),
+    enabled: !!user,
+  })
+}
 
 export function useResolverAlerta() {
   const { user } = useAuth()
