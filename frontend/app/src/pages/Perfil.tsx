@@ -218,11 +218,14 @@ export default function Perfil() {
     setSubiendoAvatar(true);
     try {
       const comprimida = await comprimirImagen(imagenRecortada, 200, 200, 0.75);
-      // Guardar la original sin comprimir para poder re-editar después
-      const original = imagenSinRecortar;
+      // Evitar perfiles gigantes en InsForge (base64 muy pesada).
+      // Guardamos una versión "editable" reducida en lugar de la original cruda.
+      const originalReducida = imagenSinRecortar
+        ? await comprimirImagen(imagenSinRecortar, 1200, 1200, 0.6)
+        : null;
       await Promise.all([
         actualizarCampoPerfil("avatar_url", comprimida),
-        original ? actualizarCampoPerfil("avatar_url_original", original) : Promise.resolve(),
+        originalReducida ? actualizarCampoPerfil("avatar_url_original", originalReducida) : Promise.resolve(),
       ]);
       actualizarUsuario({ avatarUrl: comprimida });
       toast.success("Foto de perfil actualizada");

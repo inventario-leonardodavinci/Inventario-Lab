@@ -2,10 +2,11 @@
  * Servicio de usuarios (solo administrador).
  */
 import { apiClient } from './clienteApi'
-import type { UsuarioApp, Rol } from '@/types'
+import type { UsuarioApp, Rol, Paginado } from '@/types'
+import { unwrapData, unwrapPaginated } from './apiUtils'
 
 export function getUsuarios(authUserId: string) {
-  return apiClient<{ data: UsuarioApp[] }>('/usuarios', {}, { authUserId })
+  return apiClient<Paginado<UsuarioApp>>('/usuarios', {}, { authUserId }).then(unwrapPaginated)
 }
 
 export function actualizarRolUsuario(
@@ -17,7 +18,7 @@ export function actualizarRolUsuario(
     `/usuarios/${usuarioId}/rol`,
     { method: 'PATCH', body: JSON.stringify({ rol }) },
     { authUserId },
-  )
+  ).then((res) => ({ data: unwrapData(res) }))
 }
 
 export function actualizarEstadoUsuario(
@@ -29,7 +30,7 @@ export function actualizarEstadoUsuario(
     `/usuarios/${usuarioId}/estado`,
     { method: 'PATCH', body: JSON.stringify({ activo }) },
     { authUserId },
-  )
+  ).then((res) => ({ data: unwrapData(res) }))
 }
 
 export function eliminarUsuario(authUserId: string, usuarioId: number) {
@@ -41,7 +42,7 @@ export function eliminarUsuario(authUserId: string, usuarioId: number) {
 }
 
 export function getPerfil(authUserId: string) {
-  return apiClient<{ data: UsuarioApp }>('/perfil', {}, { authUserId })
+  return apiClient<{ data: UsuarioApp }>('/perfil', {}, { authUserId }).then((res) => ({ data: unwrapData(res) }))
 }
 
 export function actualizarPerfil(
@@ -52,7 +53,7 @@ export function actualizarPerfil(
     '/perfil',
     { method: 'PATCH', body: JSON.stringify(datos) },
     { authUserId },
-  )
+  ).then((res) => ({ data: unwrapData(res) }))
 }
 
 export type RegistroSesion = {
@@ -74,7 +75,7 @@ export function getHistorialSesiones(authUserId: string) {
     '/perfil/historial-sesiones',
     {},
     { authUserId },
-  )
+  ).then((res) => ({ data: unwrapData(res) }))
 }
 
 export function eliminarSesion(authUserId: string, sesionId: number) {

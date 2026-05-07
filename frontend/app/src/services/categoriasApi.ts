@@ -3,6 +3,7 @@
  */
 import { apiClient } from './clienteApi'
 import type { Categoria } from '@/types'
+import { unwrapData } from './apiUtils'
 
 export type EntradaCrearCategoria = {
   nombre: string
@@ -11,11 +12,11 @@ export type EntradaCrearCategoria = {
 export type EntradaActualizarCategoria = Partial<EntradaCrearCategoria>
 
 export function getCategorias(authUserId: string) {
-  return apiClient<{ data: Categoria[] }>('/categorias', {}, { authUserId })
+  return apiClient<{ data: Categoria[] }>('/categorias', {}, { authUserId }).then((res) => ({ data: unwrapData(res) }))
 }
 
 export function getCategoria(authUserId: string, id: number) {
-  return apiClient<{ data: Categoria }>(`/categorias/${id}`, {}, { authUserId })
+  return apiClient<{ data: Categoria }>(`/categorias/${id}`, {}, { authUserId }).then((res) => ({ data: unwrapData(res) }))
 }
 
 export function crearCategoria(authUserId: string, entrada: EntradaCrearCategoria) {
@@ -23,7 +24,7 @@ export function crearCategoria(authUserId: string, entrada: EntradaCrearCategori
     '/categorias',
     { method: 'POST', body: JSON.stringify(entrada) },
     { authUserId },
-  )
+  ).then((res) => ({ data: unwrapData(res) }))
 }
 
 export function actualizarCategoria(
@@ -35,7 +36,7 @@ export function actualizarCategoria(
     `/categorias/${id}`,
     { method: 'PATCH', body: JSON.stringify(entrada) },
     { authUserId },
-  )
+  ).then((res) => ({ data: unwrapData(res) }))
 }
 
 export function eliminarCategoria(authUserId: string, id: number) {

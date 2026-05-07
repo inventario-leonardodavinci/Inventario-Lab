@@ -3,6 +3,7 @@
 namespace App\Http\Controllers\Api;
 
 use App\Http\Controllers\Controller;
+use App\Http\Helpers\ApiResponse;
 use App\Models\Articulo;
 use App\Models\NivelStock;
 use Illuminate\Http\JsonResponse;
@@ -50,14 +51,14 @@ class InventarioController extends Controller
             ];
         });
 
-        return response()->json([
-            'data' => $filas,
-            'meta' => [
+        return ApiResponse::paginated(
+            $filas->toArray(),
+            [
                 'current_page' => $articulos->currentPage(),
-                'last_page' => $articulos->lastPage(),
-                'total' => $articulos->total(),
-            ],
-        ]);
+                'last_page'    => $articulos->lastPage(),
+                'total'        => $articulos->total(),
+            ]
+        );
     }
 
     public function store(Request $request): JsonResponse
@@ -78,6 +79,6 @@ class InventarioController extends Controller
 
         $articulo = Articulo::query()->create($validados + ['activo' => true]);
 
-        return response()->json(['data' => $articulo], 201);
+        return ApiResponse::created($articulo->toArray());
     }
 }

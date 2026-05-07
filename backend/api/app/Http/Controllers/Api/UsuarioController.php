@@ -3,9 +3,13 @@
 namespace App\Http\Controllers\Api;
 
 use App\Http\Controllers\Controller;
+use App\Http\Helpers\ApiResponse;
+use App\Http\Requests\UsuarioIndexRequest;
+use App\Http\Resources\UsuarioResource;
 use App\Models\UsuarioApp;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\DB;
 
 class UsuarioController extends Controller
 {
@@ -13,15 +17,35 @@ class UsuarioController extends Controller
      * Lista todos los usuarios con su rol actual.
      * Solo accesible para administradores.
      */
-    public function index(): JsonResponse
+    public function index(UsuarioIndexRequest $request): JsonResponse
     {
+        $perPage = (int) $request->validated('per_page', 25);
+
         $usuarios = UsuarioApp::query()
             ->with('roles:id,name')
             ->orderBy('created_at', 'desc')
-            ->get()
-            ->map(fn (UsuarioApp $u) => $this->serializar($u));
+            ->paginate($perPage)
+            ->through(fn (UsuarioApp $u) => (new UsuarioResource($u))->toArray($request));
 
-        return response()->json(['data' => $usuarios]);
+        return ApiResponse::paginated(
+            $usuarios->items(),
+            [
+                'current_page' => $usuarios->currentPage(),
+                'last_page'    => $usuarios->lastPage(),
+                'total'        => $usuarios->total(),
+            ]
+        );
+    }
+
+    public function resumen(): JsonResponse
+    {
+        $base = UsuarioApp::query();
+
+        return ApiResponse::success([
+            'total'    => (clone $base)->count(),
+            'activos'  => (clone $base)->where('activo', true)->count(),
+            'inactivos'=> (clone $base)->where('activo', false)->count(),
+        ]);
     }
 
     /**
@@ -41,13 +65,13 @@ class UsuarioController extends Controller
         $usuarioAutenticado = $request->attributes->get('app_user');
 
         if ($usuarioAutenticado->id === $usuario->id) {
-            return response()->json(['message' => 'No puedes cambiar tu propio rol.'], 422);
+            return ApiResponse::error('No puedes cambiar tu propio rol.', 422);
         }
 
         $usuario->syncRoles([$validados['rol']]);
         $usuario->load('roles:id,name');
 
-        return response()->json(['data' => $this->serializar($usuario)]);
+        return ApiResponse::success((new UsuarioResource($usuario))->toArray($request));
     }
 
     /**
@@ -64,13 +88,13 @@ class UsuarioController extends Controller
         $usuarioAutenticado = $request->attributes->get('app_user');
 
         if ($usuarioAutenticado->id === $usuario->id) {
-            return response()->json(['message' => 'No puedes desactivar tu propia cuenta.'], 422);
+            return ApiResponse::error('No puedes desactivar tu propia cuenta.', 422);
         }
 
         $usuario->update(['activo' => $validados['activo']]);
         $usuario->load('roles:id,name');
 
-        return response()->json(['data' => $this->serializar($usuario)]);
+        return ApiResponse::success((new UsuarioResource($usuario))->toArray($request));
     }
 
     /**
@@ -83,42 +107,24 @@ class UsuarioController extends Controller
         $usuarioAutenticado = $request->attributes->get('app_user');
 
         if ($usuarioAutenticado->id === $usuario->id) {
-            return response()->json(['message' => 'No puedes eliminar tu propia cuenta.'], 422);
+            return ApiResponse::error('No puedes eliminar tu propia cuenta.', 422);
         }
 
-        // Eliminar en cascada: roles, historial de sesiones, auditoría
-        \Illuminate\Support\Facades\DB::transaction(function () use ($usuario): void {
-            // spatie: eliminar asignaciones de roles
+        DB::transaction(function () use ($usuario): void {
             $usuario->roles()->detach();
 
-            // historial de sesiones
-            \Illuminate\Support\Facades\DB::table('historial_sesiones')
+            DB::table('historial_sesiones')
                 ->where('usuario_id', $usuario->id)
                 ->delete();
 
-            // registros de auditoría (poner null en usuario_id para no perder el historial)
-            \Illuminate\Support\Facades\DB::table('registros_auditoria')
+            DB::table('registros_auditoria')
                 ->where('usuario_id', $usuario->id)
                 ->update(['usuario_id' => null]);
 
             $usuario->delete();
         });
 
-        return response()->json(null, 204);
+        return ApiResponse::deleted();
     }
 
-    // ─── Serialización ────────────────────────────────────────────────────────
-
-    private function serializar(UsuarioApp $usuario): array
-    {
-        return [
-            'id'             => $usuario->id,
-            'auth_user_id'   => $usuario->auth_user_id,
-            'nombre_visible' => $usuario->nombre_visible,
-            'activo'         => $usuario->activo,
-            'roles'          => $usuario->roles->map(fn ($r) => ['id' => $r->id, 'name' => $r->name])->values(),
-            'created_at'     => $usuario->created_at,
-            'updated_at'     => $usuario->updated_at,
-        ];
-    }
 }

@@ -3,6 +3,7 @@
 namespace App\Http\Controllers\Api;
 
 use App\Http\Controllers\Controller;
+use App\Http\Helpers\ApiResponse;
 use App\Models\HistorialSesion;
 use App\Models\UsuarioApp;
 use Illuminate\Http\JsonResponse;
@@ -15,14 +16,12 @@ class PerfilController extends Controller
         /** @var UsuarioApp $usuarioApp */
         $usuarioApp = $request->attributes->get('app_user');
 
-        return response()->json([
-            'data' => [
-                'id'             => $usuarioApp->id,
-                'auth_user_id'   => $usuarioApp->auth_user_id,
-                'nombre_visible' => $usuarioApp->nombre_visible,
-                'roles'          => $usuarioApp->roles->map(fn ($r) => ['id' => $r->id, 'name' => $r->name])->values(),
-                'created_at'     => $usuarioApp->created_at,
-            ],
+        return ApiResponse::success([
+            'id'             => $usuarioApp->id,
+            'auth_user_id'   => $usuarioApp->auth_user_id,
+            'nombre_visible' => $usuarioApp->nombre_visible,
+            'roles'          => $usuarioApp->roles->map(fn ($r) => ['id' => $r->id, 'name' => $r->name])->values()->toArray(),
+            'created_at'     => $usuarioApp->created_at,
         ]);
     }
 
@@ -35,7 +34,7 @@ class PerfilController extends Controller
             'nombre_visible' => ['sometimes', 'string', 'max:180'],
         ], [
             'nombre_visible.string' => 'El nombre visible debe ser una cadena de texto.',
-            'nombre_visible.max' => 'El nombre visible no puede superar los 180 caracteres.',
+            'nombre_visible.max'    => 'El nombre visible no puede superar los 180 caracteres.',
         ]);
 
         if (! empty($validados)) {
@@ -44,12 +43,10 @@ class PerfilController extends Controller
 
         $usuarioApp->load('roles');
 
-        return response()->json([
-            'data' => [
-                'id'             => $usuarioApp->id,
-                'nombre_visible' => $usuarioApp->nombre_visible,
-                'roles'          => $usuarioApp->roles->map(fn ($r) => ['id' => $r->id, 'name' => $r->name])->values(),
-            ],
+        return ApiResponse::success([
+            'id'             => $usuarioApp->id,
+            'nombre_visible' => $usuarioApp->nombre_visible,
+            'roles'          => $usuarioApp->roles->map(fn ($r) => ['id' => $r->id, 'name' => $r->name])->values()->toArray(),
         ]);
     }
 
@@ -77,7 +74,7 @@ class PerfilController extends Controller
                 'user_agent'        => $s->user_agent,
             ]);
 
-        return response()->json(['data' => $historial]);
+        return ApiResponse::success($historial->toArray());
     }
 
     public function eliminarSesion(Request $request, int $sesionId): JsonResponse
@@ -91,11 +88,11 @@ class PerfilController extends Controller
             ->first();
 
         if (! $sesion) {
-            return response()->json(['message' => 'Sesión no encontrada.'], 404);
+            return ApiResponse::notFound('Sesión', $sesionId);
         }
 
         $sesion->delete();
 
-        return response()->json(['message' => 'Sesión eliminada correctamente.']);
+        return ApiResponse::success([], 'Sesión eliminada correctamente.');
     }
 }

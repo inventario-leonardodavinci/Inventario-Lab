@@ -1,5 +1,6 @@
 <?php
 
+use App\Http\Controllers\Api\AlertaController;
 use App\Http\Controllers\Api\ArticuloController;
 use App\Http\Controllers\Api\AuditoriaController;
 use App\Http\Controllers\Api\CategoriaController;
@@ -25,11 +26,14 @@ Route::prefix('v1')->middleware(['throttle:api', 'app.user', 'audit.write'])->gr
     Route::post('/inventario', [InventarioController::class, 'store'])->middleware('role:administrador,profesor');
 
     // ── Artículos ─────────────────────────────────────────────────────────────
-    Route::get('/articulos', [ArticuloController::class, 'index']);
-    Route::post('/articulos', [ArticuloController::class, 'store'])->middleware('role:administrador,profesor');
-    Route::get('/articulos/{articulo}', [ArticuloController::class, 'show']);
-    Route::patch('/articulos/{articulo}', [ArticuloController::class, 'update'])->middleware('role:administrador,profesor');
-    Route::delete('/articulos/{articulo}', [ArticuloController::class, 'destroy'])->middleware('role:administrador');
+    Route::prefix('/articulos')->group(function (): void {
+        Route::get('/', [ArticuloController::class, 'index']);
+        Route::get('/resumen', [ArticuloController::class, 'resumen']);
+        Route::post('/', [ArticuloController::class, 'store'])->middleware('role:administrador,profesor');
+        Route::get('/{articulo}', [ArticuloController::class, 'show']);
+        Route::patch('/{articulo}', [ArticuloController::class, 'update'])->middleware('role:administrador,profesor');
+        Route::delete('/{articulo}', [ArticuloController::class, 'destroy'])->middleware('role:administrador');
+    });
 
     // ── Ubicaciones ───────────────────────────────────────────────────────────
     Route::get('/ubicaciones', [UbicacionController::class, 'index']);
@@ -46,22 +50,35 @@ Route::prefix('v1')->middleware(['throttle:api', 'app.user', 'audit.write'])->gr
 
     // ── Movimientos ───────────────────────────────────────────────────────────
     Route::get('/movimientos/resumen-hoy', [MovimientoController::class, 'resumenHoy']);
+    Route::get('/movimientos/resumen-rango', [MovimientoController::class, 'resumenRango']);
     Route::get('/movimientos', [MovimientoController::class, 'index']);
     Route::post('/movimientos', [MovimientoController::class, 'store'])->middleware(['role:administrador,profesor', 'throttle:escritura']);
 
     // ── Mantenimiento ─────────────────────────────────────────────────────────
-    Route::get('/mantenimiento/activos', [MantenimientoController::class, 'index']);
-    Route::post('/mantenimiento/activos', [MantenimientoController::class, 'store'])->middleware('role:administrador,profesor');
-    Route::patch('/mantenimiento/activos/{activo}', [MantenimientoController::class, 'update'])->middleware('role:administrador,profesor');
+    Route::prefix('/mantenimiento/activos')->group(function (): void {
+        Route::get('/', [MantenimientoController::class, 'index']);
+        Route::get('/resumen', [MantenimientoController::class, 'resumen']);
+        Route::post('/', [MantenimientoController::class, 'store'])->middleware('role:administrador,profesor');
+        Route::patch('/{activo}', [MantenimientoController::class, 'update'])->middleware('role:administrador,profesor');
+    });
 
     // ── Usuarios (solo administrador) ─────────────────────────────────────────
-    Route::get('/usuarios', [UsuarioController::class, 'index'])->middleware('role:administrador');
-    Route::patch('/usuarios/{usuario}/rol', [UsuarioController::class, 'actualizarRol'])->middleware('role:administrador');
-    Route::patch('/usuarios/{usuario}/estado', [UsuarioController::class, 'actualizarEstado'])->middleware('role:administrador');
-    Route::delete('/usuarios/{usuario}', [UsuarioController::class, 'destroy'])->middleware('role:administrador');
+    Route::prefix('/usuarios')->middleware('role:administrador')->group(function (): void {
+        Route::get('/', [UsuarioController::class, 'index']);
+        Route::get('/resumen', [UsuarioController::class, 'resumen']);
+        Route::patch('/{usuario}/rol', [UsuarioController::class, 'actualizarRol']);
+        Route::patch('/{usuario}/estado', [UsuarioController::class, 'actualizarEstado']);
+        Route::delete('/{usuario}', [UsuarioController::class, 'destroy']);
+    });
 
     // ── Auditoría (solo administrador) ────────────────────────────────────────
     Route::get('/auditoria', [AuditoriaController::class, 'index'])->middleware('role:administrador');
+
+    // ── Alertas ────────────────────────────────────────────────────────────────
+    Route::get('/alertas', [AlertaController::class, 'index']);
+    Route::get('/alertas/resumen', [AlertaController::class, 'resumen']);
+    Route::post('/alertas/{alerta}/confirmar', [AlertaController::class, 'confirmar'])->middleware('role:administrador,profesor');
+    Route::post('/alertas/{alerta}/resolver', [AlertaController::class, 'resolver'])->middleware('role:administrador,profesor');
 
     // ── Notificaciones ────────────────────────────────────────────────────────
     Route::get('/notificaciones', [NotificacionController::class, 'index']);

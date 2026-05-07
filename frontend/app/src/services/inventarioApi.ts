@@ -4,6 +4,7 @@
  */
 import { apiClient } from './clienteApi'
 import type { Articulo, ArticuloDetalle, Paginado } from '@/types'
+import { buildQueryString, unwrapData, unwrapPaginated } from './apiUtils'
 
 export type EntradaCrearArticulo = {
   codigo?: string
@@ -37,22 +38,22 @@ export function getArticulos(
     order_dir?: 'asc' | 'desc'
   },
 ) {
-  const params = new URLSearchParams()
-  if (filtros?.search) params.set('search', filtros.search)
-  if (filtros?.pagina && filtros.pagina > 1) params.set('page', String(filtros.pagina))
-  if (filtros?.per_page) params.set('per_page', String(filtros.per_page))
-  if (filtros?.activo !== undefined) params.set('activo', String(filtros.activo))
-  if (filtros?.categoria_id) params.set('categoria_id', String(filtros.categoria_id))
-  if (filtros?.ubicacion_id) params.set('ubicacion_id', String(filtros.ubicacion_id))
-  if (filtros?.estado_stock) params.set('estado_stock', filtros.estado_stock)
-  if (filtros?.order_by) params.set('order_by', filtros.order_by)
-  if (filtros?.order_dir) params.set('order_dir', filtros.order_dir)
-  const qs = params.toString() ? `?${params.toString()}` : ''
-  return apiClient<Paginado<Articulo>>(`/articulos${qs}`, {}, { authUserId })
+  const qs = buildQueryString({
+    search: filtros?.search,
+    page: filtros?.pagina && filtros.pagina > 1 ? filtros.pagina : undefined,
+    per_page: filtros?.per_page,
+    activo: filtros?.activo,
+    categoria_id: filtros?.categoria_id,
+    ubicacion_id: filtros?.ubicacion_id,
+    estado_stock: filtros?.estado_stock,
+    order_by: filtros?.order_by,
+    order_dir: filtros?.order_dir,
+  })
+  return apiClient<Paginado<Articulo>>(`/articulos${qs}`, {}, { authUserId }).then(unwrapPaginated)
 }
 
 export function getArticulo(authUserId: string, id: number) {
-  return apiClient<{ data: ArticuloDetalle }>(`/articulos/${id}`, {}, { authUserId })
+  return apiClient<{ data: ArticuloDetalle }>(`/articulos/${id}`, {}, { authUserId }).then((res) => ({ data: unwrapData(res) }))
 }
 
 export function crearArticulo(authUserId: string, entrada: EntradaCrearArticulo) {
@@ -60,7 +61,7 @@ export function crearArticulo(authUserId: string, entrada: EntradaCrearArticulo)
     '/articulos',
     { method: 'POST', body: JSON.stringify(entrada) },
     { authUserId },
-  )
+  ).then((res) => ({ data: unwrapData(res) }))
 }
 
 export function actualizarArticulo(
@@ -72,7 +73,7 @@ export function actualizarArticulo(
     `/articulos/${id}`,
     { method: 'PATCH', body: JSON.stringify(entrada) },
     { authUserId },
-  )
+  ).then((res) => ({ data: unwrapData(res) }))
 }
 
 export function desactivarArticulo(authUserId: string, id: number) {

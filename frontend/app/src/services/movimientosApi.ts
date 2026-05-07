@@ -4,6 +4,7 @@
  */
 import { apiClient } from './clienteApi'
 import type { Movimiento, Paginado, TipoMovimiento, FiltrosMovimiento } from '@/types'
+import { buildQueryString, unwrapData, unwrapPaginated } from './apiUtils'
 
 // Tipo base para crear movimiento
 export type EntradaCrearMovimiento = {
@@ -63,18 +64,18 @@ export function getMovimientos(
   authUserId: string,
   filtros: FiltrosMovimiento = {},
 ) {
-  const params = new URLSearchParams()
-  if (filtros.tipo) params.set('tipo', filtros.tipo)
-  if (filtros.usuario_id) params.set('usuario_id', String(filtros.usuario_id))
-  if (filtros.desde) params.set('desde', filtros.desde)
-  if (filtros.hasta) params.set('hasta', filtros.hasta)
-  if (filtros.per_page) params.set('per_page', String(filtros.per_page))
-  const qs = params.toString() ? `?${params.toString()}` : ''
-  return apiClient<Paginado<Movimiento>>(`/movimientos${qs}`, {}, { authUserId })
+  const qs = buildQueryString({
+    tipo: filtros.tipo,
+    usuario_id: filtros.usuario_id,
+    desde: filtros.desde,
+    hasta: filtros.hasta,
+    per_page: filtros.per_page,
+  })
+  return apiClient<Paginado<Movimiento>>(`/movimientos${qs}`, {}, { authUserId }).then(unwrapPaginated)
 }
 
 export function getResumenHoy(authUserId: string) {
-  return apiClient<ResumenHoy>('/movimientos/resumen-hoy', {}, { authUserId })
+  return apiClient<{ data: ResumenHoy } | ResumenHoy>('/movimientos/resumen-hoy', {}, { authUserId }).then(unwrapData)
 }
 
 export function crearMovimiento(authUserId: string, entrada: EntradaCrearMovimiento) {
@@ -82,5 +83,5 @@ export function crearMovimiento(authUserId: string, entrada: EntradaCrearMovimie
     '/movimientos',
     { method: 'POST', body: JSON.stringify(entrada) },
     { authUserId },
-  )
+  ).then((res) => ({ data: unwrapData(res) }))
 }

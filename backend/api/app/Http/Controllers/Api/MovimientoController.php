@@ -3,6 +3,7 @@
 namespace App\Http\Controllers\Api;
 
 use App\Http\Controllers\Controller;
+use App\Http\Helpers\ApiResponse;
 use App\Http\Requests\MovimientoRequest;
 use App\Models\UsuarioApp;
 use App\Models\Movimiento;
@@ -29,11 +30,43 @@ class MovimientoController extends Controller
             ->groupBy('tipo')
             ->pluck('total', 'tipo');
 
-        return response()->json([
+        return ApiResponse::success([
             'entradas_hoy'  => (int) ($conteosPorTipo['entrada']  ?? 0),
             'salidas_hoy'   => (int) ($conteosPorTipo['salida']   ?? 0),
             'ajustes_hoy'   => (int) ($conteosPorTipo['ajuste']   ?? 0),
             'traslados_hoy' => (int) ($conteosPorTipo['traslado'] ?? 0),
+        ]);
+    }
+
+    public function resumenRango(Request $request): JsonResponse
+    {
+        $validados = $request->validate([
+            'desde' => ['required', 'date'],
+            'hasta' => ['required', 'date', 'after_or_equal:desde'],
+        ]);
+
+        $desde = $validados['desde'];
+        $hasta = $validados['hasta'];
+        $usuarioApp = $request->attributes->get('app_user');
+
+        $base = Movimiento::query()
+            ->when($usuarioApp, fn ($query) => $query->where('usuario_id', $usuarioApp->id))
+            ->whereDate('created_at', '>=', $desde)
+            ->whereDate('created_at', '<=', $hasta);
+
+        $conteos = (clone $base)
+            ->selectRaw('tipo, COUNT(*) as total')
+            ->groupBy('tipo')
+            ->pluck('total', 'tipo');
+
+        return ApiResponse::success([
+            'desde' => $desde,
+            'hasta' => $hasta,
+            'total_movimientos' => (clone $base)->count(),
+            'entradas' => (int) ($conteos['entrada'] ?? 0),
+            'salidas' => (int) ($conteos['salida'] ?? 0),
+            'ajustes' => (int) ($conteos['ajuste'] ?? 0),
+            'traslados' => (int) ($conteos['traslado'] ?? 0),
         ]);
     }
 
@@ -67,14 +100,14 @@ class MovimientoController extends Controller
             ];
         });
 
-        return response()->json([
-            'data' => $filas,
-            'meta' => [
+        return ApiResponse::paginated(
+            $filas->toArray(),
+            [
                 'current_page' => $paginacion->currentPage(),
                 'last_page'    => $paginacion->lastPage(),
                 'total'        => $paginacion->total(),
-            ],
-        ]);
+            ]
+        );
     }
 
     public function store(MovimientoRequest $request): JsonResponse
@@ -87,9 +120,9 @@ class MovimientoController extends Controller
                 $request->validated() + ['usuario_id' => $usuarioApp->id]
             );
         } catch (RuntimeException $excepcion) {
-            return response()->json(['message' => $excepcion->getMessage()], 422);
+            return ApiResponse::error($excepcion->getMessage(), 422);
         }
 
-        return response()->json(['data' => $movimiento], 201);
+        return ApiResponse::created($movimiento->toArray());
     }
 }

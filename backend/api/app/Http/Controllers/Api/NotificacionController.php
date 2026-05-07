@@ -3,6 +3,7 @@
 namespace App\Http\Controllers\Api;
 
 use App\Http\Controllers\Controller;
+use App\Http\Helpers\ApiResponse;
 use App\Models\Alerta;
 use App\Models\HistorialSesion;
 use App\Models\UsuarioApp;
@@ -18,13 +19,12 @@ class NotificacionController extends Controller
 
     public function index(Request $request): JsonResponse
     {
-        /** @var UsuarioApp $usuarioApp */
-        $usuarioApp = $request->attributes->get('app_user');
+        $limite = min(max((int) $request->query('limit', 20), 1), 100);
 
         $alertas = Alerta::query()
             ->whereIn('estado', ['abierta', 'confirmada'])
             ->latest('generada_en')
-            ->limit(20)
+            ->limit($limite)
             ->get()
             ->map(fn (Alerta $a): array => [
                 'id'         => $a->id,
@@ -34,7 +34,7 @@ class NotificacionController extends Controller
                 'created_at' => $a->generada_en,
             ]);
 
-        return response()->json([
+        return ApiResponse::success([
             'data'         => $alertas,
             'unread_count' => $alertas->where('status', 'abierta')->count(),
         ]);
@@ -72,11 +72,10 @@ class NotificacionController extends Controller
             'iniciada_en'       => now(),
         ]);
 
-        return response()->json([
-            'message'      => 'Evento de inicio de sesion recibido.',
+        return ApiResponse::created([
             'user_id'      => $usuarioApp->id,
             'triggered_at' => now()->toISOString(),
-        ], 201);
+        ], 'Evento de inicio de sesión recibido.');
     }
 
     // ─── IP real ─────────────────────────────────────────────────────────────

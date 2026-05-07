@@ -54,6 +54,13 @@ export function CentroNotificaciones() {
           bellIcon: {
             color: isDark ? "hsl(215 16% 65%)" : "hsl(215 16% 47%)",
           },
+          popoverContent: {
+            zIndex: "9999",
+            position: "fixed",
+          },
+          popoverTrigger: {
+            zIndex: "9999",
+          },
         },
       }}
     />

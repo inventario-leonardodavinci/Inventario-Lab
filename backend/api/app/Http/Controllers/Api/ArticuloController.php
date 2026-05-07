@@ -3,10 +3,13 @@
 namespace App\Http\Controllers\Api;
 
 use App\Http\Controllers\Controller;
+use App\Http\Helpers\ApiResponse;
+use App\Http\Requests\ArticuloIndexRequest;
 use App\Http\Requests\ArticuloRequest;
 use App\Models\Articulo;
 use App\Models\NivelStock;
 use Illuminate\Http\JsonResponse;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Http\Request;
 
 class ArticuloController extends Controller
@@ -42,15 +45,18 @@ class ArticuloController extends Controller
      * Lista paginada de artículos con categoría resuelta y stock total.
      * Filtros: search, activo, categoria_id, ubicacion_id, estado_stock, order_by, order_dir
      */
-    public function index(Request $request): JsonResponse
+    public function index(ArticuloIndexRequest $request): JsonResponse
     {
-        $busqueda = trim((string) $request->query('search', ''));
-        $activo = $request->query('activo');
-        $categoriaId = $request->query('categoria_id');
-        $ubicacionId = $request->query('ubicacion_id');
-        $estadoStock = $request->query('estado_stock');
-        $orderBy = $request->query('order_by', 'nombre');
-        $orderDir = $request->query('order_dir', 'asc');
+        $filtros = $request->validated();
+
+        $busqueda = trim((string) ($filtros['search'] ?? ''));
+        $activo = $filtros['activo'] ?? null;
+        $categoriaId = $filtros['categoria_id'] ?? null;
+        $ubicacionId = $filtros['ubicacion_id'] ?? null;
+        $estadoStock = $filtros['estado_stock'] ?? null;
+        $orderBy = $filtros['order_by'] ?? 'nombre';
+        $orderDir = $filtros['order_dir'] ?? 'asc';
+        $perPage = (int) ($filtros['per_page'] ?? config('constantes.default_per_page'));
 
         // Validar campos de ordenamiento permitidos
         $orderByPermitidos = ['nombre', 'codigo', 'stock_total', 'categoria', 'created_at'];
@@ -59,8 +65,18 @@ class ArticuloController extends Controller
         }
         $orderDir = strtolower($orderDir) === 'desc' ? 'desc' : 'asc';
 
+        $stockSubquery = NivelStock::query()
+            ->selectRaw('articulo_id, SUM(cantidad) as stock_total, MIN(cantidad_minima) as stock_minimo')
+            ->groupBy('articulo_id');
+
         $articulosQuery = Articulo::query()
             ->with('categoria:id,nombre')
+            ->leftJoinSub($stockSubquery, 'stock_agg', function ($join): void {
+                $join->on('stock_agg.articulo_id', '=', 'articulos.id');
+            })
+            ->select('articulos.*')
+            ->selectRaw('COALESCE(stock_agg.stock_total, 0) as stock_total_calc')
+            ->selectRaw('COALESCE(stock_agg.stock_minimo, 0) as stock_minimo_calc')
             ->when($busqueda !== '', function ($query) use ($busqueda): void {
                 $query->where(function ($q) use ($busqueda): void {
                     $q->where('nombre', 'ILIKE', "%{$busqueda}%")
@@ -84,39 +100,71 @@ class ArticuloController extends Controller
             });
         }
 
-        $articulos = $articulosQuery
-            ->orderBy($orderBy === 'categoria' ? 'categoria_id' : $orderBy, $orderDir)
-            ->paginate((int) $request->query('per_page', 100));
-
-        $articuloIds = $articulos->getCollection()->pluck('id');
-
-        $stockPorArticulo = NivelStock::query()
-            ->selectRaw('articulo_id, SUM(cantidad) as total_cantidad, MIN(cantidad_minima) as cantidad_minima')
-            ->whereIn('articulo_id', $articuloIds)
-            ->groupBy('articulo_id')
-            ->get()
-            ->keyBy('articulo_id');
-
-        $filas = $articulos->getCollection()->map(function (Articulo $articulo) use ($stockPorArticulo): array {
-            $stock = $stockPorArticulo->get($articulo->id);
-            $cantidad = (float) ($stock->total_cantidad ?? 0);
-            $cantidadMinima = (float) ($stock->cantidad_minima ?? 0);
-
-            return $this->serializar($articulo, $cantidad, $cantidadMinima);
-        });
-
-        // Filtrar por estado_stock si se solicita
-        if ($estadoStock !== null) {
-            $filas = $filas->filter(fn ($fila) => $fila['estado_stock'] === $estadoStock);
+        if ($estadoStock === 'critico') {
+            $articulosQuery->whereRaw('COALESCE(stock_agg.stock_minimo, 0) > 0')
+                ->whereRaw('COALESCE(stock_agg.stock_total, 0) < COALESCE(stock_agg.stock_minimo, 0)');
+        } elseif ($estadoStock === 'ok') {
+            $articulosQuery->where(function ($query): void {
+                $query->whereRaw('COALESCE(stock_agg.stock_minimo, 0) = 0')
+                    ->orWhereRaw('COALESCE(stock_agg.stock_total, 0) >= COALESCE(stock_agg.stock_minimo, 0)');
+            });
         }
 
-        return response()->json([
-            'data' => $filas->values(),
-            'meta' => [
+        $orderField = match ($orderBy) {
+            'stock_total' => DB::raw('stock_total_calc'),
+            'categoria' => 'categoria_id',
+            default => $orderBy,
+        };
+
+        $articulos = $articulosQuery
+            ->orderBy($orderField, $orderDir)
+            ->paginate($perPage);
+
+        $filas = $articulos->getCollection()->map(function (Articulo $articulo): array {
+            $stockTotal = (float) ($articulo->stock_total_calc ?? 0);
+            $stockMinimo = (float) ($articulo->stock_minimo_calc ?? 0);
+            return $this->serializar($articulo, $stockTotal, $stockMinimo);
+        });
+
+        return ApiResponse::paginated(
+            $filas->values()->toArray(),
+            [
                 'current_page' => $articulos->currentPage(),
-                'last_page' => $articulos->lastPage(),
-                'total' => $estadoStock !== null ? $filas->count() : $articulos->total(),
-            ],
+                'last_page'    => $articulos->lastPage(),
+                'total'        => $articulos->total(),
+            ]
+        );
+    }
+
+    public function resumen(Request $request): JsonResponse
+    {
+        $categoriaId = $request->query('categoria_id');
+        $ubicacionId = $request->query('ubicacion_id');
+
+        $stockSubquery = NivelStock::query()
+            ->selectRaw('articulo_id, SUM(cantidad) as stock_total, MIN(cantidad_minima) as stock_minimo')
+            ->groupBy('articulo_id');
+
+        $base = Articulo::query()
+            ->leftJoinSub($stockSubquery, 'stock_agg', fn ($join) => $join->on('stock_agg.articulo_id', '=', 'articulos.id'))
+            ->when($categoriaId !== null, fn ($query) => $query->where('articulos.categoria_id', (int) $categoriaId))
+            ->when($ubicacionId !== null, function ($query) use ($ubicacionId): void {
+                $query->whereExists(function ($sub) use ($ubicacionId): void {
+                    $sub->selectRaw('1')
+                        ->from('niveles_stock')
+                        ->whereColumn('niveles_stock.articulo_id', 'articulos.id')
+                        ->where('niveles_stock.ubicacion_id', (int) $ubicacionId);
+                });
+            });
+
+        return ApiResponse::success([
+            'total_articulos' => (clone $base)->count('articulos.id'),
+            'activos' => (clone $base)->where('articulos.activo', true)->count('articulos.id'),
+            'inactivos' => (clone $base)->where('articulos.activo', false)->count('articulos.id'),
+            'stock_critico' => (clone $base)
+                ->whereRaw('COALESCE(stock_agg.stock_minimo, 0) > 0')
+                ->whereRaw('COALESCE(stock_agg.stock_total, 0) < COALESCE(stock_agg.stock_minimo, 0)')
+                ->count('articulos.id'),
         ]);
     }
 
@@ -130,8 +178,7 @@ class ArticuloController extends Controller
         $stockTotal = $articulo->nivelesStock->sum('cantidad');
         $cantidadMinima = (float) ($articulo->nivelesStock->min('cantidad_minima') ?? 0);
 
-        return response()->json([
-            'data' => [
+        return ApiResponse::success([
                 'id'              => $articulo->id,
                 'codigo'          => $articulo->codigo,
                 'nombre'          => $articulo->nombre,
@@ -154,11 +201,10 @@ class ArticuloController extends Controller
                     'ubicacion'       => $nivel->ubicacion?->nombre,
                     'cantidad'        => (float) $nivel->cantidad,
                     'cantidad_minima' => (float) $nivel->cantidad_minima,
-                ]),
+                ])->values()->toArray(),
                 'created_at'      => $articulo->created_at,
                 'updated_at'      => $articulo->updated_at,
-            ],
-        ]);
+            ]);
     }
 
     /**
@@ -188,9 +234,7 @@ class ArticuloController extends Controller
 
         $articulo->load('categoria:id,nombre');
 
-        return response()->json([
-            'data' => $this->serializar($articulo, $stockInicial, $stockMinimo),
-        ], 201);
+        return ApiResponse::created($this->serializar($articulo, $stockInicial, $stockMinimo));
     }
 
     /**
@@ -213,9 +257,7 @@ class ArticuloController extends Controller
         $stockTotal = (float) $articulo->nivelesStock()->sum('cantidad');
         $cantidadMinima = (float) ($articulo->nivelesStock()->min('cantidad_minima') ?? 0);
 
-        return response()->json([
-            'data' => $this->serializar($articulo, $stockTotal, $cantidadMinima),
-        ]);
+        return ApiResponse::success($this->serializar($articulo, $stockTotal, $cantidadMinima));
     }
 
     /**
@@ -226,8 +268,6 @@ class ArticuloController extends Controller
         $articulo->update(['activo' => false]);
         $articulo->load('categoria:id,nombre');
 
-        return response()->json([
-            'data' => $this->serializar($articulo),
-        ]);
+        return ApiResponse::success($this->serializar($articulo));
     }
 }

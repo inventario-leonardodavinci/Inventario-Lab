@@ -3,14 +3,15 @@
  */
 import { apiClient } from './clienteApi'
 import type { Alerta, Paginado, FiltrosAlerta } from '@/types'
+import { buildQueryString, unwrapData, unwrapPaginated } from './apiUtils'
 
 export function getAlertas(authUserId: string, filtros: FiltrosAlerta = {}) {
-  const params = new URLSearchParams()
-  if (filtros.tipo) params.set('tipo', filtros.tipo)
-  if (filtros.severidad) params.set('severidad', filtros.severidad)
-  if (filtros.estado) params.set('estado', filtros.estado)
-  const qs = params.toString() ? `?${params.toString()}` : ''
-  return apiClient<Paginado<Alerta>>(`/alertas${qs}`, {}, { authUserId })
+  const qs = buildQueryString({
+    tipo: filtros.tipo,
+    severidad: filtros.severidad,
+    estado: filtros.estado,
+  })
+  return apiClient<Paginado<Alerta>>(`/alertas${qs}`, {}, { authUserId }).then(unwrapPaginated)
 }
 
 export function confirmarAlerta(authUserId: string, id: number) {
@@ -18,7 +19,7 @@ export function confirmarAlerta(authUserId: string, id: number) {
     `/alertas/${id}/confirmar`,
     { method: 'POST' },
     { authUserId },
-  )
+  ).then((res) => ({ data: unwrapData(res) }))
 }
 
 export function resolverAlerta(authUserId: string, id: number, notasResolucion?: string) {
@@ -29,5 +30,5 @@ export function resolverAlerta(authUserId: string, id: number, notasResolucion?:
       body: notasResolucion ? JSON.stringify({ notas_resolucion: notasResolucion }) : undefined,
     },
     { authUserId },
-  )
+  ).then((res) => ({ data: unwrapData(res) }))
 }
