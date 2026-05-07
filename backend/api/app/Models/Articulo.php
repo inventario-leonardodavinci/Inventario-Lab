@@ -18,10 +18,16 @@ class Articulo extends Model
         'unidad',
         'notas',
         'activo',
+        'serial_number',
+        'material_type',
+        'capacity_ml',
+        'expiration_date',
     ];
 
     protected $casts = [
-        'activo' => 'boolean',
+        'activo'          => 'boolean',
+        'capacity_ml'     => 'float',
+        'expiration_date' => 'date:Y-m-d',
     ];
 
     public function categoria(): BelongsTo

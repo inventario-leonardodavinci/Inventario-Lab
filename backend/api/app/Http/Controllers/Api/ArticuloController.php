@@ -17,19 +17,24 @@ class ArticuloController extends Controller
     private function serializar(Articulo $articulo, float $stockTotal = 0.0, float $cantidadMinima = 0.0): array
     {
         return [
-            'id'           => $articulo->id,
-            'codigo'       => $articulo->codigo,
-            'nombre'       => $articulo->nombre,
-            'descripcion'  => $articulo->descripcion,
-            'categoria_id' => $articulo->categoria_id,
-            'categoria'    => $articulo->categoria?->nombre,
-            'unidad'       => $articulo->unidad,
-            'notas'        => $articulo->notas,
-            'activo'       => $articulo->activo,
-            'stock_total'  => $stockTotal,
-            'estado_stock' => ($cantidadMinima > 0 && $stockTotal < $cantidadMinima) ? 'critico' : 'ok',
-            'created_at'   => $articulo->created_at,
-            'updated_at'   => $articulo->updated_at,
+            'id'             => $articulo->id,
+            'codigo'         => $articulo->codigo,
+            'nombre'         => $articulo->nombre,
+            'descripcion'    => $articulo->descripcion,
+            'categoria_id'   => $articulo->categoria_id,
+            'categoria'      => $articulo->categoria?->nombre,
+            'unidad'         => $articulo->unidad,
+            'notas'          => $articulo->notas,
+            'activo'         => $articulo->activo,
+            'stock_total'    => $stockTotal,
+            'stock_minimo'   => $cantidadMinima,
+            'estado_stock'   => ($cantidadMinima > 0 && $stockTotal < $cantidadMinima) ? 'critico' : 'ok',
+            'numero_serie'   => $articulo->serial_number,
+            'tipo_material'  => $articulo->material_type,
+            'capacidad_ml'   => $articulo->capacity_ml,
+            'fecha_caducidad'=> $articulo->expiration_date,
+            'created_at'     => $articulo->created_at,
+            'updated_at'     => $articulo->updated_at,
         ];
     }
 
@@ -127,26 +132,31 @@ class ArticuloController extends Controller
 
         return response()->json([
             'data' => [
-                'id' => $articulo->id,
-                'codigo' => $articulo->codigo,
-                'nombre' => $articulo->nombre,
-                'descripcion' => $articulo->descripcion,
-                'categoria_id' => $articulo->categoria_id,
-                'categoria' => $articulo->categoria?->nombre,
-                'unidad' => $articulo->unidad,
-                'notas' => $articulo->notas,
-                'activo' => $articulo->activo,
-                'stock_total' => (float) $stockTotal,
-                'estado_stock' => ($cantidadMinima > 0 && (float) $stockTotal <= $cantidadMinima) ? 'critico' : 'ok',
-                'niveles_stock' => $articulo->nivelesStock->map(fn ($nivel) => [
-                    'id' => $nivel->id,
-                    'ubicacion_id' => $nivel->ubicacion_id,
-                    'ubicacion' => $nivel->ubicacion?->nombre,
-                    'cantidad' => (float) $nivel->cantidad,
+                'id'              => $articulo->id,
+                'codigo'          => $articulo->codigo,
+                'nombre'          => $articulo->nombre,
+                'descripcion'     => $articulo->descripcion,
+                'categoria_id'    => $articulo->categoria_id,
+                'categoria'       => $articulo->categoria?->nombre,
+                'unidad'          => $articulo->unidad,
+                'notas'           => $articulo->notas,
+                'activo'          => $articulo->activo,
+                'stock_total'     => (float) $stockTotal,
+                'stock_minimo'    => $cantidadMinima,
+                'estado_stock'    => ($cantidadMinima > 0 && (float) $stockTotal <= $cantidadMinima) ? 'critico' : 'ok',
+                'numero_serie'    => $articulo->serial_number,
+                'tipo_material'   => $articulo->material_type,
+                'capacidad_ml'    => $articulo->capacity_ml,
+                'fecha_caducidad' => $articulo->expiration_date,
+                'niveles_stock'   => $articulo->nivelesStock->map(fn ($nivel) => [
+                    'id'              => $nivel->id,
+                    'ubicacion_id'    => $nivel->ubicacion_id,
+                    'ubicacion'       => $nivel->ubicacion?->nombre,
+                    'cantidad'        => (float) $nivel->cantidad,
                     'cantidad_minima' => (float) $nivel->cantidad_minima,
                 ]),
-                'created_at' => $articulo->created_at,
-                'updated_at' => $articulo->updated_at,
+                'created_at'      => $articulo->created_at,
+                'updated_at'      => $articulo->updated_at,
             ],
         ]);
     }
@@ -158,13 +168,14 @@ class ArticuloController extends Controller
      */
     public function store(ArticuloRequest $request): JsonResponse
     {
-        $articulo = Articulo::query()->create(
-            $request->validated() + ['activo' => true]
-        );
+        $validados    = $request->validated();
+        $stockInicial = (float) ($validados['stock_inicial'] ?? 0);
+        $stockMinimo  = (float) ($validados['stock_minimo']  ?? 0);
+        $ubicacionId  = $validados['ubicacion_id'] ?? null;
 
-        $stockInicial = (float) $request->input('stock_inicial', 0);
-        $stockMinimo  = (float) $request->input('stock_minimo', 0);
-        $ubicacionId  = $request->input('ubicacion_id');
+        $datosArticulo = array_diff_key($validados, array_flip(['stock_inicial', 'stock_minimo', 'ubicacion_id']));
+
+        $articulo = Articulo::query()->create($datosArticulo + ['activo' => true]);
 
         if ($ubicacionId && ($stockInicial > 0 || $stockMinimo > 0)) {
             NivelStock::query()->create([
@@ -187,7 +198,16 @@ class ArticuloController extends Controller
      */
     public function update(ArticuloRequest $request, Articulo $articulo): JsonResponse
     {
-        $articulo->update($request->validated());
+        $validados = $request->validated();
+        $stockMinimo = isset($validados['stock_minimo']) ? (float) $validados['stock_minimo'] : null;
+        unset($validados['stock_minimo']);
+
+        $articulo->update($validados);
+
+        if ($stockMinimo !== null) {
+            $articulo->nivelesStock()->update(['cantidad_minima' => $stockMinimo]);
+        }
+
         $articulo->load('categoria:id,nombre');
 
         $stockTotal = (float) $articulo->nivelesStock()->sum('cantidad');

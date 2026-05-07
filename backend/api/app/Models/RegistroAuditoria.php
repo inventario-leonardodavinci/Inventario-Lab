@@ -19,6 +19,8 @@ class RegistroAuditoria extends Model
         'antes_json',
         'despues_json',
         'payload_json',
+        'ip_address',
+        'user_agent',
     ];
 
     protected $casts = [

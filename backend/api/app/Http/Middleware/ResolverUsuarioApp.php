@@ -64,18 +64,10 @@ class ResolverUsuarioApp
             app(\Spatie\Permission\PermissionRegistrar::class)->forgetCachedPermissions();
         }
 
-        // Establecer variable de sesión PostgreSQL para los triggers de auditoría.
-        // Usamos SET (sin LOCAL) para que persista en toda la conexión,
-        // ya que SET LOCAL solo funciona dentro de una transacción explícita.
-        try {
-            \Illuminate\Support\Facades\DB::statement(
-                'SET app.current_user_id = ?',
-                [(int) $usuarioApp->id]
-            );
-        } catch (\Throwable) {
-            // Silencioso: no bloquear la petición si falla
-        }
-
+        // Almacenar el usuario resuelto en los atributos de la request.
+        // El middleware AuditarEscritura se encarga de SET LOCAL app.current_user_id
+        // dentro de una transacción explícita para que los triggers de auditoría
+        // puedan leerlo correctamente incluso con connection pooling.
         $request->attributes->set('app_user', $usuarioApp);
 
         return $next($request);

@@ -54,6 +54,10 @@ class NotificacionController extends Controller
         $ip  = $this->resolverIp($request);
         $geo = $this->geolocalizarIp($ip);
 
+        $tipoEvento = in_array($request->input('tipo_evento'), HistorialSesion::TIPOS_EVENTO, true)
+            ? $request->input('tipo_evento')
+            : 'login';
+
         HistorialSesion::create([
             'usuario_id'        => $usuarioApp->id,
             'ip_address'        => $ip,
@@ -63,7 +67,7 @@ class NotificacionController extends Controller
             'sistema_operativo' => $this->detectarSO($ua),
             'pais'              => $geo['pais'] ?? null,
             'ciudad'            => $geo['ciudad'] ?? null,
-            'tipo_evento'       => 'login',
+            'tipo_evento'       => $tipoEvento,
             'exitoso'           => true,
             'iniciada_en'       => now(),
         ]);

@@ -4,6 +4,7 @@ namespace App\Models;
 
 use Illuminate\Auth\Authenticatable;
 use Illuminate\Contracts\Auth\Authenticatable as AuthenticatableContract;
+use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 use Spatie\Permission\Traits\HasRoles;
@@ -25,7 +26,7 @@ use Spatie\Permission\Traits\HasRoles;
  */
 class UsuarioApp extends Model implements AuthenticatableContract
 {
-    use HasRoles, Authenticatable;
+    use HasFactory, HasRoles, Authenticatable;
 
     protected $table = 'usuarios_app';
 

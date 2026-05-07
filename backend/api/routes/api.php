@@ -1,6 +1,5 @@
 <?php
 
-use App\Http\Controllers\Api\AlertaController;
 use App\Http\Controllers\Api\ArticuloController;
 use App\Http\Controllers\Api\AuditoriaController;
 use App\Http\Controllers\Api\CategoriaController;
@@ -13,12 +12,13 @@ use App\Http\Controllers\Api\UbicacionController;
 use App\Http\Controllers\Api\UsuarioController;
 use Illuminate\Support\Facades\Route;
 
-Route::prefix('v1')->middleware(['throttle:api', 'app.user'])->group(function (): void {
+Route::prefix('v1')->middleware(['throttle:api', 'app.user', 'audit.write'])->group(function (): void {
 
     // ── Perfil ────────────────────────────────────────────────────────────────
     Route::get('/perfil', PerfilController::class);
     Route::patch('/perfil', [PerfilController::class, 'actualizar']);
     Route::get('/perfil/historial-sesiones', [PerfilController::class, 'historialSesiones']);
+    Route::delete('/perfil/sesiones/{sesionId}', [PerfilController::class, 'eliminarSesion']);
 
     // ── Inventario (ruta legacy — se mantiene para compatibilidad) ────────────
     Route::get('/inventario', [InventarioController::class, 'index']);
@@ -48,11 +48,6 @@ Route::prefix('v1')->middleware(['throttle:api', 'app.user'])->group(function ()
     Route::get('/movimientos/resumen-hoy', [MovimientoController::class, 'resumenHoy']);
     Route::get('/movimientos', [MovimientoController::class, 'index']);
     Route::post('/movimientos', [MovimientoController::class, 'store'])->middleware(['role:administrador,profesor', 'throttle:escritura']);
-
-    // ── Alertas ───────────────────────────────────────────────────────────────
-    Route::get('/alertas', [AlertaController::class, 'index']);
-    Route::post('/alertas/{alerta}/confirmar', [AlertaController::class, 'confirmar'])->middleware('role:administrador,profesor');
-    Route::post('/alertas/{alerta}/resolver', [AlertaController::class, 'resolver'])->middleware('role:administrador,profesor');
 
     // ── Mantenimiento ─────────────────────────────────────────────────────────
     Route::get('/mantenimiento/activos', [MantenimientoController::class, 'index']);

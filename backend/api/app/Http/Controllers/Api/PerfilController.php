@@ -61,7 +61,7 @@ class PerfilController extends Controller
         $historial = HistorialSesion::query()
             ->where('usuario_id', $usuarioApp->id)
             ->orderByDesc('iniciada_en')
-            ->limit(20)
+            ->limit(50)
             ->get()
             ->map(fn (HistorialSesion $s): array => [
                 'id'                => $s->id,
@@ -74,8 +74,28 @@ class PerfilController extends Controller
                 'tipo_evento'       => $s->tipo_evento ?? 'login',
                 'exitoso'           => $s->exitoso ?? true,
                 'iniciada_en'       => $s->iniciada_en?->toISOString(),
+                'user_agent'        => $s->user_agent,
             ]);
 
         return response()->json(['data' => $historial]);
+    }
+
+    public function eliminarSesion(Request $request, int $sesionId): JsonResponse
+    {
+        /** @var UsuarioApp $usuarioApp */
+        $usuarioApp = $request->attributes->get('app_user');
+
+        $sesion = HistorialSesion::query()
+            ->where('id', $sesionId)
+            ->where('usuario_id', $usuarioApp->id)
+            ->first();
+
+        if (! $sesion) {
+            return response()->json(['message' => 'Sesión no encontrada.'], 404);
+        }
+
+        $sesion->delete();
+
+        return response()->json(['message' => 'Sesión eliminada correctamente.']);
     }
 }
