@@ -20,7 +20,7 @@ import {
 } from '@/hooks/queries'
 import { useArticulosView } from './articulos/hooks/useArticulosView'
 import { FiltrosBar } from './articulos/components/FiltrosBar'
-import type { Articulo, TipoMovimiento } from '@/types'
+import type { TipoMovimiento } from '@/types'
 import { ArticulosGrid } from './articulos/components/ArticulosGrid'
 import { PanelAccionRapida } from './articulos/components/PanelAccionRapida'
 import { ArticuloDrawer } from './articulos/components/ArticuloDrawer'
@@ -59,10 +59,10 @@ export default function Articulos() {
   })
   
   const { data: categoriasData, isLoading: _isLoadingCategorias } = useCategorias()
-  const { data: ubicacionesData, isLoading: _isLoadingUbicaciones } = useUbicaciones()
+  const { data: ubicacionesData, isLoading: isLoadingUbicaciones } = useUbicaciones()
   const { data: alertasData, isLoading: _isLoadingAlertas } = useAlertas({ estado: 'abierta' })
   const { data: movimientosData } = useMovimientos({ per_page: 50 })
-  const { data: articuloDetalle, isLoading: isLoadingDetalle } = useArticulo(view.articuloDetalle?.id ?? 0)
+  const { data: articuloDetalle } = useArticulo(view.articuloDetalle?.id ?? 0)
   // Query para obtener stock del artículo seleccionado en panel de acción
   const { data: articuloPanelDetalle, isLoading: isLoadingPanelDetalle } = useArticulo(view.articuloSeleccionado?.id ?? 0)
   
@@ -292,12 +292,17 @@ export default function Articulos() {
           view.seleccionarArticulo(art, 'salida')
           view.setTipoMovimiento('salida')
         }}
+        onTraslado={(art) => {
+          view.seleccionarArticulo(art, 'traslado')
+          view.setTipoMovimiento('traslado')
+        }}
         onVerDetalle={view.abrirDetalle}
         onCrear={view.abrirCrear}
       />
       
       {view.mostrarPanelAccion && view.articuloSeleccionado && (
         <PanelAccionRapida
+          open={view.mostrarPanelAccion}
           articulo={view.articuloSeleccionado}
           tipo={view.tipoMovimiento}
           cantidad={view.cantidad}
@@ -336,6 +341,7 @@ export default function Articulos() {
       <ArticuloFormSheet
         articulo={view.articuloEditando}
         categorias={categorias}
+        ubicaciones={ubicaciones}
         open={view.formAbierto}
         onClose={view.cerrarForm}
         onSubmit={view.articuloEditando ? handleActualizarArticulo : handleCrearArticulo}

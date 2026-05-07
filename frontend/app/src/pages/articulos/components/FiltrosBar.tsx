@@ -14,7 +14,7 @@ import {
 import { cn } from '@/lib/utils'
 import type { Categoria, Ubicacion } from '@/types'
 
-type FiltroVista = 'todos' | 'critico' | 'inactivos'
+type FiltroVista = 'todos' | 'critico' | 'inactivos' | 'alertas'
 
 interface FiltrosBarProps {
   filtro: FiltroVista
@@ -28,6 +28,7 @@ interface FiltrosBarProps {
     todos: number
     critico: number
     inactivos: number
+    alertas: number
   }
   categorias: Categoria[]
   ubicaciones: Ubicacion[]

@@ -32,8 +32,6 @@ import {
   STALE_TIME_MS,
   STALE_TIME_LONG_MS,
   GC_TIME_MS,
-  RETRY_COUNT,
-  RETRY_DELAY_MAX_MS,
 } from '@/constants'
 
 import type {
