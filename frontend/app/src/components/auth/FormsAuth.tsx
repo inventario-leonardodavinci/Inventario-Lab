@@ -6,6 +6,7 @@ import { Label } from "@/components/ui/label";
 import { useAuth } from "@/context/ContextoAutenticacion";
 import { toast } from "sonner";
 import { useState, useRef, useEffect } from "react";
+import { InputOTP, InputOTPGroup, InputOTPSlot } from "@/components/ui/input-otp";
 import { AlertCircle } from "lucide-react";
 
 // ─── Componente de alerta inline ─────────────────────────────────────────────
@@ -191,23 +192,30 @@ export function validarEmail(email: string): boolean {
 export function VistaLogin({ onNavegar, oAuthProviders }: { onNavegar: (ruta: string) => void; oAuthProviders: string[] }) {
   const navigate = useNavigate();
   const { login, loginConOAuth } = useAuth();
-  const [email, setEmail] = useState("");
+  const [ultimoUsuario, setUltimoUsuario] = useState<{ nombre: string; email: string; avatarUrl: string } | null>(() => {
+    try {
+      const raw = localStorage.getItem("ultimo_usuario:v1");
+      if (raw) {
+        const datos = JSON.parse(raw) as { nombre: string; email: string; avatarUrl: string };
+        return datos.email ? datos : null;
+      }
+    } catch { /* ignorar */ }
+    return null;
+  });
+  const [email, setEmail] = useState(() => {
+    try {
+      const raw = localStorage.getItem("ultimo_usuario:v1");
+      if (raw) {
+        const datos = JSON.parse(raw) as { nombre: string; email: string; avatarUrl: string };
+        return datos.email ?? "";
+      }
+    } catch { /* ignorar */ }
+    return "";
+  });
   const [password, setPassword] = useState("");
   const [errores, setErrores] = useState<{ email?: string; password?: string; general?: string }>({});
   const [showPassword, setShowPassword] = useState(false);
   const [submitting, setSubmitting] = useState(false);
-  const [ultimoUsuario, setUltimoUsuario] = useState<{ nombre: string; email: string; avatarUrl: string } | null>(null);
-  const [usandoUltimoUsuario, setUsandoUltimoUsuario] = useState(false);
-
-  useEffect(() => {
-    try {
-      const raw = localStorage.getItem("ultimo_usuario");
-      if (raw) {
-        const datos = JSON.parse(raw) as { nombre: string; email: string; avatarUrl: string };
-        if (datos.email) { setUltimoUsuario(datos); setUsandoUltimoUsuario(true); setEmail(datos.email); }
-      }
-    } catch { /* ignorar */ }
-  }, []);
 
   function iniciales(nombre: string): string {
     return nombre.split(" ").slice(0, 2).map((p) => p[0]?.toUpperCase() ?? "").join("");
@@ -247,9 +255,9 @@ export function VistaLogin({ onNavegar, oAuthProviders }: { onNavegar: (ruta: st
     catch (err) { toast.error(err instanceof Error ? err.message : "Error con el proveedor"); }
   };
 
-  const onUsarOtraCuenta = () => { setUsandoUltimoUsuario(false); setEmail(""); setPassword(""); setErrores({}); };
+  const onUsarOtraCuenta = () => { setUltimoUsuario(null); setEmail(""); setPassword(""); setErrores({}); };
 
-  if (usandoUltimoUsuario && ultimoUsuario) {
+  if (ultimoUsuario) {
     return (
       <AuthCard titulo="Bienvenido de nuevo" descripcion="Última sesión iniciada con esta cuenta."
         icono={
@@ -478,7 +486,18 @@ export function VistaVerificarEmail({ email, onNavegar }: { email: string; onNav
       }
     >
       <form className="space-y-5" onSubmit={onSubmit}>
-        <Input type="text" inputMode="numeric" maxLength={6} placeholder="123456" value={otp} onChange={(e) => setOtp(e.target.value.replace(/\D/g, ""))} required autoComplete="one-time-code" className="text-center text-2xl tracking-[0.3em] font-mono h-14 rounded-xl" />
+        <div className="flex justify-center">
+          <InputOTP maxLength={6} value={otp} onChange={setOtp} autoFocus>
+            <InputOTPGroup>
+              <InputOTPSlot index={0} className="size-12 text-lg" />
+              <InputOTPSlot index={1} className="size-12 text-lg" />
+              <InputOTPSlot index={2} className="size-12 text-lg" />
+              <InputOTPSlot index={3} className="size-12 text-lg" />
+              <InputOTPSlot index={4} className="size-12 text-lg" />
+              <InputOTPSlot index={5} className="size-12 text-lg" />
+            </InputOTPGroup>
+          </InputOTP>
+        </div>
         <Button type="submit" className="w-full h-11 rounded-xl font-normal" disabled={submitting || otp.length < 6}>{submitting ? "Verificando..." : "Verificar"}</Button>
         <div className="flex items-center justify-between text-sm">
           <span className="text-muted-foreground">¿No llegó el código?</span>
@@ -583,7 +602,18 @@ export function VistaRestablecer({ email, onNavegar }: { email: string; onNavega
     >
       {!token ? (
         <form className="space-y-5" onSubmit={onVerificarCodigo}>
-          <Input type="text" inputMode="numeric" maxLength={6} placeholder="123456" value={codigo} onChange={(e) => setCodigo(e.target.value.replace(/\D/g, ""))} required autoComplete="one-time-code" className="text-center text-2xl tracking-[0.3em] font-mono h-14 rounded-xl" />
+          <div className="flex justify-center">
+            <InputOTP maxLength={6} value={codigo} onChange={setCodigo} autoFocus>
+              <InputOTPGroup>
+                <InputOTPSlot index={0} className="size-12 text-lg" />
+                <InputOTPSlot index={1} className="size-12 text-lg" />
+                <InputOTPSlot index={2} className="size-12 text-lg" />
+                <InputOTPSlot index={3} className="size-12 text-lg" />
+                <InputOTPSlot index={4} className="size-12 text-lg" />
+                <InputOTPSlot index={5} className="size-12 text-lg" />
+              </InputOTPGroup>
+            </InputOTP>
+          </div>
           <Button type="submit" className="w-full h-11 rounded-xl font-normal" disabled={submitting || codigo.length < 6}>{submitting ? "Verificando..." : "Verificar código"}</Button>
           <Button type="button" variant="ghost" className="w-full h-10 text-sm font-normal rounded-xl" onClick={() => onNavegar("/login/recuperar")}>Volver</Button>
         </form>

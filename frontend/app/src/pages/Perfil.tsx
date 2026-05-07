@@ -1,4 +1,4 @@
-import { useEffect, useState, useRef } from "react";
+import React, { useEffect, useState, useRef, Fragment } from "react";
 import { useSearchParams } from "react-router-dom";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Badge } from "@/components/ui/badge";
@@ -8,8 +8,9 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Separator } from "@/components/ui/separator";
 import { EditorRecorteImagen } from "@/components/ui/EditorRecorteImagen";
+import { InputOTP, InputOTPGroup, InputOTPSlot } from "@/components/ui/input-otp";
 import { useAuth } from "@/context/ContextoAutenticacion";
-import { useNotificaciones, usePerfil, useActualizarPerfil, useHistorialSesiones } from "@/hooks/queries";
+import { useNotificaciones, usePerfil, useActualizarPerfil, useHistorialSesiones, useEliminarSesion } from "@/hooks/queries";
 import {
   actualizarNombreUsuario,
   actualizarCampoPerfil,
@@ -41,6 +42,11 @@ import {
   MapPin,
   KeyRound,
   Info,
+  Trash2,
+  RefreshCw,
+  XCircle,
+  Link2,
+  History,
 } from "lucide-react";
 import { toast } from "sonner";
 import { SkeletonPerfil } from "@/components/ui/PageSkeleton";
@@ -97,14 +103,16 @@ function comprimirImagen(base64: string, maxW: number, maxH: number, calidad: nu
   });
 }
 
-type TabActiva = "perfil" | "seguridad";
+type TabActiva = "perfil" | "seguridad" | "historial";
 
 export default function Perfil() {
   const { user, actualizarUsuario } = useAuth();
   const [searchParams] = useSearchParams();
 
+  const tabParam = searchParams.get("tab")
   const tabInicial: TabActiva =
-    searchParams.get("tab") === "seguridad" ? "seguridad" : "perfil";
+    tabParam === "seguridad" ? "seguridad" :
+    tabParam === "historial" ? "historial" : "perfil";
   const [tab, setTab] = useState<TabActiva>(tabInicial);
 
   // ─── Estado perfil ────────────────────────────────────────────────────────
@@ -146,6 +154,7 @@ export default function Perfil() {
 
   // ─── Historial de sesiones ────────────────────────────────────────────────
   const { data: historialData, isLoading: cargandoHistorial } = useHistorialSesiones();
+  const eliminarSesionMutation = useEliminarSesion();
 
   useEffect(() => {
     import("@/services/authApi").then(({ obtenerUsuarioCompleto }) => {
@@ -310,7 +319,7 @@ export default function Perfil() {
           avatarParaGuardar = user.avatarUrl;
         }
       }
-      localStorage.setItem("ultimo_usuario", JSON.stringify({
+      localStorage.setItem("ultimo_usuario:v1", JSON.stringify({
         nombre: user.displayName,
         email: email ?? "",
         avatarUrl: avatarParaGuardar,
@@ -333,9 +342,9 @@ export default function Perfil() {
   const pasoActual = pasos.indexOf(pasoCambio) + 1;
 
   return (
-    <main className="flex flex-1 flex-col gap-6 bg-muted/20 p-4 lg:p-6">
+    <main className="animate-page-enter flex flex-1 flex-col gap-6 bg-muted/20 p-4 lg:p-6">
       {/* ── Cabecera ─────────────────────────────────────────────────────── */}
-      <div className="flex flex-col gap-1 sm:flex-row sm:items-center sm:justify-between">
+      <div className="page-section flex flex-col gap-1 sm:flex-row sm:items-center sm:justify-between">
         <div>
           <h2 className="text-2xl font-semibold tracking-tight">Mi perfil</h2>
           <p className="text-sm text-muted-foreground">
@@ -349,7 +358,7 @@ export default function Perfil() {
       </div>
 
       {/* ── Tarjeta de identidad ─────────────────────────────────────────── */}
-      <Card className="overflow-hidden border-primary/10 shadow-sm p-0! gap-0!">
+      <Card className="page-section overflow-hidden border-primary/10 shadow-sm p-0! gap-0!">
         <CardContent className="relative flex flex-col gap-4 overflow-hidden p-0! sm:flex-row sm:items-center">
           {/* Fondo degradado */}
           <div className="absolute inset-0 bg-linear-to-r from-primary/15 via-primary/5 to-transparent pointer-events-none" />
@@ -418,6 +427,7 @@ export default function Perfil() {
         {([
           { id: "perfil", label: "Información", icon: Info },
           { id: "seguridad", label: "Seguridad", icon: Shield },
+          { id: "historial", label: "Accesos", icon: History },
         ] as { id: TabActiva; label: string; icon: React.ElementType }[]).map(({ id, label, icon: Icon }) => (
           <button
             key={id}
@@ -556,7 +566,7 @@ export default function Perfil() {
         <div className="grid gap-6 lg:grid-cols-2">
           {/* Cambiar contraseña */}
           <Card className="shadow-sm">
-            <CardHeader className="pb-4">
+            <CardHeader>
               <CardTitle className="flex items-center gap-2 text-base">
                 <div className="flex size-7 items-center justify-center rounded-lg bg-primary/10">
                   <KeyRound className="size-4 text-primary" />
@@ -564,120 +574,248 @@ export default function Perfil() {
                 Cambiar contraseña
               </CardTitle>
               <CardDescription>
-                {pasoCambio === "solicitar" && "Recibirás un código en tu correo para verificar el cambio."}
-                {pasoCambio === "codigo" && `Introduce el código de 6 dígitos enviado a ${email}.`}
-                {pasoCambio === "nueva" && "Elige tu nueva contraseña segura."}
+                {pasoCambio === "solicitar" && "Te enviaremos un código de 6 dígitos a tu correo."}
+                {pasoCambio === "codigo" && `Revisa ${email ?? "tu correo"} e introduce el código recibido.`}
+                {pasoCambio === "nueva" && "Elige una contraseña segura para tu cuenta."}
               </CardDescription>
             </CardHeader>
-            <CardContent className="space-y-5">
-              {/* Indicador de pasos */}
-              <div className="flex items-center gap-2">
-                {[1, 2, 3].map((n) => (
-                  <div key={n} className="flex items-center gap-2">
-                    <div className={`flex size-6 items-center justify-center rounded-full text-xs font-semibold transition-colors ${
-                      n < pasoActual ? "bg-primary text-primary-foreground" :
-                      n === pasoActual ? "bg-primary/20 text-primary ring-2 ring-primary/30" :
-                      "bg-muted text-muted-foreground"
-                    }`}>
-                      {n < pasoActual ? <CheckCircle2 className="size-3.5" /> : n}
+            <CardContent className="flex flex-col gap-6">
+
+              {/* ── Stepper ── */}
+              <div className="flex items-center gap-0">
+                {[
+                  { n: 1, label: "Correo" },
+                  { n: 2, label: "Código" },
+                  { n: 3, label: "Contraseña" },
+                ].map(({ n, label }, i, arr) => (
+                  <Fragment key={n}>
+                    <div className="flex flex-col items-center gap-1">
+                      <div className={`flex size-7 items-center justify-center rounded-full text-xs font-semibold transition-all ${
+                        n < pasoActual
+                          ? "bg-primary text-primary-foreground shadow-sm"
+                          : n === pasoActual
+                          ? "bg-primary/15 text-primary ring-2 ring-primary/40"
+                          : "bg-muted text-muted-foreground"
+                      }`}>
+                        {n < pasoActual ? <CheckCircle2 className="size-3.5" /> : n}
+                      </div>
+                      <span className={`text-[10px] font-medium ${
+                        n <= pasoActual ? "text-foreground" : "text-muted-foreground"
+                      }`}>{label}</span>
                     </div>
-                    {n < 3 && <div className={`h-px w-8 transition-colors ${n < pasoActual ? "bg-primary" : "bg-border"}`} />}
-                  </div>
+                    {i < arr.length - 1 && (
+                      <div className={`mb-4 h-px flex-1 mx-2 transition-colors ${
+                        n < pasoActual ? "bg-primary" : "bg-border"
+                      }`} />
+                    )}
+                  </Fragment>
                 ))}
-                <span className="ml-1 text-xs text-muted-foreground">
-                  {pasoCambio === "solicitar" ? "Solicitar código" : pasoCambio === "codigo" ? "Verificar código" : "Nueva contraseña"}
-                </span>
               </div>
 
+              {/* ── Paso 1: Solicitar código ── */}
               {pasoCambio === "solicitar" && (
-                <form onSubmit={onSolicitarCodigo} className="space-y-4">
-                  <div className="rounded-lg border bg-muted/30 px-4 py-3">
-                    <p className="text-xs text-muted-foreground mb-0.5">Se enviará un código a</p>
-                    <p className="text-sm font-medium">{email ?? "—"}</p>
+                <form onSubmit={onSolicitarCodigo} className="flex flex-col gap-4">
+                  <div className="flex items-center gap-3 rounded-xl border bg-muted/40 px-4 py-3">
+                    <div className="flex size-8 shrink-0 items-center justify-center rounded-lg bg-background shadow-sm">
+                      <Mail className="size-4 text-muted-foreground" />
+                    </div>
+                    <div className="min-w-0">
+                      <p className="text-[11px] text-muted-foreground">Se enviará el código a</p>
+                      <p className="truncate text-sm font-semibold">{email ?? "—"}</p>
+                    </div>
                   </div>
-                  <Button type="submit" disabled={submittingPass || !email} className="w-full sm:w-auto">
-                    {submittingPass ? "Enviando..." : "Enviar código de verificación"}
+                  <Button type="submit" disabled={submittingPass || !email} className="w-full">
+                    {submittingPass
+                      ? <><RefreshCw className="size-4 mr-2 animate-spin" />Enviando...</>
+                      : <><Mail className="size-4 mr-2" />Enviar código</>}
                   </Button>
                 </form>
               )}
 
+              {/* ── Paso 2: Introducir código OTP ── */}
               {pasoCambio === "codigo" && (
-                <form onSubmit={onVerificarCodigo} className="space-y-4">
-                  <div className="space-y-2">
-                    <Label htmlFor="codigo-cambio">Código de verificación</Label>
-                    <Input
-                      id="codigo-cambio"
-                      type="text"
-                      inputMode="numeric"
+                <form onSubmit={onVerificarCodigo} className="flex flex-col gap-5">
+                  <div className="flex flex-col items-center gap-3">
+                    <p className="text-xs text-muted-foreground">Introduce los 6 dígitos del correo</p>
+                    <InputOTP
                       maxLength={6}
-                      placeholder="• • • • • •"
                       value={codigoReset}
-                      onChange={(e) => setCodigoReset(e.target.value.replace(/\D/g, ""))}
-                      className="text-center text-2xl tracking-[0.5em] font-mono h-12"
-                      autoComplete="one-time-code"
+                      onChange={setCodigoReset}
                       autoFocus
-                    />
+                    >
+                      <InputOTPGroup>
+                        <InputOTPSlot index={0} className="size-11 text-lg" />
+                        <InputOTPSlot index={1} className="size-11 text-lg" />
+                        <InputOTPSlot index={2} className="size-11 text-lg" />
+                        <InputOTPSlot index={3} className="size-11 text-lg" />
+                        <InputOTPSlot index={4} className="size-11 text-lg" />
+                        <InputOTPSlot index={5} className="size-11 text-lg" />
+                      </InputOTPGroup>
+                    </InputOTP>
+                    <button
+                      type="button"
+                      className="text-xs text-muted-foreground underline underline-offset-2 hover:text-foreground"
+                      onClick={(e) => { e.preventDefault(); void onSolicitarCodigo(e as unknown as React.FormEvent); }}
+                    >
+                      No recibiste el código? Reenviar
+                    </button>
                   </div>
                   <div className="flex gap-2">
-                    <Button type="submit" disabled={submittingPass || codigoReset.length < 6}>
-                      {submittingPass ? "Verificando..." : "Verificar código"}
+                    <Button type="submit" disabled={submittingPass || codigoReset.length < 6} className="flex-1">
+                      {submittingPass
+                        ? <><RefreshCw className="size-4 mr-2 animate-spin" />Verificando...</>
+                        : <><CheckCircle2 className="size-4 mr-2" />Verificar código</>}
                     </Button>
-                    <Button type="button" variant="ghost" onClick={() => setPasoCambio("solicitar")}>Cancelar</Button>
+                    <Button type="button" variant="outline" onClick={() => { setPasoCambio("solicitar"); setCodigoReset(""); }}>
+                      Atrás
+                    </Button>
                   </div>
                 </form>
               )}
 
+              {/* ── Paso 3: Nueva contraseña ── */}
               {pasoCambio === "nueva" && (
-                <form onSubmit={onCambiarContrasena} className="space-y-4">
-                  <div className="space-y-2">
+                <form onSubmit={onCambiarContrasena} className="flex flex-col gap-4">
+                  <div className="flex flex-col gap-2">
                     <Label htmlFor="nueva-pass-perfil">Nueva contraseña</Label>
                     <div className="relative">
-                      <Input id="nueva-pass-perfil" type={mostrarPass.nueva ? "text" : "password"} value={nuevaPass} onChange={(e) => setNuevaPass(e.target.value)} required minLength={6} autoComplete="new-password" className="pr-10" autoFocus />
-                      <button type="button" className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground" onClick={() => setMostrarPass(p => ({ ...p, nueva: !p.nueva }))}>
+                      <Input
+                        id="nueva-pass-perfil"
+                        type={mostrarPass.nueva ? "text" : "password"}
+                        value={nuevaPass}
+                        onChange={(e) => setNuevaPass(e.target.value)}
+                        required
+                        minLength={6}
+                        autoComplete="new-password"
+                        className="pr-10"
+                        autoFocus
+                        placeholder="Mínimo 6 caracteres"
+                      />
+                      <button
+                        type="button"
+                        className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground"
+                        onClick={() => setMostrarPass(p => ({ ...p, nueva: !p.nueva }))}
+                      >
                         {mostrarPass.nueva ? <EyeOff className="size-4" /> : <Eye className="size-4" />}
                       </button>
                     </div>
-                    {fuerzaPass && (
-                      <div className="flex items-center gap-2">
-                        <div className="h-1.5 flex-1 rounded-full bg-muted overflow-hidden">
-                          <div className={`h-full rounded-full transition-all duration-300 ${
-                            fuerzaPass === "débil" ? "w-1/3 bg-destructive" :
-                            fuerzaPass === "media" ? "w-2/3 bg-yellow-500" :
-                            "w-full bg-green-500"
-                          }`} />
+                    {/* Barra de fuerza */}
+                    {nuevaPass.length > 0 && (
+                      <div className="flex flex-col gap-1.5">
+                        <div className="flex gap-1">
+                          {[1,2,3].map((i) => (
+                            <div key={i} className={`h-1 flex-1 rounded-full transition-all duration-300 ${
+                              fuerzaPass === "débil" && i === 1 ? "bg-destructive" :
+                              fuerzaPass === "media" && i <= 2 ? "bg-yellow-500" :
+                              fuerzaPass === "fuerte" ? "bg-green-500" :
+                              "bg-muted"
+                            }`} />
+                          ))}
                         </div>
-                        <span className={`text-xs font-medium ${fuerzaPass === "débil" ? "text-destructive" : fuerzaPass === "media" ? "text-yellow-500" : "text-green-500"}`}>{fuerzaPass}</span>
+                        <p className={`text-[11px] font-medium ${
+                          fuerzaPass === "débil" ? "text-destructive" :
+                          fuerzaPass === "media" ? "text-yellow-500" : "text-green-600"
+                        }`}>
+                          Contraseña {fuerzaPass}
+                        </p>
                       </div>
                     )}
                   </div>
-                  <div className="space-y-2">
+
+                  <div className="flex flex-col gap-2">
                     <Label htmlFor="confirmar-pass-perfil">Confirmar contraseña</Label>
                     <div className="relative">
-                      <Input id="confirmar-pass-perfil" type={mostrarPass.confirmar ? "text" : "password"} value={confirmarPass} onChange={(e) => setConfirmarPass(e.target.value)} required minLength={6} autoComplete="new-password" className="pr-10" />
-                      <button type="button" className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground" onClick={() => setMostrarPass(p => ({ ...p, confirmar: !p.confirmar }))}>
+                      <Input
+                        id="confirmar-pass-perfil"
+                        type={mostrarPass.confirmar ? "text" : "password"}
+                        value={confirmarPass}
+                        onChange={(e) => setConfirmarPass(e.target.value)}
+                        required
+                        minLength={6}
+                        autoComplete="new-password"
+                        className={`pr-10 ${
+                          confirmarPass && nuevaPass !== confirmarPass ? "border-destructive focus-visible:ring-destructive/30" : ""
+                        }`}
+                        placeholder="Repite la contraseña"
+                      />
+                      <button
+                        type="button"
+                        className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground"
+                        onClick={() => setMostrarPass(p => ({ ...p, confirmar: !p.confirmar }))}
+                      >
                         {mostrarPass.confirmar ? <EyeOff className="size-4" /> : <Eye className="size-4" />}
                       </button>
                     </div>
                     {confirmarPass && nuevaPass !== confirmarPass && (
-                      <p className="text-xs text-destructive flex items-center gap-1">Las contraseñas no coinciden</p>
+                      <p className="text-[11px] text-destructive flex items-center gap-1">
+                        <XCircle className="size-3" /> Las contraseñas no coinciden
+                      </p>
                     )}
                     {confirmarPass && nuevaPass === confirmarPass && (
-                      <p className="text-xs text-green-500 flex items-center gap-1"><CheckCircle2 className="size-3" /> Las contraseñas coinciden</p>
+                      <p className="text-[11px] text-green-600 flex items-center gap-1">
+                        <CheckCircle2 className="size-3" /> Las contraseñas coinciden
+                      </p>
                     )}
                   </div>
+
                   <div className="flex gap-2">
-                    <Button type="submit" disabled={submittingPass || nuevaPass !== confirmarPass}>
-                      {submittingPass ? "Guardando..." : "Cambiar contraseña"}
+                    <Button
+                      type="submit"
+                      disabled={submittingPass || !nuevaPass || nuevaPass !== confirmarPass}
+                      className="flex-1"
+                    >
+                      {submittingPass
+                        ? <><RefreshCw className="size-4 mr-2 animate-spin" />Guardando...</>
+                        : <><KeyRound className="size-4 mr-2" />Cambiar contraseña</>}
                     </Button>
-                    <Button type="button" variant="ghost" onClick={() => { setPasoCambio("solicitar"); setCodigoReset(""); setTokenReset(null); setNuevaPass(""); setConfirmarPass(""); }}>
+                    <Button
+                      type="button"
+                      variant="outline"
+                      onClick={() => { setPasoCambio("solicitar"); setCodigoReset(""); setTokenReset(null); setNuevaPass(""); setConfirmarPass(""); }}
+                    >
                       Cancelar
                     </Button>
                   </div>
                 </form>
               )}
+
             </CardContent>
           </Card>
 
+          {/* Info de seguridad */}
+          <Card className="shadow-sm">
+            <CardHeader>
+              <CardTitle className="flex items-center gap-2 text-base">
+                <div className="flex size-7 items-center justify-center rounded-lg bg-amber-500/10">
+                  <Shield className="size-4 text-amber-600" />
+                </div>
+                Recomendaciones
+              </CardTitle>
+              <CardDescription>Consejos para mantener tu cuenta segura.</CardDescription>
+            </CardHeader>
+            <CardContent className="flex flex-col gap-3">
+              {[
+                { icon: CheckCircle2, color: "text-green-600", bg: "bg-green-500/10", tip: "Usa al menos 10 caracteres mezclando letras, números y símbolos." },
+                { icon: CheckCircle2, color: "text-green-600", bg: "bg-green-500/10", tip: "No reutilices la misma contraseña en otros sitios." },
+                { icon: AlertTriangle, color: "text-amber-600", bg: "bg-amber-500/10", tip: "Nunca compartas tu contraseña con nadie, ni con soporte." },
+                { icon: Info, color: "text-primary", bg: "bg-primary/10", tip: "Cambiar la contraseña cierra todas las sesiones activas en otros dispositivos." },
+              ].map(({ icon: Icon, color, bg, tip }, i) => (
+                <div key={i} className="flex items-start gap-3 text-sm">
+                  <div className={`mt-0.5 flex size-6 shrink-0 items-center justify-center rounded-md ${bg}`}>
+                    <Icon className={`size-3.5 ${color}`} />
+                  </div>
+                  <p className="text-muted-foreground leading-relaxed">{tip}</p>
+                </div>
+              ))}
+            </CardContent>
+          </Card>
+
+        </div>
+      )}
+
+      {/* ── Tab: Historial ───────────────────────────────────────────────── */}
+      {tab === "historial" && (
+        <div className="grid gap-6 lg:grid-cols-3">
           {/* Sesión activa */}
           <Card className="shadow-sm">
             <CardHeader className="pb-4">
@@ -718,24 +856,45 @@ export default function Perfil() {
           {/* Historial de sesiones */}
           <Card className="lg:col-span-2 shadow-sm">
             <CardHeader className="pb-4">
-              <CardTitle className="flex items-center gap-2 text-base">
-                <div className="flex size-7 items-center justify-center rounded-lg bg-primary/10">
-                  <LogIn className="size-4 text-primary" />
+              <div className="flex items-start justify-between gap-4">
+                <div>
+                  <CardTitle className="flex items-center gap-2 text-base">
+                    <div className="flex size-7 items-center justify-center rounded-lg bg-primary/10">
+                      <History className="size-4 text-primary" />
+                    </div>
+                    Historial de accesos
+                  </CardTitle>
+                  <CardDescription className="mt-1">
+                    Últimos {historialData?.data?.length ?? 0} accesos registrados.
+                  </CardDescription>
                 </div>
-                Historial de accesos
-              </CardTitle>
-              <CardDescription>Últimos 20 accesos a tu cuenta.</CardDescription>
+              </div>
             </CardHeader>
             <CardContent>
+              <div className="mb-4 flex items-start gap-3 rounded-lg border border-amber-500/30 bg-amber-500/5 px-3 py-2.5 text-xs text-amber-700 dark:text-amber-400">
+                <AlertTriangle className="size-3.5 shrink-0 mt-0.5" />
+                <span>
+                  Para cerrar sesión en todos los dispositivos,{" "}
+                  <button type="button" className="underline underline-offset-2 font-medium hover:no-underline" onClick={() => setTab("seguridad")}>cambia tu contraseña</button>{" "}
+                  desde Seguridad. Esto invalida todas las sesiones activas.
+                </span>
+              </div>
               {cargandoHistorial ? (
-                <div className="flex items-center gap-3 py-6 text-sm text-muted-foreground">
-                  <div className="size-4 animate-spin rounded-full border-2 border-primary border-t-transparent" />
-                  Cargando historial...
+                <div className="divide-y">
+                  {[1,2,3,4].map((i) => (
+                    <div key={i} className="flex items-start gap-3 py-3.5">
+                      <div className="mt-0.5 size-8 shrink-0 rounded-lg bg-muted animate-pulse" />
+                      <div className="flex flex-1 flex-col gap-2 pt-1">
+                        <div className="h-3.5 w-28 rounded bg-muted animate-pulse" />
+                        <div className="h-3 w-40 rounded bg-muted animate-pulse" />
+                      </div>
+                    </div>
+                  ))}
                 </div>
               ) : !historialData?.data?.length ? (
                 <div className="flex flex-col items-center justify-center py-10 text-center">
                   <div className="mb-3 flex size-12 items-center justify-center rounded-full bg-muted">
-                    <LogIn className="size-5 text-muted-foreground" />
+                    <History className="size-5 text-muted-foreground" />
                   </div>
                   <p className="text-sm font-medium">Sin registros aún</p>
                   <p className="text-xs text-muted-foreground mt-1">El historial se irá llenando con cada inicio de sesión.</p>
@@ -744,47 +903,75 @@ export default function Perfil() {
                 <ul className="divide-y">
                   {historialData.data.map((sesion, idx) => {
                     const esActual = idx === 0;
-                    const IconoDispositivo =
-                      sesion.dispositivo === "Móvil" ? Smartphone :
-                      sesion.dispositivo === "Tablet" ? Tablet : Monitor;
+                    const IconoDispositivo = sesion.dispositivo === "Móvil" ? Smartphone : sesion.dispositivo === "Tablet" ? Tablet : Monitor;
+                    const configEvento = {
+                      login:   { label: "Contraseña", icon: LogIn,     color: "text-primary",           bg: "bg-primary/10" },
+                      oauth:   { label: "OAuth",       icon: Link2,     color: "text-violet-600",        bg: "bg-violet-500/10" },
+                      refresh: { label: "Renovación",  icon: RefreshCw, color: "text-amber-600",         bg: "bg-amber-500/10" },
+                      logout:  { label: "Cierre",      icon: LogOut,    color: "text-muted-foreground",  bg: "bg-muted" },
+                    }[sesion.tipo_evento] ?? { label: sesion.tipo_evento, icon: LogIn, color: "text-muted-foreground", bg: "bg-muted" };
+                    const IconoEvento = configEvento.icon;
+                    const borrando = eliminarSesionMutation.isPending && eliminarSesionMutation.variables === sesion.id;
                     return (
-                      <li key={sesion.id} className={`flex items-start gap-3 py-3.5 ${esActual ? "rounded-lg bg-green-500/5 px-3 -mx-3" : ""}`}>
-                        {/* Icono dispositivo */}
-                        <div className={`mt-0.5 flex size-8 shrink-0 items-center justify-center rounded-lg ${esActual ? "bg-green-500/15 text-green-600" : "bg-muted text-muted-foreground"}`}>
-                          <IconoDispositivo className="size-4" />
+                      <li key={sesion.id} className={`group flex items-start gap-3 py-3.5 transition-colors ${ esActual ? "rounded-lg bg-green-500/5 px-3 -mx-3" : "" } ${!sesion.exitoso ? "opacity-60" : ""}` }>
+                        <div className={`mt-0.5 flex size-8 shrink-0 items-center justify-center rounded-lg ${ esActual ? "bg-green-500/15 text-green-600" : `${configEvento.bg} ${configEvento.color}` }`}>
+                          {esActual ? <IconoDispositivo className="size-4" /> : <IconoEvento className="size-4" />}
                         </div>
-
                         <div className="flex flex-1 flex-col gap-1 min-w-0">
-                          {/* Fila 1: navegador + SO + badges */}
                           <div className="flex flex-wrap items-center gap-2">
-                            <span className="text-sm font-medium">{sesion.navegador ?? "Navegador desconocido"}</span>
+                            <span className={`text-sm font-medium ${!sesion.exitoso ? "text-destructive line-through" : ""}`}>
+                              {sesion.navegador ?? "Navegador desconocido"}
+                            </span>
                             <span className="text-xs text-muted-foreground">·</span>
                             <span className="text-xs text-muted-foreground">{sesion.sistema_operativo ?? "SO desconocido"}</span>
+                            <span className="text-xs text-muted-foreground">·</span>
+                            <span className={`text-xs font-medium ${configEvento.color}`}>{configEvento.label}</span>
                             {esActual && (
                               <Badge variant="outline" className="text-xs text-green-600 border-green-500/40 bg-green-500/5 gap-1 py-0">
                                 <div className="size-1.5 rounded-full bg-green-500 animate-pulse" />
                                 Sesión actual
                               </Badge>
                             )}
+                            {!sesion.exitoso && (
+                              <Badge variant="destructive" className="text-xs gap-1 py-0">
+                                <XCircle className="size-2.5" /> Fallido
+                              </Badge>
+                            )}
                           </div>
-
-                          {/* Fila 2: IP + ubicación + fecha */}
                           <div className="flex flex-wrap items-center gap-3">
-                            <span className="flex items-center gap-1 text-xs text-muted-foreground font-mono">
-                              <Globe className="size-3 shrink-0" />
-                              {sesion.ip_address ?? "IP desconocida"}
+                            <span className="flex items-center gap-1 text-xs text-muted-foreground">
+                              <IconoDispositivo className="size-3 shrink-0" />
+                              {sesion.dispositivo ?? "Escritorio"}
                             </span>
+                            {sesion.ip_address && (
+                              <span className="flex items-center gap-1 text-xs text-muted-foreground font-mono">
+                                <Globe className="size-3 shrink-0" />
+                                {sesion.ip_address}
+                              </span>
+                            )}
                             {(sesion.ciudad ?? sesion.pais) && (
                               <span className="flex items-center gap-1 text-xs text-muted-foreground">
                                 <MapPin className="size-3 shrink-0" />
                                 {[sesion.ciudad, sesion.pais].filter(Boolean).join(", ")}
                               </span>
                             )}
-                            <span className="text-xs text-muted-foreground ml-auto">
-                              {formatearFecha(sesion.iniciada_en)}
-                            </span>
+                            <span className="text-xs text-muted-foreground ml-auto">{formatearFecha(sesion.iniciada_en)}</span>
                           </div>
                         </div>
+                        {!esActual && (
+                          <button
+                            type="button"
+                            onClick={() => eliminarSesionMutation.mutate(sesion.id, {
+                              onSuccess: () => toast.success("Registro eliminado"),
+                              onError: () => toast.error("No se pudo eliminar el registro"),
+                            })}
+                            disabled={borrando || eliminarSesionMutation.isPending}
+                            className="ml-1 mt-0.5 shrink-0 rounded-md p-1.5 text-muted-foreground opacity-0 transition-all hover:bg-destructive/10 hover:text-destructive focus-visible:opacity-100 group-hover:opacity-100 disabled:cursor-not-allowed disabled:opacity-30"
+                            aria-label="Eliminar este registro de sesión"
+                          >
+                            {borrando ? <RefreshCw className="size-3.5 animate-spin" /> : <Trash2 className="size-3.5" />}
+                          </button>
+                        )}
                       </li>
                     );
                   })}
