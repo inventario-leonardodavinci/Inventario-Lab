@@ -13,7 +13,6 @@ class ApiRutasPruebaHumoTest extends TestCase
             '/api/v1/movimientos',
             '/api/v1/alertas',
             '/api/v1/mantenimiento/activos',
-            '/api/v1/notificaciones',
         ];
 
         foreach ($rutas as $ruta) {

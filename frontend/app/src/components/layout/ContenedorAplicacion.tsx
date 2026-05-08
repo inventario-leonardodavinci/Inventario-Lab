@@ -5,9 +5,9 @@ import {
   SidebarProvider,
   SidebarTrigger,
 } from "@/components/ui/sidebar"
-import { CentroNotificaciones } from "./CentroNotificaciones"
 import { MenuUsuario } from "./MenuUsuario"
 import { BotonTema } from "@/components/ui/BotonTema"
+import { Separator } from "@/components/ui/separator"
 
 const RUTAS: Record<string, string> = {
   "/": "Panel",
@@ -33,23 +33,24 @@ export function ContenedorAplicacion({ children }: { children: React.ReactNode }
   return (
     <SidebarProvider>
       <BarraLateralAplicacion />
-      <SidebarInset>
-        <header className="flex h-14 shrink-0 items-center justify-between gap-2 border-b bg-background/80 px-4 backdrop-blur-sm">
-          <div className="flex items-center gap-2.5">
-            <SidebarTrigger className="-ml-1" />
-            <div className="h-4 w-px bg-border" />
-            <span className="text-sm font-semibold tracking-tight">
+      <SidebarInset className="flex flex-col min-h-screen">
+        <header className="flex h-16 shrink-0 items-center justify-between gap-2 border-b bg-background/80 px-4 backdrop-blur-sm sticky top-0 z-30">
+          <div className="flex items-center gap-2 min-w-0">
+            <SidebarTrigger className="-ml-1 shrink-0" />
+            <Separator orientation="vertical" className="h-6 shrink-0" />
+            <span className="text-sm font-semibold tracking-tight truncate">
               {titulo}
             </span>
           </div>
-          <div className="flex items-center gap-1.5">
+          <div className="flex items-center gap-1.5 shrink-0">
             <BotonTema />
-            <CentroNotificaciones />
-            <div className="h-4 w-px bg-border mx-0.5" />
+            <Separator orientation="vertical" className="h-6" />
             <MenuUsuario />
           </div>
         </header>
-        {children}
+        <div className="flex-1 overflow-auto">
+          {children}
+        </div>
       </SidebarInset>
     </SidebarProvider>
   )

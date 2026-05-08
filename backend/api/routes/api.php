@@ -7,7 +7,6 @@ use App\Http\Controllers\Api\CategoriaController;
 use App\Http\Controllers\Api\InventarioController;
 use App\Http\Controllers\Api\MantenimientoController;
 use App\Http\Controllers\Api\MovimientoController;
-use App\Http\Controllers\Api\NotificacionController;
 use App\Http\Controllers\Api\PerfilController;
 use App\Http\Controllers\Api\UbicacionController;
 use App\Http\Controllers\Api\UsuarioController;
@@ -23,47 +22,48 @@ Route::prefix('v1')->middleware(['throttle:api', 'app.user', 'audit.write'])->gr
 
     // ── Inventario (ruta legacy — se mantiene para compatibilidad) ────────────
     Route::get('/inventario', [InventarioController::class, 'index']);
-    Route::post('/inventario', [InventarioController::class, 'store'])->middleware('role:administrador,profesor');
+    Route::post('/inventario', [InventarioController::class, 'store'])->middleware('role:profesor');
 
     // ── Artículos ─────────────────────────────────────────────────────────────
     Route::prefix('/articulos')->group(function (): void {
         Route::get('/', [ArticuloController::class, 'index']);
         Route::get('/resumen', [ArticuloController::class, 'resumen']);
-        Route::post('/', [ArticuloController::class, 'store'])->middleware('role:administrador,profesor');
+        Route::post('/', [ArticuloController::class, 'store'])->middleware('role:profesor');
         Route::get('/{articulo}', [ArticuloController::class, 'show']);
-        Route::patch('/{articulo}', [ArticuloController::class, 'update'])->middleware('role:administrador,profesor');
-        Route::delete('/{articulo}', [ArticuloController::class, 'destroy'])->middleware('role:administrador');
+        Route::patch('/{articulo}', [ArticuloController::class, 'update'])->middleware('role:profesor');
+        Route::delete('/{articulo}', [ArticuloController::class, 'destroy'])->middleware('role:profesor');
     });
 
     // ── Ubicaciones ───────────────────────────────────────────────────────────
     Route::get('/ubicaciones', [UbicacionController::class, 'index']);
-    Route::post('/ubicaciones', [UbicacionController::class, 'store'])->middleware('role:administrador');
+    Route::post('/ubicaciones', [UbicacionController::class, 'store'])->middleware('role:profesor');
     Route::get('/ubicaciones/{ubicacion}', [UbicacionController::class, 'show']);
-    Route::patch('/ubicaciones/{ubicacion}', [UbicacionController::class, 'update'])->middleware('role:administrador');
+    Route::patch('/ubicaciones/{ubicacion}', [UbicacionController::class, 'update'])->middleware('role:profesor');
 
     // ── Categorías ────────────────────────────────────────────────────────────
     Route::get('/categorias', [CategoriaController::class, 'index']);
-    Route::post('/categorias', [CategoriaController::class, 'store'])->middleware('role:administrador');
+    Route::post('/categorias', [CategoriaController::class, 'store'])->middleware('role:profesor');
     Route::get('/categorias/{categoria}', [CategoriaController::class, 'show']);
-    Route::patch('/categorias/{categoria}', [CategoriaController::class, 'update'])->middleware('role:administrador');
-    Route::delete('/categorias/{categoria}', [CategoriaController::class, 'destroy'])->middleware('role:administrador');
+    Route::patch('/categorias/{categoria}', [CategoriaController::class, 'update'])->middleware('role:profesor');
+    Route::delete('/categorias/{categoria}', [CategoriaController::class, 'destroy'])->middleware('role:profesor');
 
     // ── Movimientos ───────────────────────────────────────────────────────────
     Route::get('/movimientos/resumen-hoy', [MovimientoController::class, 'resumenHoy']);
     Route::get('/movimientos/resumen-rango', [MovimientoController::class, 'resumenRango']);
     Route::get('/movimientos', [MovimientoController::class, 'index']);
-    Route::post('/movimientos', [MovimientoController::class, 'store'])->middleware(['role:administrador,profesor', 'throttle:escritura']);
+    Route::post('/movimientos', [MovimientoController::class, 'store'])->middleware(['role:profesor', 'throttle:escritura']);
 
     // ── Mantenimiento ─────────────────────────────────────────────────────────
     Route::prefix('/mantenimiento/activos')->group(function (): void {
         Route::get('/', [MantenimientoController::class, 'index']);
         Route::get('/resumen', [MantenimientoController::class, 'resumen']);
-        Route::post('/', [MantenimientoController::class, 'store'])->middleware('role:administrador,profesor');
-        Route::patch('/{activo}', [MantenimientoController::class, 'update'])->middleware('role:administrador,profesor');
+        Route::post('/', [MantenimientoController::class, 'store'])->middleware('role:profesor');
+        Route::patch('/{activo}', [MantenimientoController::class, 'update'])->middleware('role:profesor');
+        Route::delete('/{activo}', [MantenimientoController::class, 'destroy'])->middleware('role:profesor');
     });
 
-    // ── Usuarios (solo administrador) ─────────────────────────────────────────
-    Route::prefix('/usuarios')->middleware('role:administrador')->group(function (): void {
+    // ── Usuarios (solo profesor) ──────────────────────────────────────────────
+    Route::prefix('/usuarios')->middleware('role:profesor')->group(function (): void {
         Route::get('/', [UsuarioController::class, 'index']);
         Route::get('/resumen', [UsuarioController::class, 'resumen']);
         Route::patch('/{usuario}/rol', [UsuarioController::class, 'actualizarRol']);
@@ -71,16 +71,12 @@ Route::prefix('v1')->middleware(['throttle:api', 'app.user', 'audit.write'])->gr
         Route::delete('/{usuario}', [UsuarioController::class, 'destroy']);
     });
 
-    // ── Auditoría (solo administrador) ────────────────────────────────────────
-    Route::get('/auditoria', [AuditoriaController::class, 'index'])->middleware('role:administrador');
+    // ── Auditoría (solo profesor) ─────────────────────────────────────────────
+    Route::get('/auditoria', [AuditoriaController::class, 'index'])->middleware('role:profesor');
 
     // ── Alertas ────────────────────────────────────────────────────────────────
     Route::get('/alertas', [AlertaController::class, 'index']);
     Route::get('/alertas/resumen', [AlertaController::class, 'resumen']);
-    Route::post('/alertas/{alerta}/confirmar', [AlertaController::class, 'confirmar'])->middleware('role:administrador,profesor');
-    Route::post('/alertas/{alerta}/resolver', [AlertaController::class, 'resolver'])->middleware('role:administrador,profesor');
-
-    // ── Notificaciones ────────────────────────────────────────────────────────
-    Route::get('/notificaciones', [NotificacionController::class, 'index']);
-    Route::post('/notificaciones/evento-login', [NotificacionController::class, 'guardarEventoLogin'])->middleware('throttle:login-evento');
+    Route::post('/alertas/{alerta}/confirmar', [AlertaController::class, 'confirmar'])->middleware('role:profesor');
+    Route::post('/alertas/{alerta}/resolver', [AlertaController::class, 'resolver'])->middleware('role:profesor');
 });

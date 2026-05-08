@@ -7,10 +7,10 @@ Controlar la ejecucion semanal con un mapa unico entre interfaz, API, permisos y
 
 | Pantalla | Endpoint | Metodo | Rol minimo | Estado actual | Criterio de terminado |
 |---|---|---|---|---|---|
-| Inicio de sesion | `/notifications/login-event` | POST | consulta | Base implementada | Evento Novu disparado y aviso visual en interfaz |
+| Inicio de sesion | `/notificaciones/evento-login` | POST | consulta | Implementado | Historial de sesion registrado correctamente |
 | Cabecera / sesion | `/profile` | GET | consulta | Implementado | Muestra nombre y roles correctos |
 | Panel KPIs | `/inventory` | GET | consulta | Implementado parcial | KPI total y criticos desde API real |
-| Panel alertas | `/notifications` | GET | consulta | Implementado parcial | Bandeja en aplicacion con contador no leidas |
+| Panel alertas | `/alertas` | GET | consulta | Implementado | Lista de alertas abiertas con conteo |
 | Inventario listado | `/inventory` | GET | consulta | Implementado | Busqueda + paginacion en servidor |
 | Inventario alta | `/inventory` | POST | tecnico | Implementado base | Alta validada y refresco de tabla |
 | Movimientos historial | `/movements` | GET | consulta | Implementado | Lista ordenada por fecha |
@@ -25,7 +25,7 @@ Controlar la ejecucion semanal con un mapa unico entre interfaz, API, permisos y
 1. Cerrar lo parcial del panel principal.
 2. Completar interfaz de alertas (`/alerts` + acknowledge).
 3. Endurecer formularios de inventario/movimientos (validaciones y mensajes).
-4. Añadir pruebas E2E del flujo critico: inicio de sesion -> inventario -> movimiento -> notificacion.
+4. Añadir pruebas E2E del flujo critico: inicio de sesion -> inventario -> movimiento -> alerta.
 
 ## Lista rapida por tarea
 

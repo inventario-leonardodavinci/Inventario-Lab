@@ -10,7 +10,6 @@ Aplicación web para la gestión del inventario del laboratorio de química del 
 | Backend | Laravel (API REST) |
 | Base de datos | PostgreSQL (Insforge) |
 | Autenticación | Insforge Auth |
-| Notificaciones | Novu |
 | Despliegue | Railway |
 
 ## Estructura del proyecto
@@ -63,7 +62,6 @@ npm run dev
 | [Esquema de BD](docs/esquema-base-datos.md) | Tablas, columnas, constraints y triggers |
 | [OpenAPI](docs/08-openapi-v1.yaml) | Contrato de la API REST |
 | [Checklist despliegue](docs/09-release-hardening-checklist.md) | Verificaciones antes de producción |
-| [Integración Novu](docs/10-novu-integration.md) | Configuración de notificaciones |
 | [Matriz endpoints](docs/11-matriz-endpoints-pantallas.md) | Mapa endpoint ↔ pantalla ↔ estado |
 
 ## Equipo

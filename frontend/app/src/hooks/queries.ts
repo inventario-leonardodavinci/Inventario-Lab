@@ -24,7 +24,6 @@ import { getCategorias, crearCategoria, actualizarCategoria, eliminarCategoria }
 import { getUsuarios, actualizarRolUsuario, actualizarEstadoUsuario, eliminarUsuario, getPerfil, actualizarPerfil, getHistorialSesiones, eliminarSesion } from '@/services/usuariosApi'
 import { getAuditoria } from '@/services/auditoriaApi'
 import { getAlertas, resolverAlerta, confirmarAlerta } from '@/services/alertasApi'
-import { getNotificaciones } from '@/services/notificacionesApi'
 import { apiClient } from '@/services/clienteApi'
 import { insforge } from '@/services/insforgeClient'
 import { unwrapPaginated } from '@/services/apiUtils'
@@ -128,8 +127,6 @@ export const queryKeys = {
     ['resumen-hoy'] as const,
   alertas: (filtros?: FiltrosAlerta) =>
     ['alertas', filtros] as const,
-  notificaciones: (authUserId?: string) =>
-    ['notificaciones', authUserId ?? ''] as const,
   historialSesiones: (authUserId?: string) =>
     ['historial-sesiones', authUserId ?? ''] as const,
 }
@@ -464,13 +461,62 @@ export function useMantenimiento() {
   })
 }
 
+export interface EntradaCrearActivo {
+  codigo_activo: string
+  articulo_id?: number
+  estado?: string
+  notes?: string
+  next_service_due_date?: string
+  last_service_date?: string
+  numero_serie?: string
+  manufacturer?: string
+  model?: string
+  purchase_date?: string
+  warranty_end_date?: string
+  ubicacion_actual_id?: number
+}
+
+export interface EntradaActualizarActivo {
+  id: number
+  codigo_activo?: string
+  articulo_id?: number
+  estado?: string
+  notes?: string
+  next_service_due_date?: string
+  last_service_date?: string
+  numero_serie?: string
+  manufacturer?: string
+  model?: string
+  purchase_date?: string
+  warranty_end_date?: string
+  ubicacion_actual_id?: number
+}
+
 export function useCrearActivo() {
   const { user } = useAuth()
   const queryClient = useQueryClient()
   return useMutation({
-    mutationFn: (datos: { codigo_activo: string; estado?: string }) =>
+    mutationFn: (datos: EntradaCrearActivo) =>
       apiClient('/mantenimiento/activos', {
         method: 'POST',
+        body: JSON.stringify({
+          ...datos,
+          estado: datos.estado || 'operativo',
+        }),
+      }, { authUserId: user!.authUserId }),
+    onSuccess: () => {
+      void queryClient.invalidateQueries({ queryKey: queryKeys.mantenimiento() })
+    },
+  })
+}
+
+export function useActualizarActivo() {
+  const { user } = useAuth()
+  const queryClient = useQueryClient()
+  return useMutation({
+    mutationFn: (datos: EntradaActualizarActivo) =>
+      apiClient(`/mantenimiento/activos/${datos.id}`, {
+        method: 'PATCH',
         body: JSON.stringify(datos),
       }, { authUserId: user!.authUserId }),
     onSuccess: () => {
@@ -479,14 +525,17 @@ export function useCrearActivo() {
   })
 }
 
-// ─── Notificaciones ───────────────────────────────────────────────────────────
-
-export function useNotificaciones() {
+export function useEliminarActivo() {
   const { user } = useAuth()
-  return useQuery({
-    queryKey: queryKeys.notificaciones(user?.authUserId),
-    queryFn: () => getNotificaciones(user!.authUserId),
-    enabled: !!user,
+  const queryClient = useQueryClient()
+  return useMutation({
+    mutationFn: (id: number) =>
+      apiClient(`/mantenimiento/activos/${id}`, {
+        method: 'DELETE',
+      }, { authUserId: user!.authUserId }),
+    onSuccess: () => {
+      void queryClient.invalidateQueries({ queryKey: queryKeys.mantenimiento() })
+    },
   })
 }
 

@@ -16,7 +16,6 @@ it('protege todos los endpoints principales de la API v1', function (string $rut
     '/api/v1/movimientos',
     '/api/v1/alertas',
     '/api/v1/mantenimiento/activos',
-    '/api/v1/notificaciones',
     '/api/v1/articulos',
     '/api/v1/categorias',
     '/api/v1/ubicaciones',

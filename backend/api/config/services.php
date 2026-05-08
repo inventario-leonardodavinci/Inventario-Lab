@@ -35,10 +35,4 @@ return [
         ],
     ],
 
-    'novu' => [
-        'api_url' => env('NOVU_API_URL', 'https://api.novu.co'),
-        'api_key' => env('NOVU_API_KEY'),
-        'login_trigger' => env('NOVU_LOGIN_TRIGGER', 'user-login'),
-    ],
-
 ];

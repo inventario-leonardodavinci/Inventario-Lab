@@ -127,9 +127,8 @@ export function construirKpiCards(params: {
   criticalCount: number | null
   entradasHoy: number | null
   salidasHoy: number | null
-  unreadNotifications: number
 }) {
-  const { inventoryCount, criticalCount, entradasHoy, salidasHoy, unreadNotifications } = params
+  const { inventoryCount, criticalCount, entradasHoy, salidasHoy } = params
   return [
     {
       title: 'Articulos en inventario',
@@ -155,7 +154,7 @@ export function construirKpiCards(params: {
     {
       title: 'Stock crítico',
       value: formatearKpi(criticalCount),
-      delta: `${unreadNotifications} notificaciones abiertas`,
+      delta: 'Artículos con stock por debajo del mínimo',
       badge: 'Urgente' as const,
       icon: 'TriangleAlert' as const,
     },

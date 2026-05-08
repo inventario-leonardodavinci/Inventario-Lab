@@ -3,7 +3,7 @@
  * Usa TanStack Query para lanzar las 4 peticiones en paralelo con caché y
  * estados de carga/error por sección, sin reducer manual.
  */
-import { useInventario, useResumenHoy, useMovimientos, useNotificaciones } from '@/hooks/queries'
+import { useInventario, useResumenHoy, useMovimientos } from '@/hooks/queries'
 import { extraerCriticos, mapearAlertas, mapearMovimientosRecientes } from '@/utils/panelUtils'
 
 export type PanelData = {
@@ -11,7 +11,6 @@ export type PanelData = {
   criticalCount: number | null
   entradasHoy: number | null
   salidasHoy: number | null
-  unreadNotifications: number
   movimientosRecientes: Array<{
     id: number
     tipo: string
@@ -28,10 +27,8 @@ export function usePanelData(): PanelData {
   const inv = useInventario()
   const resumen = useResumenHoy()
   const movimientos = useMovimientos({ per_page: 5 })
-  const notificaciones = useNotificaciones()
-
   const cargando =
-    inv.isLoading || resumen.isLoading || movimientos.isLoading || notificaciones.isLoading
+    inv.isLoading || resumen.isLoading || movimientos.isLoading
 
   // Inventario
   const inventoryCount = inv.data?.meta.total ?? (inv.isError ? -1 : null)
@@ -49,15 +46,11 @@ export function usePanelData(): PanelData {
     : (movimientos.isError ? [] : null)
   const errorMovimientos = movimientos.isError
 
-  // Notificaciones
-  const unreadNotifications = notificaciones.data?.unread_count ?? 0
-
   return {
     inventoryCount,
     criticalCount,
     entradasHoy,
     salidasHoy,
-    unreadNotifications,
     movimientosRecientes,
     errorMovimientos,
     lowStockItems,

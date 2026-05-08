@@ -146,7 +146,11 @@ export function ProveedorAutenticacion({ children }: { children: React.ReactNode
 
         if (resultado.tipo === 'sesion_activa') {
           console.log('[Auth] Sesión activa detectada');
-          setUser(resultado.sesion);
+          // Usar rol persistido si existe para evitar flash de rol por defecto
+          const sesionConRolPersistido = rolPersistido 
+            ? { ...resultado.sesion, role: rolPersistido as SesionUsuario['role'] }
+            : resultado.sesion;
+          setUser(sesionConRolPersistido);
           setProcesandoOAuth(false);
 
           // NOTA: El rol se obtiene via UserRoleSync component (una sola vez)
@@ -217,7 +221,6 @@ export function ProveedorAutenticacion({ children }: { children: React.ReactNode
     useSesionStore.getState().setRol(null);
     setUser(sesion);
     await queryClient.invalidateQueries({ queryKey: ['perfil'] });
-    await queryClient.invalidateQueries({ queryKey: ['notificaciones'] });
     await queryClient.invalidateQueries({ queryKey: ['historial-sesiones'] });
     enviarEventoLogin(sesion.authUserId).catch((err) => {
       console.warn("[historial] evento-login falló:", err);
@@ -244,7 +247,6 @@ export function ProveedorAutenticacion({ children }: { children: React.ReactNode
     if (resultado.tipo === "sesion_iniciada") {
       setUser(resultado.sesion);
       await queryClient.invalidateQueries({ queryKey: ['perfil'] });
-      await queryClient.invalidateQueries({ queryKey: ['notificaciones'] });
       await queryClient.invalidateQueries({ queryKey: ['historial-sesiones'] });
       enviarEventoLogin(resultado.sesion.authUserId).catch((err) => {
         console.warn("[historial] evento-login falló (registro):", err);
@@ -271,7 +273,6 @@ export function ProveedorAutenticacion({ children }: { children: React.ReactNode
     const sesion = await verificarEmail(email, otp);
     setUser(sesion);
     await queryClient.invalidateQueries({ queryKey: ['perfil'] });
-    await queryClient.invalidateQueries({ queryKey: ['notificaciones'] });
     await queryClient.invalidateQueries({ queryKey: ['historial-sesiones'] });
     enviarEventoLogin(sesion.authUserId).catch((err) => {
       console.warn("[historial] evento-login falló (verificarEmail):", err);

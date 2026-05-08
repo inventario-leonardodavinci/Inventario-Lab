@@ -10,7 +10,7 @@ import { Separator } from "@/components/ui/separator";
 import { EditorRecorteImagen } from "@/components/ui/EditorRecorteImagen";
 import { InputOTP, InputOTPGroup, InputOTPSlot } from "@/components/ui/input-otp";
 import { useAuth } from "@/context/ContextoAutenticacion";
-import { useNotificaciones, usePerfil, useActualizarPerfil, useHistorialSesiones, useEliminarSesion } from "@/hooks/queries";
+import { usePerfil, useActualizarPerfil, useHistorialSesiones, useEliminarSesion } from "@/hooks/queries";
 import {
   actualizarNombreUsuario,
   actualizarCampoPerfil,
@@ -24,7 +24,6 @@ import type { Rol } from "@/types";
 import {
   Camera,
   CheckCircle2,
-  Clock,
   AlertTriangle,
   LogIn,
   LogOut,
@@ -52,11 +51,7 @@ import { toast } from "sonner";
 import { SkeletonPerfil } from "@/components/ui/PageSkeleton";
 
 const COLOR_ROL: Record<string, string> = {
-  admin: "destructive",
-  administrador: "destructive",
-  tecnico: "default",
   profesor: "default",
-  consulta: "secondary",
   consultor: "secondary",
 };
 
@@ -131,14 +126,6 @@ export default function Perfil() {
   // ─── Datos del perfil desde la API ────────────────────────────────────────
   usePerfil();
   const actualizarPerfilMutation = useActualizarPerfil();
-
-  // ─── Actividad reciente via TanStack Query ────────────────────────────────
-  const { data: notifData } = useNotificaciones();
-  const actividad = (notifData?.data ?? []).slice(0, 8);
-  const alertasPendientes = actividad.filter(
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    (a) => (a as any).status === "abierta" || (a as any).status === "open"
-  ).length;
 
   // ─── Estado seguridad ─────────────────────────────────────────────────────
   const [pasoCambio, setPasoCambio] = useState<"solicitar" | "codigo" | "nueva">("solicitar");
@@ -413,12 +400,6 @@ export default function Perfil() {
                   <Shield className="size-3" />
                   {formatearRol((user.role as unknown) as Rol) ?? user.role}
                 </Badge>
-                {alertasPendientes > 0 && (
-                  <Badge variant="destructive" className="gap-1.5">
-                    <AlertTriangle className="size-3" />
-                    {alertasPendientes} alerta{alertasPendientes > 1 ? "s" : ""}
-                  </Badge>
-                )}
               </div>
             </div>
           </div>
@@ -521,46 +502,6 @@ export default function Perfil() {
             </CardContent>
           </Card>
 
-          {/* Actividad reciente */}
-          <Card className="lg:col-span-2 shadow-sm">
-            <CardHeader className="pb-4">
-              <CardTitle className="flex items-center gap-2 text-base">
-                <div className="flex size-7 items-center justify-center rounded-lg bg-primary/10">
-                  <Clock className="size-4 text-primary" />
-                </div>
-                Actividad reciente
-              </CardTitle>
-              <CardDescription>Últimas notificaciones y eventos de tu cuenta.</CardDescription>
-            </CardHeader>
-            <CardContent>
-              {actividad.length === 0 ? (
-                <div className="flex flex-col items-center justify-center py-8 text-center">
-                  <div className="mb-3 flex size-12 items-center justify-center rounded-full bg-muted">
-                    <Clock className="size-5 text-muted-foreground" />
-                  </div>
-                  <p className="text-sm font-medium">Sin actividad reciente</p>
-                  <p className="text-xs text-muted-foreground mt-1">Las notificaciones aparecerán aquí.</p>
-                </div>
-              ) : (
-                <ul className="space-y-0 divide-y">
-                  {actividad.map((item) => (
-                    <li key={item.id} className="flex items-start gap-3 py-3">
-                      <div className="mt-0.5 flex size-7 shrink-0 items-center justify-center rounded-lg bg-muted">
-                        <LogIn className="size-3.5 text-muted-foreground" />
-                      </div>
-                      <div className="flex flex-1 flex-col gap-0.5 sm:flex-row sm:items-center sm:justify-between min-w-0">
-                        <div className="min-w-0">
-                          <p className="text-sm font-medium truncate">{item.title}</p>
-                          <p className="text-xs text-muted-foreground truncate">{item.body}</p>
-                        </div>
-                        <span className="text-xs text-muted-foreground mt-1 sm:mt-0 shrink-0 sm:ml-4">{fechaRelativa(item.created_at)}</span>
-                      </div>
-                    </li>
-                  ))}
-                </ul>
-              )}
-            </CardContent>
-          </Card>
         </div>
       )}
 
@@ -818,10 +759,10 @@ export default function Perfil() {
 
       {/* ── Tab: Historial ───────────────────────────────────────────────── */}
       {tab === "historial" && (
-        <div className="grid gap-6 lg:grid-cols-3">
+        <div className="flex flex-col gap-6">
           {/* Sesión activa */}
           <Card className="shadow-sm">
-            <CardHeader className="pb-4">
+            <CardHeader className="pb-3">
               <CardTitle className="flex items-center gap-2 text-base">
                 <div className="flex size-7 items-center justify-center rounded-lg bg-green-500/10">
                   <CheckCircle2 className="size-4 text-green-600" />
@@ -830,150 +771,210 @@ export default function Perfil() {
               </CardTitle>
               <CardDescription>Información sobre tu sesión actual.</CardDescription>
             </CardHeader>
-            <CardContent className="space-y-0 divide-y">
-              <div className="flex justify-between py-3 text-sm">
-                <span className="text-muted-foreground">Usuario</span>
-                <span className="font-medium">{user.displayName}</span>
-              </div>
-              <div className="flex justify-between py-3 text-sm">
-                <span className="text-muted-foreground">Correo</span>
-                <span className="font-medium truncate max-w-[200px]">{email ?? "—"}</span>
-              </div>
-              <div className="flex justify-between py-3 text-sm items-center">
-                <span className="text-muted-foreground">Rol</span>
-                <Badge variant={COLOR_ROL[user.role] as "default" | "secondary" | "destructive"}>
-                  {formatearRol((user.role as unknown) as Rol) ?? user.role}
-                </Badge>
-              </div>
-              <div className="flex justify-between py-3 text-sm">
-                <span className="text-muted-foreground">ID de usuario</span>
-                <span className="font-mono text-xs text-muted-foreground truncate max-w-[160px]">{user.authUserId}</span>
-              </div>
-              <div className="flex justify-between py-3 text-sm">
-                <span className="text-muted-foreground">Registrado</span>
-                <span className="font-medium">{formatearFecha(user.createdAt)}</span>
+            <CardContent className="p-0">
+              <div className="divide-y px-6">
+                <div className="flex items-center justify-between gap-4 py-3 text-sm">
+                  <span className="text-muted-foreground shrink-0">Usuario</span>
+                  <span className="font-medium text-right truncate">{user.displayName}</span>
+                </div>
+                <div className="flex items-center justify-between gap-4 py-3 text-sm">
+                  <span className="text-muted-foreground shrink-0">Correo</span>
+                  <span className="font-medium text-right truncate">{email ?? "—"}</span>
+                </div>
+                <div className="flex items-center justify-between gap-4 py-3 text-sm">
+                  <span className="text-muted-foreground shrink-0">Rol</span>
+                  <Badge variant={COLOR_ROL[user.role] as "default" | "secondary" | "destructive"}>
+                    {formatearRol((user.role as unknown) as Rol) ?? user.role}
+                  </Badge>
+                </div>
+                <div className="flex items-center justify-between gap-4 py-3 text-sm">
+                  <span className="text-muted-foreground shrink-0">ID de usuario</span>
+                  <span className="font-mono text-xs text-muted-foreground text-right truncate max-w-[160px]">{user.authUserId}</span>
+                </div>
+                <div className="flex items-center justify-between gap-4 py-3 text-sm">
+                  <span className="text-muted-foreground shrink-0">Registrado</span>
+                  <span className="font-medium text-right">{formatearFecha(user.createdAt)}</span>
+                </div>
               </div>
             </CardContent>
           </Card>
 
           {/* Historial de sesiones */}
-          <Card className="lg:col-span-2 shadow-sm">
-            <CardHeader className="pb-4">
-              <div className="flex items-start justify-between gap-4">
-                <div>
-                  <CardTitle className="flex items-center gap-2 text-base">
-                    <div className="flex size-7 items-center justify-center rounded-lg bg-primary/10">
-                      <History className="size-4 text-primary" />
-                    </div>
-                    Historial de accesos
-                  </CardTitle>
-                  <CardDescription className="mt-1">
-                    Últimos {historialData?.data?.length ?? 0} accesos registrados.
-                  </CardDescription>
+          <Card className="shadow-sm">
+            <CardHeader className="pb-3">
+              <CardTitle className="flex items-center gap-2 text-base">
+                <div className="flex size-7 items-center justify-center rounded-lg bg-primary/10">
+                  <History className="size-4 text-primary" />
                 </div>
-              </div>
+                Historial de accesos
+              </CardTitle>
+              <CardDescription>
+                Últimos {historialData?.data?.length ?? 0} accesos registrados.
+              </CardDescription>
             </CardHeader>
-            <CardContent>
-              <div className="mb-4 flex items-start gap-3 rounded-lg border border-amber-500/30 bg-amber-500/5 px-3 py-2.5 text-xs text-amber-700 dark:text-amber-400">
+            <CardContent className="space-y-4">
+              <div className="flex items-start gap-3 rounded-lg border border-amber-500/30 bg-amber-500/5 px-3 py-2.5 text-xs text-amber-700 dark:text-amber-400">
                 <AlertTriangle className="size-3.5 shrink-0 mt-0.5" />
                 <span>
                   Para cerrar sesión en todos los dispositivos,{" "}
-                  <button type="button" className="underline underline-offset-2 font-medium hover:no-underline" onClick={() => setTab("seguridad")}>cambia tu contraseña</button>{" "}
+                  <button
+                    type="button"
+                    className="underline underline-offset-2 font-medium hover:no-underline"
+                    onClick={() => setTab("seguridad")}
+                  >
+                    cambia tu contraseña
+                  </button>{" "}
                   desde Seguridad. Esto invalida todas las sesiones activas.
                 </span>
               </div>
+
               {cargandoHistorial ? (
                 <div className="divide-y">
-                  {[1,2,3,4].map((i) => (
-                    <div key={i} className="flex items-start gap-3 py-3.5">
-                      <div className="mt-0.5 size-8 shrink-0 rounded-lg bg-muted animate-pulse" />
+                  {[1, 2, 3, 4].map((i) => (
+                    <div key={i} className="flex items-start gap-3 py-4">
+                      <div className="mt-0.5 size-9 shrink-0 rounded-lg bg-muted animate-pulse" />
                       <div className="flex flex-1 flex-col gap-2 pt-1">
-                        <div className="h-3.5 w-28 rounded bg-muted animate-pulse" />
-                        <div className="h-3 w-40 rounded bg-muted animate-pulse" />
+                        <div className="h-3.5 w-36 rounded bg-muted animate-pulse" />
+                        <div className="h-3 w-48 rounded bg-muted animate-pulse" />
+                        <div className="h-3 w-24 rounded bg-muted animate-pulse" />
                       </div>
                     </div>
                   ))}
                 </div>
               ) : !historialData?.data?.length ? (
-                <div className="flex flex-col items-center justify-center py-10 text-center">
+                <div className="flex flex-col items-center justify-center py-12 text-center">
                   <div className="mb-3 flex size-12 items-center justify-center rounded-full bg-muted">
                     <History className="size-5 text-muted-foreground" />
                   </div>
                   <p className="text-sm font-medium">Sin registros aún</p>
-                  <p className="text-xs text-muted-foreground mt-1">El historial se irá llenando con cada inicio de sesión.</p>
+                  <p className="text-xs text-muted-foreground mt-1">
+                    El historial se irá llenando con cada inicio de sesión.
+                  </p>
                 </div>
               ) : (
-                <ul className="divide-y">
+                <ul className="divide-y overflow-hidden rounded-lg border">
                   {historialData.data.map((sesion, idx) => {
                     const esActual = idx === 0;
-                    const IconoDispositivo = sesion.dispositivo === "Móvil" ? Smartphone : sesion.dispositivo === "Tablet" ? Tablet : Monitor;
+                    const IconoDispositivo =
+                      sesion.dispositivo === "Móvil"
+                        ? Smartphone
+                        : sesion.dispositivo === "Tablet"
+                        ? Tablet
+                        : Monitor;
                     const configEvento = {
-                      login:   { label: "Contraseña", icon: LogIn,     color: "text-primary",           bg: "bg-primary/10" },
-                      oauth:   { label: "OAuth",       icon: Link2,     color: "text-violet-600",        bg: "bg-violet-500/10" },
-                      refresh: { label: "Renovación",  icon: RefreshCw, color: "text-amber-600",         bg: "bg-amber-500/10" },
-                      logout:  { label: "Cierre",      icon: LogOut,    color: "text-muted-foreground",  bg: "bg-muted" },
+                      login:   { label: "Contraseña", icon: LogIn,     color: "text-primary",          bg: "bg-primary/10" },
+                      oauth:   { label: "OAuth",      icon: Link2,     color: "text-violet-600",       bg: "bg-violet-500/10" },
+                      refresh: { label: "Renovación", icon: RefreshCw, color: "text-amber-600",        bg: "bg-amber-500/10" },
+                      logout:  { label: "Cierre",     icon: LogOut,    color: "text-muted-foreground", bg: "bg-muted" },
                     }[sesion.tipo_evento] ?? { label: sesion.tipo_evento, icon: LogIn, color: "text-muted-foreground", bg: "bg-muted" };
                     const IconoEvento = configEvento.icon;
                     const borrando = eliminarSesionMutation.isPending && eliminarSesionMutation.variables === sesion.id;
+
                     return (
-                      <li key={sesion.id} className={`group flex items-start gap-3 py-3.5 transition-colors ${ esActual ? "rounded-lg bg-green-500/5 px-3 -mx-3" : "" } ${!sesion.exitoso ? "opacity-60" : ""}` }>
-                        <div className={`mt-0.5 flex size-8 shrink-0 items-center justify-center rounded-lg ${ esActual ? "bg-green-500/15 text-green-600" : `${configEvento.bg} ${configEvento.color}` }`}>
-                          {esActual ? <IconoDispositivo className="size-4" /> : <IconoEvento className="size-4" />}
+                      <li
+                        key={sesion.id}
+                        className={`flex items-start gap-3 px-4 py-3.5 transition-colors ${
+                          esActual ? "bg-green-500/5" : "hover:bg-muted/30"
+                        } ${!sesion.exitoso ? "opacity-60" : ""}`}
+                      >
+                        {/* Icono */}
+                        <div
+                          className={`mt-0.5 flex size-9 shrink-0 items-center justify-center rounded-lg ${
+                            esActual
+                              ? "bg-green-500/15 text-green-600"
+                              : `${configEvento.bg} ${configEvento.color}`
+                          }`}
+                        >
+                          {esActual ? (
+                            <IconoDispositivo className="size-4" />
+                          ) : (
+                            <IconoEvento className="size-4" />
+                          )}
                         </div>
-                        <div className="flex flex-1 flex-col gap-1 min-w-0">
-                          <div className="flex flex-wrap items-center gap-2">
-                            <span className={`text-sm font-medium ${!sesion.exitoso ? "text-destructive line-through" : ""}`}>
+
+                        {/* Contenido */}
+                        <div className="flex flex-1 flex-col gap-1.5 min-w-0">
+                          {/* Línea 1: navegador + badges */}
+                          <div className="flex flex-wrap items-center gap-1.5">
+                            <span
+                              className={`text-sm font-medium leading-none ${
+                                !sesion.exitoso ? "text-destructive line-through" : ""
+                              }`}
+                            >
                               {sesion.navegador ?? "Navegador desconocido"}
                             </span>
-                            <span className="text-xs text-muted-foreground">·</span>
-                            <span className="text-xs text-muted-foreground">{sesion.sistema_operativo ?? "SO desconocido"}</span>
-                            <span className="text-xs text-muted-foreground">·</span>
-                            <span className={`text-xs font-medium ${configEvento.color}`}>{configEvento.label}</span>
+                            <span className={`text-xs font-medium ${configEvento.color}`}>
+                              · {configEvento.label}
+                            </span>
                             {esActual && (
-                              <Badge variant="outline" className="text-xs text-green-600 border-green-500/40 bg-green-500/5 gap-1 py-0">
+                              <Badge
+                                variant="outline"
+                                className="text-xs text-green-600 border-green-500/40 bg-green-500/5 gap-1 px-1.5 py-0 h-5"
+                              >
                                 <div className="size-1.5 rounded-full bg-green-500 animate-pulse" />
-                                Sesión actual
+                                Activa
                               </Badge>
                             )}
                             {!sesion.exitoso && (
-                              <Badge variant="destructive" className="text-xs gap-1 py-0">
+                              <Badge variant="destructive" className="text-xs gap-1 px-1.5 py-0 h-5">
                                 <XCircle className="size-2.5" /> Fallido
                               </Badge>
                             )}
                           </div>
-                          <div className="flex flex-wrap items-center gap-3">
-                            <span className="flex items-center gap-1 text-xs text-muted-foreground">
+
+                          {/* Línea 2: SO + dispositivo */}
+                          <div className="flex flex-wrap items-center gap-2 text-xs text-muted-foreground">
+                            <span className="flex items-center gap-1">
                               <IconoDispositivo className="size-3 shrink-0" />
                               {sesion.dispositivo ?? "Escritorio"}
                             </span>
+                            {sesion.sistema_operativo && (
+                              <span>{sesion.sistema_operativo}</span>
+                            )}
+                          </div>
+
+                          {/* Línea 3: IP + ubicación + fecha */}
+                          <div className="flex flex-wrap items-center gap-2 text-xs text-muted-foreground">
                             {sesion.ip_address && (
-                              <span className="flex items-center gap-1 text-xs text-muted-foreground font-mono">
+                              <span className="flex items-center gap-1 font-mono">
                                 <Globe className="size-3 shrink-0" />
                                 {sesion.ip_address}
                               </span>
                             )}
                             {(sesion.ciudad ?? sesion.pais) && (
-                              <span className="flex items-center gap-1 text-xs text-muted-foreground">
+                              <span className="flex items-center gap-1">
                                 <MapPin className="size-3 shrink-0" />
                                 {[sesion.ciudad, sesion.pais].filter(Boolean).join(", ")}
                               </span>
                             )}
-                            <span className="text-xs text-muted-foreground ml-auto">{formatearFecha(sesion.iniciada_en)}</span>
+                            <span className="ml-auto tabular-nums">
+                              {formatearFecha(sesion.iniciada_en)}
+                            </span>
                           </div>
                         </div>
-                        {!esActual && (
+
+                        {/* Botón eliminar */}
+                        {!esActual ? (
                           <button
                             type="button"
-                            onClick={() => eliminarSesionMutation.mutate(sesion.id, {
-                              onSuccess: () => toast.success("Registro eliminado"),
-                              onError: () => toast.error("No se pudo eliminar el registro"),
-                            })}
+                            onClick={() =>
+                              eliminarSesionMutation.mutate(sesion.id, {
+                                onSuccess: () => toast.success("Registro eliminado"),
+                                onError: () => toast.error("No se pudo eliminar el registro"),
+                              })
+                            }
                             disabled={borrando || eliminarSesionMutation.isPending}
-                            className="ml-1 mt-0.5 shrink-0 rounded-md p-1.5 text-muted-foreground opacity-0 transition-all hover:bg-destructive/10 hover:text-destructive focus-visible:opacity-100 group-hover:opacity-100 disabled:cursor-not-allowed disabled:opacity-30"
+                            className="mt-0.5 shrink-0 rounded-md p-1.5 text-muted-foreground transition-colors hover:bg-destructive/10 hover:text-destructive disabled:cursor-not-allowed disabled:opacity-30"
                             aria-label="Eliminar este registro de sesión"
                           >
-                            {borrando ? <RefreshCw className="size-3.5 animate-spin" /> : <Trash2 className="size-3.5" />}
+                            {borrando ? (
+                              <RefreshCw className="size-3.5 animate-spin" />
+                            ) : (
+                              <Trash2 className="size-3.5" />
+                            )}
                           </button>
+                        ) : (
+                          <div className="size-8 shrink-0" />
                         )}
                       </li>
                     );

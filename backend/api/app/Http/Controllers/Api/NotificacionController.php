@@ -7,16 +7,11 @@ use App\Http\Helpers\ApiResponse;
 use App\Models\Alerta;
 use App\Models\HistorialSesion;
 use App\Models\UsuarioApp;
-use App\Services\NovuService;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 
 class NotificacionController extends Controller
 {
-    public function __construct(private readonly NovuService $novuService)
-    {
-    }
-
     public function index(Request $request): JsonResponse
     {
         $limite = min(max((int) $request->query('limit', 20), 1), 100);
@@ -44,11 +39,6 @@ class NotificacionController extends Controller
     {
         /** @var UsuarioApp $usuarioApp */
         $usuarioApp = $request->attributes->get('app_user');
-
-        $this->novuService->triggerLoginEvent(
-            $usuarioApp->auth_user_id,
-            $usuarioApp->nombre_visible ?? 'Usuario'
-        );
 
         $ua  = $request->userAgent() ?? '';
         $ip  = $this->resolverIp($request);
