@@ -372,7 +372,7 @@ export function ArticuloFormSheet({
               <Label>Fecha de caducidad</Label>
               <DatePickerSimple
                 value={expirationDate}
-                onChange={setExpirationDate}
+                onChange={(d) => setExpirationDate(d ?? '')}
                 placeholder="Seleccionar fecha"
               />
             </div>
@@ -389,7 +389,7 @@ export function ArticuloFormSheet({
                 <Label>Fecha de adquisición</Label>
                 <DatePickerSimple
                   value={fechaAdquisicion}
-                  onChange={setFechaAdquisicion}
+                  onChange={(d) => setFechaAdquisicion(d ?? '')}
                   placeholder="Seleccionar fecha"
                 />
               </div>

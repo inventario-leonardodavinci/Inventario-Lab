@@ -48,7 +48,7 @@ export function ContenedorAplicacion({ children }: { children: React.ReactNode }
             <MenuUsuario />
           </div>
         </header>
-        <div className="flex-1 overflow-auto">
+        <div className="flex flex-1 flex-col overflow-auto">
           {children}
         </div>
       </SidebarInset>

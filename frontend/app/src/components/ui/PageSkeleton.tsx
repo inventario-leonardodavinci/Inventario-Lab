@@ -63,7 +63,7 @@ function SkeletonPageHeader({
 /** Panel principal: 4 KPI cards + tabla alertas + feed actividad */
 export function SkeletonPanel() {
   return (
-    <main className="flex flex-1 flex-col gap-6 bg-muted/20 p-4 lg:p-6">
+    <main className="flex flex-1 grow flex-col gap-6 bg-muted/20 p-4 lg:p-6">
       <SkeletonPageHeader buttonW="w-52" />
 
       {/* KPI cards */}
@@ -123,7 +123,7 @@ export function SkeletonTabla({
   rows?: number
 }) {
   return (
-    <main className="flex flex-1 flex-col gap-6 bg-muted/20 p-4 lg:p-6">
+    <main className="flex flex-1 grow flex-col gap-6 bg-muted/20 p-4 lg:p-6">
       <SkeletonPageHeader hasButton={hasButton} />
 
       {hasFilterBar && (
@@ -180,7 +180,7 @@ export function SkeletonUbicaciones() {
 /** Movimientos: formulario + tabla */
 export function SkeletonMovimientos() {
   return (
-    <main className="flex flex-1 flex-col gap-6 bg-muted/20 p-4 lg:p-6">
+    <main className="flex flex-1 grow flex-col gap-6 bg-muted/20 p-4 lg:p-6">
       <SkeletonPageHeader hasButton={false} />
 
       {/* Formulario */}
@@ -214,7 +214,7 @@ export function SkeletonMovimientos() {
 /** Alertas: filtros (3 dropdowns) + tabla */
 export function SkeletonAlertas() {
   return (
-    <main className="flex flex-1 flex-col gap-6 bg-muted/20 p-4 lg:p-6">
+    <main className="flex flex-1 grow flex-col gap-6 bg-muted/20 p-4 lg:p-6">
       <SkeletonPageHeader hasButton={false} />
 
       <SkeletonCard>
@@ -244,7 +244,7 @@ export function SkeletonAlertas() {
 /** Mantenimiento: input rápido + tabla */
 export function SkeletonMantenimiento() {
   return (
-    <main className="flex flex-1 flex-col gap-6 bg-muted/20 p-4 lg:p-6">
+    <main className="flex flex-1 grow flex-col gap-6 bg-muted/20 p-4 lg:p-6">
       <SkeletonPageHeader hasButton={false} />
 
       <SkeletonCard>
@@ -266,7 +266,7 @@ export function SkeletonMantenimiento() {
 /** Informes: filtros fecha + 3 stat cards + tabla */
 export function SkeletonInformes() {
   return (
-    <main className="flex flex-1 flex-col gap-6 bg-muted/20 p-4 lg:p-6">
+    <main className="flex flex-1 grow flex-col gap-6 bg-muted/20 p-4 lg:p-6">
       <SkeletonPageHeader hasButton={false} />
 
       <SkeletonCard>
@@ -305,7 +305,7 @@ export function SkeletonInformes() {
 /** Usuarios: tabla con selector de rol inline */
 export function SkeletonUsuarios() {
   return (
-    <main className="flex flex-1 flex-col gap-6 bg-muted/20 p-4 lg:p-6">
+    <main className="flex flex-1 grow flex-col gap-6 bg-muted/20 p-4 lg:p-6">
       <SkeletonPageHeader hasButton={false} />
 
       <SkeletonCard>
@@ -334,7 +334,7 @@ export function SkeletonUsuarios() {
 /** Auditoría: filtros + tabla con detalle expandible */
 export function SkeletonAuditoria() {
   return (
-    <main className="flex flex-1 flex-col gap-6 bg-muted/20 p-4 lg:p-6">
+    <main className="flex flex-1 grow flex-col gap-6 bg-muted/20 p-4 lg:p-6">
       <SkeletonPageHeader hasButton={false} />
 
       <SkeletonCard>
@@ -378,7 +378,7 @@ export function SkeletonAuditoria() {
 /** Perfil: tarjeta identidad + tabs + cards */
 export function SkeletonPerfil() {
   return (
-    <main className="flex flex-1 flex-col gap-6 bg-muted/20 p-4 lg:p-6">
+    <main className="flex flex-1 grow flex-col gap-6 bg-muted/20 p-4 lg:p-6">
       <div className="flex items-center justify-between">
         <div className="flex flex-col gap-2">
           <Skeleton className="h-7 w-28" />

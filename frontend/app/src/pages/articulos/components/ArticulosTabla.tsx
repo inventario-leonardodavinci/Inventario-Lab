@@ -18,9 +18,9 @@ function diasParaCaducar(fecha: string): number {
 
 interface ArticulosTablaProps {
   articulos: Articulo[]
-  onEntrada: (articulo: Articulo) => void
-  onSalida: (articulo: Articulo) => void
-  onTraslado: (articulo: Articulo) => void
+  onEntrada?: (articulo: Articulo) => void
+  onSalida?: (articulo: Articulo) => void
+  onTraslado?: (articulo: Articulo) => void
   onVerDetalle: (articulo: Articulo) => void
   onEditar?: (articulo: Articulo) => void
 }
@@ -191,8 +191,8 @@ export function ArticulosTabla({
                       size="icon"
                       className="size-7 text-green-600 dark:text-green-400 hover:text-green-700 hover:bg-green-50 dark:hover:bg-green-950"
                       title="Entrada"
-                      disabled={esInactivo}
-                      onClick={() => onEntrada(articulo)}
+                      disabled={esInactivo || !onEntrada}
+                      onClick={() => onEntrada?.(articulo)}
                     >
                       <Plus className="size-3.5" />
                     </Button>
@@ -201,8 +201,8 @@ export function ArticulosTabla({
                       size="icon"
                       className="size-7 text-amber-600 dark:text-amber-400 hover:text-amber-700 hover:bg-amber-50 dark:hover:bg-amber-950"
                       title="Salida"
-                      disabled={esInactivo || articulo.stock_total === 0}
-                      onClick={() => onSalida(articulo)}
+                      disabled={esInactivo || articulo.stock_total === 0 || !onSalida}
+                      onClick={() => onSalida?.(articulo)}
                     >
                       <Minus className="size-3.5" />
                     </Button>
@@ -211,8 +211,8 @@ export function ArticulosTabla({
                       size="icon"
                       className="size-7 text-blue-600 dark:text-blue-400 hover:text-blue-700 hover:bg-blue-50 dark:hover:bg-blue-950"
                       title="Traslado"
-                      disabled={esInactivo || articulo.stock_total === 0}
-                      onClick={() => onTraslado(articulo)}
+                      disabled={esInactivo || articulo.stock_total === 0 || !onTraslado}
+                      onClick={() => onTraslado?.(articulo)}
                     >
                       <ArrowRightLeft className="size-3.5" />
                     </Button>
