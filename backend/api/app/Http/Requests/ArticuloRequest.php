@@ -37,6 +37,11 @@ class ArticuloRequest extends FormRequest
             'stock_minimo'    => ['nullable', 'numeric', 'min:0'],
             'stock_inicial'   => ['nullable', 'numeric', 'min:0'],
             'ubicacion_id'    => ['nullable', 'integer', 'exists:ubicaciones,id'],
+            // Campos para equipos y máquinas inventariables
+            'fecha_adquisicion' => ['nullable', 'date'],
+            'precio_compra'     => ['nullable', 'numeric', 'min:0'],
+            'proveedor'         => ['nullable', 'string', 'max:150'],
+            'numero_factura'    => ['nullable', 'string', 'max:50'],
         ];
     }
 

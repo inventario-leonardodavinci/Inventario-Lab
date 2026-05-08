@@ -62,7 +62,7 @@ class RolesYPermisosSeeder extends Seeder
      * Configuración de roles y sus permisos.
      */
     private const ROLES = [
-        'administrador' => [
+        'profesor' => [
             'articulos.ver', 'articulos.crear', 'articulos.editar', 'articulos.eliminar',
             'categorias.ver', 'categorias.crear', 'categorias.editar', 'categorias.eliminar',
             'ubicaciones.ver', 'ubicaciones.crear', 'ubicaciones.editar',
@@ -70,15 +70,6 @@ class RolesYPermisosSeeder extends Seeder
             'alertas.ver', 'alertas.confirmar', 'alertas.resolver',
             'auditoria.ver',
             'usuarios.ver', 'usuarios.editar_roles',
-            'mantenimiento.ver', 'mantenimiento.crear', 'mantenimiento.editar',
-            'informes.ver',
-        ],
-        'profesor' => [
-            'articulos.ver', 'articulos.crear', 'articulos.editar',
-            'categorias.ver',
-            'ubicaciones.ver',
-            'movimientos.ver', 'movimientos.crear',
-            'alertas.ver', 'alertas.confirmar', 'alertas.resolver',
             'mantenimiento.ver', 'mantenimiento.crear', 'mantenimiento.editar',
             'informes.ver',
         ],

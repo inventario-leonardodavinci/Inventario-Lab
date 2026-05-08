@@ -55,12 +55,18 @@ class MantenimientoController extends Controller
     public function store(Request $request): JsonResponse
     {
         $validados = $request->validate([
-            'articulo_id'        => ['nullable', 'integer', 'exists:articulos,id'],
-            'codigo_activo'      => ['required', 'string', 'max:100', 'unique:activos_mantenimiento,codigo_activo'],
-            'numero_serie'       => ['nullable', 'string', 'max:120'],
-            'estado'             => ['required', 'string', 'in:' . implode(',', self::ESTADOS_VALIDOS)],
-            'ubicacion_actual_id' => ['nullable', 'integer', 'exists:ubicaciones,id'],
-            'notas'              => ['nullable', 'string'],
+            'articulo_id'           => ['nullable', 'integer', 'exists:articulos,id'],
+            'codigo_activo'         => ['required', 'string', 'max:100', 'unique:activos_mantenimiento,codigo_activo'],
+            'numero_serie'          => ['nullable', 'string', 'max:120'],
+            'estado'                => ['required', 'string', 'in:' . implode(',', self::ESTADOS_VALIDOS)],
+            'ubicacion_actual_id'   => ['nullable', 'integer', 'exists:ubicaciones,id'],
+            'notes'                 => ['nullable', 'string'],
+            'next_service_due_date' => ['nullable', 'date'],
+            'last_service_date'     => ['nullable', 'date'],
+            'manufacturer'          => ['nullable', 'string', 'max:120'],
+            'model'                 => ['nullable', 'string', 'max:120'],
+            'purchase_date'         => ['nullable', 'date'],
+            'warranty_end_date'     => ['nullable', 'date'],
         ], [
             'articulo_id.exists'         => 'El artículo indicado no existe.',
             'codigo_activo.required'     => 'El código del activo es obligatorio.',
@@ -79,12 +85,18 @@ class MantenimientoController extends Controller
     public function update(Request $request, ActivoMantenimiento $activo): JsonResponse
     {
         $validados = $request->validate([
-            'articulo_id'        => ['nullable', 'integer', 'exists:articulos,id'],
-            'codigo_activo'      => ['sometimes', 'string', 'max:100', 'unique:activos_mantenimiento,codigo_activo,' . $activo->id],
-            'numero_serie'       => ['nullable', 'string', 'max:120'],
-            'estado'             => ['sometimes', 'string', 'in:' . implode(',', self::ESTADOS_VALIDOS)],
-            'ubicacion_actual_id' => ['nullable', 'integer', 'exists:ubicaciones,id'],
-            'notas'              => ['nullable', 'string'],
+            'articulo_id'           => ['nullable', 'integer', 'exists:articulos,id'],
+            'codigo_activo'         => ['sometimes', 'string', 'max:100', 'unique:activos_mantenimiento,codigo_activo,' . $activo->id],
+            'numero_serie'          => ['nullable', 'string', 'max:120'],
+            'estado'                => ['sometimes', 'string', 'in:' . implode(',', self::ESTADOS_VALIDOS)],
+            'ubicacion_actual_id'   => ['nullable', 'integer', 'exists:ubicaciones,id'],
+            'notes'                 => ['nullable', 'string'],
+            'next_service_due_date' => ['nullable', 'date'],
+            'last_service_date'     => ['nullable', 'date'],
+            'manufacturer'          => ['nullable', 'string', 'max:120'],
+            'model'                 => ['nullable', 'string', 'max:120'],
+            'purchase_date'         => ['nullable', 'date'],
+            'warranty_end_date'     => ['nullable', 'date'],
         ], [
             'articulo_id.exists'         => 'El artículo indicado no existe.',
             'codigo_activo.unique'       => 'Ya existe un activo con ese código.',
@@ -96,5 +108,11 @@ class MantenimientoController extends Controller
         $activo->load(['articulo:id,nombre', 'ubicacionActual:id,nombre']);
 
         return ApiResponse::success((new ActivoMantenimientoResource($activo))->toArray($request));
+    }
+
+    public function destroy(ActivoMantenimiento $activo): JsonResponse
+    {
+        $activo->delete();
+        return ApiResponse::success(['message' => 'Activo de mantenimiento eliminado exitosamente.']);
     }
 }

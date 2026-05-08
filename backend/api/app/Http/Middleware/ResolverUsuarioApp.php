@@ -53,23 +53,23 @@ class ResolverUsuarioApp
             $usuarioApp->load('roles');
         } elseif (! $usuarioApp->activo) {
             return new JsonResponse([
-                'message' => 'Cuenta desactivada. Contacta con un administrador.',
+                'message' => 'Cuenta desactivada. Contacta con un profesor.'
             ], Response::HTTP_FORBIDDEN);
         }
 
         // Asignar rol 'consultor' si el usuario no tiene ninguno aún
-        if (! $usuarioApp->hasAnyRole(['administrador', 'profesor', 'consultor'])) {
+        if (! $usuarioApp->hasAnyRole(['profesor', 'consultor'])) {
             $usuarioApp->assignRole('consultor');
             app(\Spatie\Permission\PermissionRegistrar::class)->forgetCachedPermissions();
             $usuarioApp->load('roles');
         }
 
         // ── Sincronizar rol elevado desde insforge ───────────────────────────────
-        // Si el cliente envía X-Auth-User-Role: administrador|profesor, se actualiza
+        // Si el cliente envía X-Auth-User-Role: profesor, se actualiza
         // el rol en BD. Nunca se degrada: un 'profesor' promovido por un admin no
         // vuelve a 'consultor' aunque su metadata de insforge diga 'consultor'.
         $roleDesdeHeader = $request->header('X-Auth-User-Role');
-        $rolesElevados   = ['administrador', 'profesor'];
+        $rolesElevados   = ['profesor'];
 
         if (in_array($roleDesdeHeader, $rolesElevados, true)) {
             $rolActual = $usuarioApp->roles->first()?->name;
@@ -80,17 +80,17 @@ class ResolverUsuarioApp
             }
         }
 
-        // ── Promoverse por email si está en la lista ADMIN_EMAILS ────────────────
-        // Si el email del usuario coincide con uno de los emails de admin
-        // configurados en .env, se promueve automáticamente a administrador.
+        // ── Promoverse por email si está en la lista PROFESOR_EMAILS ────────────
+        // Si el email del usuario coincide con uno de los emails de profesor
+        // configurados en .env, se promueve automáticamente a profesor.
         // Útil para cuentas OAuth (Google) que se crean como 'consultor' por defecto.
         $emailHeader  = $request->header('X-Auth-User-Email');
-        $adminEmails  = array_filter(array_map('trim', explode(',', (string) config('constantes.admin_emails', env('ADMIN_EMAILS', '')))));
+        $profesorEmails = array_filter(array_map('trim', explode(',', (string) config('constantes.profesor_emails', env('PROFESOR_EMAILS', env('ADMIN_EMAILS', ''))))));
 
-        if ($emailHeader && in_array($emailHeader, $adminEmails, true)) {
+        if ($emailHeader && in_array($emailHeader, $profesorEmails, true)) {
             $rolActual = $usuarioApp->roles->first()?->name;
-            if ($rolActual !== 'administrador') {
-                $usuarioApp->syncRoles(['administrador']);
+            if ($rolActual !== 'profesor') {
+                $usuarioApp->syncRoles(['profesor']);
                 app(\Spatie\Permission\PermissionRegistrar::class)->forgetCachedPermissions();
                 $usuarioApp->load('roles');
             }

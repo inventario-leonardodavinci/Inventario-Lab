@@ -1,41 +1,42 @@
 # Sistema de Roles y Permisos - Documentación
 
-**Fecha:** 6 de Mayo 2026  
-**Estado:** ⚠️ SISTEMA DUAL - Requiere atención
+**Fecha:** 8 de Mayo 2026  
+**Estado:** ✅ SIMPLIFICADO - 2 roles
 
 ---
 
 ## 📋 Resumen Ejecutivo
 
-El proyecto tiene **dos sistemas de roles** coexistiendo:
+El proyecto usa **Spatie (laravel-permission)** como sistema de roles único.
 
-1. **Sistema Propio (Legacy):** Tablas `roles` + `usuario_roles`
-2. **Sistema Spatie:** Tablas `spatie_roles` + `spatie_model_has_roles`
+**Roles disponibles:**
+- `profesor` - Acceso completo (CRUD, usuarios, auditoría)
+- `consultor` - Solo lectura (ver artículos, stock, movimientos)
 
-**⚠️ PROBLEMA:** El middleware `AsegurarRol` usa Spatie (`HasRoles` trait), pero las migraciones muestran intento de migración incompleto.
+**Cambio importante:** El rol `administrador` ha sido consolidado en `profesor`.
 
 ---
 
 ## 🗄️ Esquema de Base de Datos
 
-### Tablas del Sistema Propio (Legacy)
+### Tablas de Spatie (Sistema activo)
 ```sql
-roles                    -- Roles definidos (administrador, profesor, consultor)
-usuario_roles           -- Asignación usuario ↔ rol
-```
-
-### Tablas del Sistema Spatie
-```sql
-spatie_roles            -- Roles de spatie/laravel-permission
-spatie_permissions      -- Permisos de spatie
-spatie_model_has_roles  -- Asignación modelo ↔ rol
+spatie_roles            -- Roles: profesor, consultor
+spatie_permissions      -- Permisos granulares (opcional)
+spatie_model_has_roles  -- Asignación usuario ↔ rol
 spatie_role_has_permissions
 spatie_model_has_permissions
 ```
 
+### Tablas Legacy (No usadas actualmente)
+```sql
+roles                    -- Legacy, no usar
+usuario_roles           -- Legacy, no usar
+```
+
 ---
 
-## 🔧 Implementación Actual
+## 🔧 Implementación
 
 ### Modelo: `UsuarioApp.php`
 ```php
@@ -43,11 +44,11 @@ use Spatie\Permission\Traits\HasRoles;
 
 class UsuarioApp extends Model implements AuthenticatableContract
 {
-    use HasRoles, Authenticatable;  // ← Usa Spatie
+    use HasRoles, Authenticatable;
     
-    // Métodos disponibles de Spatie:
-    // - hasAnyRole($roles)
-    // - hasRole($role)
+    // Métodos disponibles:
+    // - hasAnyRole(['profesor', 'consultor'])
+    // - hasRole('profesor')
     // - can($permission)
     // - etc.
 }

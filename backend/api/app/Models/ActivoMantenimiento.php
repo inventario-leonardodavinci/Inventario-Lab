@@ -15,8 +15,26 @@ class ActivoMantenimiento extends Model
         'numero_serie',
         'estado',
         'ubicacion_actual_id',
-        'notas',
+        'notes',
+        'next_service_due_date',
+        'last_service_date',
+        'manufacturer',
+        'model',
+        'purchase_date',
+        'warranty_end_date',
     ];
+
+    protected function casts(): array
+    {
+        return [
+            'purchase_date' => 'date',
+            'warranty_end_date' => 'date',
+            'last_service_date' => 'date',
+            'next_service_due_date' => 'date',
+            'created_at' => 'datetime',
+            'updated_at' => 'datetime',
+        ];
+    }
 
     public function articulo(): BelongsTo
     {

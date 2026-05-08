@@ -15,7 +15,7 @@ class UsuarioController extends Controller
 {
     /**
      * Lista todos los usuarios con su rol actual.
-     * Solo accesible para administradores.
+     * Solo accesible para profesores.
      */
     public function index(UsuarioIndexRequest $request): JsonResponse
     {
@@ -50,15 +50,15 @@ class UsuarioController extends Controller
 
     /**
      * Actualiza el rol de un usuario.
-     * Un administrador no puede cambiar su propio rol.
+     * Un profesor no puede cambiar su propio rol.
      */
     public function actualizarRol(Request $request, UsuarioApp $usuario): JsonResponse
     {
         $validados = $request->validate([
-            'rol' => ['required', 'string', 'in:administrador,profesor,consultor'],
+            'rol' => ['required', 'string', 'in:profesor,consultor'],
         ], [
             'rol.required' => 'El rol es obligatorio.',
-            'rol.in'       => 'El rol debe ser uno de: administrador, profesor, consultor.',
+            'rol.in'       => 'El rol debe ser profesor o consultor.',
         ]);
 
         /** @var UsuarioApp $usuarioAutenticado */
@@ -76,7 +76,7 @@ class UsuarioController extends Controller
 
     /**
      * Activa o desactiva un usuario.
-     * Un administrador no puede desactivarse a sí mismo.
+     * Un profesor no puede desactivarse a sí mismo.
      */
     public function actualizarEstado(Request $request, UsuarioApp $usuario): JsonResponse
     {
@@ -99,7 +99,7 @@ class UsuarioController extends Controller
 
     /**
      * Elimina un usuario y todos sus datos asociados.
-     * Un administrador no puede eliminarse a sí mismo.
+     * Un profesor no puede eliminarse a sí mismo.
      */
     public function destroy(Request $request, UsuarioApp $usuario): JsonResponse
     {

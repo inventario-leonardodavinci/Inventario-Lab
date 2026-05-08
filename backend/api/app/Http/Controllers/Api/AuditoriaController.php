@@ -12,7 +12,7 @@ class AuditoriaController extends Controller
 {
     /**
      * Lista paginada de registros de auditoría con filtros opcionales.
-     * Solo accesible para administradores (protegido por middleware en rutas).
+     * Solo accesible para profesores (protegido por middleware en rutas).
      */
     public function index(Request $request): JsonResponse
     {

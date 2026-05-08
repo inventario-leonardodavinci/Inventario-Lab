@@ -10,16 +10,16 @@ class PromoverAdmin extends Command
 {
     protected $signature = 'admin:promover
                             {busqueda : Nombre visible o fragmento de auth_user_id del usuario}
-                            {--rol=administrador : Rol a asignar (administrador|profesor|consultor)}';
+                            {--rol=profesor : Rol a asignar (profesor|consultor)}';
 
-    protected $description = 'Asigna un rol a un usuario por nombre visible o auth_user_id (para bootstrapping del primer administrador)';
+    protected $description = 'Asigna un rol a un usuario por nombre visible o auth_user_id (para bootstrapping del primer profesor)';
 
     public function handle(): int
     {
         $busqueda = $this->argument('busqueda');
         $rol      = $this->option('rol');
 
-        $rolesValidos = ['administrador', 'profesor', 'consultor'];
+        $rolesValidos = ['profesor', 'consultor'];
         if (! in_array($rol, $rolesValidos, true)) {
             $this->error("Rol inválido: {$rol}. Debe ser uno de: " . implode(', ', $rolesValidos));
             return self::FAILURE;
@@ -37,7 +37,7 @@ class PromoverAdmin extends Command
             $this->line('');
             $this->line('Usuarios existentes:');
             UsuarioApp::with('roles')->get()->each(function (UsuarioApp $u): void {
-                $rol = $u->roles->first()?->name ?? '(sin rol)';
+                $rol = $u->roles->first() ? $u->roles->first()->name : '(sin rol)';
                 $this->line("  [{$u->id}] {$u->nombre_visible} — {$rol} (id: {$u->auth_user_id})");
             });
             return self::FAILURE;
@@ -45,7 +45,10 @@ class PromoverAdmin extends Command
 
         if ($usuarios->count() > 1) {
             $this->warn("Se encontraron varios usuarios. Selecciona el correcto:");
-            $opciones = $usuarios->map(fn ($u) => "[{$u->id}] {$u->nombre_visible} ({$u->roles->first()?->name ?? 'sin rol'})")->toArray();
+            $opciones = $usuarios->map(function ($u) {
+                $rol = $u->roles->first() ? $u->roles->first()->name : 'sin rol';
+                return "[{$u->id}] {$u->nombre_visible} ({$rol})";
+            })->toArray();
             $eleccion = $this->choice('¿Cuál usuario?', $opciones);
             $idx      = (int) explode(']', explode('[', $eleccion)[1])[0];
             $usuario  = $usuarios->firstWhere('id', $idx);
@@ -53,7 +56,7 @@ class PromoverAdmin extends Command
             $usuario = $usuarios->first();
         }
 
-        $rolActual = $usuario->roles->first()?->name ?? '(sin rol)';
+        $rolActual = $usuario->roles->first() ? $usuario->roles->first()->name : '(sin rol)';
         $this->line("Usuario: <info>{$usuario->nombre_visible}</info> (auth_user_id: {$usuario->auth_user_id})");
         $this->line("Rol actual: <comment>{$rolActual}</comment> → Nuevo rol: <info>{$rol}</info>");
 

@@ -22,12 +22,18 @@ class Articulo extends Model
         'material_type',
         'capacity_ml',
         'expiration_date',
+        'fecha_adquisicion',
+        'precio_compra',
+        'proveedor',
+        'numero_factura',
     ];
 
     protected $casts = [
-        'activo'          => 'boolean',
-        'capacity_ml'     => 'float',
-        'expiration_date' => 'date:Y-m-d',
+        'activo'           => 'boolean',
+        'capacity_ml'      => 'float',
+        'expiration_date'  => 'date:Y-m-d',
+        'fecha_adquisicion'=> 'date:Y-m-d',
+        'precio_compra'    => 'decimal:2',
     ];
 
     public function categoria(): BelongsTo

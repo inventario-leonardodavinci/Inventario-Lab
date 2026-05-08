@@ -17,7 +17,8 @@ use Symfony\Component\HttpFoundation\Response;
  * NOTA: No usar tablas legacy (roles, usuario_roles).
  * Ver docs/SISTEMA_ROLES.md para más información.
  *
- * Uso en rutas: ->middleware(['role:administrador,profesor'])
+ * Roles válidos: 'profesor', 'consultor'
+ * Uso en rutas: ->middleware(['role:profesor'])
  */
 class AsegurarRol
 {
