@@ -10,7 +10,7 @@ export type TipoAlerta = 'stock_bajo' | 'caducidad' | 'mantenimiento' | 'inactiv
 export type Severidad = 'baja' | 'media' | 'alta' | 'critica'
 export type EstadoAlerta = 'abierta' | 'confirmada' | 'resuelta' | 'ignorada'
 export type EstadoActivo = 'operativo' | 'mantenimiento_pendiente' | 'en_mantenimiento' | 'fuera_servicio' | 'retirado'
-export type Rol = 'administrador' | 'profesor' | 'consultor'
+export type Rol = 'profesor' | 'consultor'
 export type RolLegado = 'admin' | 'tecnico' | 'consulta'
 export type TipoUbicacion = 'armario' | 'nevera' | 'estanteria' | 'cajon' | 'vitrina' | 'otro'
 
@@ -49,6 +49,11 @@ export interface Articulo {
   tipo_material?: string | null
   capacidad_ml?: number | null
   fecha_caducidad?: string | null
+  // Campos para equipos y máquinas inventariables
+  fecha_adquisicion?: string | null
+  precio_compra?: number | null
+  proveedor?: string | null
+  numero_factura?: string | null
 }
 
 export interface NivelStock {
@@ -144,13 +149,19 @@ export interface UsuarioApp {
 export interface ActivoMantenimiento {
   id: number
   articulo_id: number | null
-  articulo: { id: number; nombre: string } | null
+  articulo: string | null
   codigo_activo: string
   numero_serie: string | null
   estado: EstadoActivo
   ubicacion_actual_id: number | null
-  ubicacion_actual: { id: number; nombre: string } | null
-  notas: string | null
+  ubicacion_actual: string | null
+  notes: string | null
+  next_service_due_date: string | null
+  last_service_date: string | null
+  manufacturer: string | null
+  model: string | null
+  purchase_date: string | null
+  warranty_end_date: string | null
   created_at: string
   updated_at: string
 }

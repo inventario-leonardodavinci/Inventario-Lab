@@ -1,5 +1,5 @@
 /**
- * Servicio de auditoría (solo administrador).
+ * Servicio de auditoría (solo profesor).
  */
 import { apiClient } from './clienteApi'
 import type { RegistroAuditoria, Paginado, FiltrosAuditoria } from '@/types'

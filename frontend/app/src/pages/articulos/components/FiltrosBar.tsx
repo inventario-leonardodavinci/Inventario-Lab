@@ -69,11 +69,11 @@ export function FiltrosBar({
   return (
     <div className="flex flex-col gap-3">
 
-      {/* ── Fila principal: todos los controles alineados a h-9 ── */}
-      <div className="flex items-center gap-2 flex-wrap">
+      {/* ── Fila principal: controles responsive ── */}
+      <div className="flex flex-col sm:flex-row gap-2 sm:items-center sm:flex-wrap">
 
-        {/* Buscador — ancho fijo razonable, no flex-1 */}
-        <div className="relative w-72 shrink-0">
+        {/* Buscador — responsive width */}
+        <div className="relative w-full sm:w-64 lg:w-72 shrink-0">
           <div className="pointer-events-none absolute left-2.5 top-1/2 -translate-y-1/2">
             {isFetching && busqueda ? (
               <Loader2 className="size-3.5 text-muted-foreground animate-spin" />
@@ -86,8 +86,8 @@ export function FiltrosBar({
             type="text"
             role="searchbox"
             aria-label="Buscar artículos"
-            placeholder="Buscar..."
-            className="h-9 pl-8 pr-8 text-sm"
+            placeholder="Buscar artículos..."
+            className="h-9 pl-8 pr-8 text-sm w-full"
             value={busqueda}
             onChange={(e) => onBusquedaChange(e.target.value)}
             onKeyDown={(e) => e.key === 'Escape' && onBusquedaChange('')}
@@ -111,7 +111,7 @@ export function FiltrosBar({
             value={categoriaId ?? 'todas'}
             onValueChange={(val) => onCategoriaChange(val === 'todas' ? null : val)}
           >
-            <SelectTrigger className="h-9 w-48 text-sm">
+            <SelectTrigger className="h-9 w-full sm:w-40 lg:w-48 text-sm">
               <SelectValue placeholder="Categoría" />
             </SelectTrigger>
             <SelectContent>
@@ -129,7 +129,7 @@ export function FiltrosBar({
             value={ubicacionId ?? 'todas'}
             onValueChange={(val) => onUbicacionChange(val === 'todas' ? null : val)}
           >
-            <SelectTrigger className="h-9 w-48 text-sm">
+            <SelectTrigger className="h-9 w-full sm:w-40 lg:w-48 text-sm">
               <SelectValue placeholder="Ubicación" />
             </SelectTrigger>
             <SelectContent>

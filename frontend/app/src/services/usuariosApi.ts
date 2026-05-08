@@ -1,5 +1,5 @@
 /**
- * Servicio de usuarios (solo administrador).
+ * Servicio de usuarios (solo profesor).
  */
 import { apiClient } from './clienteApi'
 import type { UsuarioApp, Rol, Paginado } from '@/types'

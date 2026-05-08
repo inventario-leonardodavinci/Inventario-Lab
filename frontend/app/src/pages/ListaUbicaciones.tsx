@@ -92,7 +92,7 @@ export default function ListaUbicaciones() {
             Lugares físicos donde se almacenan los artículos del laboratorio.
           </p>
         </div>
-        <GuardRol roles={['administrador']}>
+        <GuardRol roles={['profesor']}>
           <Button onClick={() => setDialogAbierto(true)}>Nueva ubicación</Button>
         </GuardRol>
       </div>

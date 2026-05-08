@@ -1,5 +1,5 @@
 /**
- * Página de gestión de usuarios (solo administrador).
+ * Página de gestión de usuarios (solo profesor).
  */
 import { useState } from 'react'
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar'
@@ -48,21 +48,19 @@ import {
 import { toast } from 'sonner'
 import { SkeletonUsuarios } from '@/components/ui/PageSkeleton'
 
-const ROLES: Rol[] = ['administrador', 'profesor', 'consultor']
+const ROLES: Rol[] = ['profesor', 'consultor']
 
 // ─── Helpers ──────────────────────────────────────────────────────────────────
 
 function extraerRol(roles: Array<{ id: number; name: string }>): Rol {
   const nombres = roles.map((r) => r.name)
-  if (nombres.includes('administrador')) return 'administrador'
   if (nombres.includes('profesor')) return 'profesor'
   return 'consultor'
 }
 
-function badgeVarianteRol(rol: Rol): 'default' | 'secondary' | 'outline' {
-  if (rol === 'administrador') return 'default'
-  if (rol === 'profesor') return 'secondary'
-  return 'outline'
+function badgeVarianteRol(rol: Rol): 'default' | 'secondary' {
+  if (rol === 'profesor') return 'default'
+  return 'secondary'
 }
 
 function iniciales(nombre: string | null | undefined): string {
@@ -150,7 +148,7 @@ function ModalDetalleUsuario({
               )}
             </div>
             <Badge variant={badgeVarianteRol(rolActual)} className="w-fit">
-              {rolActual === 'administrador' && <Crown className="size-3 mr-1" />}
+              {rolActual === 'profesor' && <Crown className="size-3 mr-1" />}
               {formatearRol(rolActual)}
             </Badge>
           </div>
@@ -317,7 +315,7 @@ export default function Usuarios() {
   const perfilActual = perfilData?.data
   const cargandoPerfil = perfilData === undefined
 
-  const esAdmin = user?.role === 'administrador'
+  const esProfesor = user?.role === 'profesor'
   const pendiente =
     actualizarRolMutation.isPending ||
     actualizarEstadoMutation.isPending ||
@@ -325,7 +323,7 @@ export default function Usuarios() {
 
   if (isLoading) return <SkeletonUsuarios />
 
-  if (!esAdmin) {
+  if (!esProfesor) {
     return (
       <main className="flex flex-1 flex-col items-center justify-center bg-muted/20 p-4 lg:p-6">
         <Card className="w-full max-w-sm text-center shadow-sm">
@@ -335,7 +333,7 @@ export default function Usuarios() {
             </div>
             <CardTitle>Acceso restringido</CardTitle>
             <CardDescription>
-              Esta sección solo está disponible para administradores del sistema.
+              Esta sección solo está disponible para profesores del sistema.
             </CardDescription>
           </CardHeader>
         </Card>
@@ -384,7 +382,7 @@ export default function Usuarios() {
   }
 
   const activos = usuarios.filter((u) => u.activo).length
-  const admins = usuarios.filter((u) => extraerRol(u.roles) === 'administrador').length
+  const profesores = usuarios.filter((u) => extraerRol(u.roles) === 'profesor').length
 
   return (
     <main className="animate-page-enter flex flex-1 flex-col gap-6 bg-muted/20 p-4 lg:p-6">
@@ -426,8 +424,8 @@ export default function Usuarios() {
               <Crown className="size-4 text-amber-600" />
             </div>
             <div>
-              <p className="text-2xl font-bold">{admins}</p>
-              <p className="text-xs text-muted-foreground">Administradores</p>
+              <p className="text-2xl font-bold">{profesores}</p>
+              <p className="text-xs text-muted-foreground">Profesores</p>
             </div>
           </div>
         </Card>
@@ -490,7 +488,7 @@ export default function Usuarios() {
                       </div>
                       <div className="flex items-center gap-2 mt-0.5">
                         <Badge variant={badgeVarianteRol(rolActual)} className="text-xs">
-                          {rolActual === 'administrador' && <Crown className="size-2.5 mr-1" />}
+                          {rolActual === 'profesor' && <Crown className="size-2.5 mr-1" />}
                           {formatearRol(rolActual)}
                         </Badge>
                         {usuario.email && (

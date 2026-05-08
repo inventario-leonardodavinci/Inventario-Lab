@@ -12,7 +12,7 @@ export type SesionUsuario = {
   emailVerified: boolean;
   displayName: string;
   avatarUrl?: string;
-  role: "administrador" | "profesor" | "consultor";
+  role: "profesor" | "consultor";
   createdAt: string;
   metadata: Record<string, unknown>;
 };
@@ -354,7 +354,7 @@ export async function sincronizarPerfilOAuth(authUserId: string, sesionInicial: 
 }
 
 // Obtiene el rol real del usuario desde el backend Laravel.
-// Si se pasa insforgeRole (administrador/profesor), el backend lo sincroniza antes de responder.
+// Si se pasa insforgeRole (profesor), el backend lo sincroniza antes de responder.
 // Si se pasa email, el backend puede auto-promover según ADMIN_EMAILS en .env.
 export async function obtenerRolDesdeBackend(authUserId: string, insforgeRole?: string, email?: string): Promise<SesionUsuario["role"] | null> {
   const baseUrl = import.meta.env.VITE_API_BASE_URL as string;

@@ -13,6 +13,7 @@ interface ArticulosGridProps {
   onVerDetalle: (articulo: Articulo) => void
   onEditar?: (articulo: Articulo) => void
   onCrear: () => void
+  esProfesor?: boolean
 }
 
 export function ArticulosGrid({
@@ -24,6 +25,7 @@ export function ArticulosGrid({
   onVerDetalle,
   onEditar,
   onCrear,
+  esProfesor = false,
 }: ArticulosGridProps) {
   if (articulos.length === 0) {
     return (
@@ -37,10 +39,12 @@ export function ArticulosGrid({
             Comienza creando el primer artículo del inventario.
           </p>
         </div>
-        <Button onClick={onCrear}>
-          <Plus className="size-4 mr-2" />
-          Crear artículo
-        </Button>
+        {esProfesor && (
+          <Button onClick={onCrear}>
+            <Plus className="size-4 mr-2" />
+            Crear artículo
+          </Button>
+        )}
       </div>
     )
   }
@@ -49,26 +53,30 @@ export function ArticulosGrid({
     return (
       <ArticulosTabla
         articulos={articulos}
-        onEntrada={onEntrada}
-        onSalida={onSalida}
-        onTraslado={onTraslado}
+        onEntrada={esProfesor ? onEntrada : undefined}
+        onSalida={esProfesor ? onSalida : undefined}
+        onTraslado={esProfesor ? onTraslado : undefined}
         onVerDetalle={onVerDetalle}
-        onEditar={onEditar}
+        onEditar={esProfesor ? onEditar : undefined}
       />
     )
   }
 
   return (
-    <div className="grid gap-4 grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 2xl:grid-cols-5">
-      {articulos.map((articulo) => (
-        <div key={articulo.id} className="stagger-row">
+    <div className="grid gap-3 sm:gap-4 grid-cols-1 xs:grid-cols-2 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-3 xl:grid-cols-4 2xl:grid-cols-5">
+      {articulos.map((articulo, index) => (
+        <div 
+          key={articulo.id} 
+          className="animate-fade-in"
+          style={{ animationDelay: `${Math.min(index * 30, 300)}ms` }}
+        >
           <ArticuloCard
             articulo={articulo}
-            onEntrada={onEntrada}
-            onSalida={onSalida}
-            onTraslado={onTraslado}
+            onEntrada={esProfesor ? onEntrada : undefined}
+            onSalida={esProfesor ? onSalida : undefined}
+            onTraslado={esProfesor ? onTraslado : undefined}
             onVerDetalle={onVerDetalle}
-            onEditar={onEditar}
+            onEditar={esProfesor ? onEditar : undefined}
           />
         </div>
       ))}

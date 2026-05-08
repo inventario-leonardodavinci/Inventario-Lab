@@ -1,8 +1,9 @@
 import { useState, useEffect } from 'react'
-import { Package, Layers, MapPin, FlaskConical, FileText, Loader2 } from 'lucide-react'
+import { Package, Layers, MapPin, FlaskConical, FileText, Loader2, ShoppingCart } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
+import { DatePickerSimple } from '@/components/ui/date-picker'
 import {
   Select,
   SelectContent,
@@ -83,6 +84,11 @@ export type DatosFormArticulo = {
   material_type?: string
   capacity_ml?: number
   expiration_date?: string
+  // Campos para equipos y máquinas inventariables
+  fecha_adquisicion?: string
+  precio_compra?: number
+  proveedor?: string
+  numero_factura?: string
 }
 
 interface ArticuloFormSheetProps {
@@ -124,6 +130,12 @@ export function ArticuloFormSheet({
   const [capacityMl, setCapacityMl] = useState('')
   const [expirationDate, setExpirationDate] = useState('')
 
+  // Adquisición (para equipos y máquinas inventariables)
+  const [fechaAdquisicion, setFechaAdquisicion] = useState('')
+  const [precioCompra, setPrecioCompra] = useState('')
+  const [proveedor, setProveedor] = useState('')
+  const [numeroFactura, setNumeroFactura] = useState('')
+
   // Notas
   const [notas, setNotas] = useState('')
 
@@ -142,6 +154,11 @@ export function ArticuloFormSheet({
       setMaterialType(articulo.tipo_material ?? '')
       setCapacityMl(articulo.capacidad_ml != null ? String(articulo.capacidad_ml) : '')
       setExpirationDate(articulo.fecha_caducidad ?? '')
+      // Campos de adquisición
+      setFechaAdquisicion(articulo.fecha_adquisicion ?? '')
+      setPrecioCompra(articulo.precio_compra != null ? String(articulo.precio_compra) : '')
+      setProveedor(articulo.proveedor ?? '')
+      setNumeroFactura(articulo.numero_factura ?? '')
       setNotas(articulo.notas ?? '')
       setStockMinimo(articulo.stock_minimo != null ? String(articulo.stock_minimo) : '')
     } else {
@@ -157,6 +174,10 @@ export function ArticuloFormSheet({
       setMaterialType('')
       setCapacityMl('')
       setExpirationDate('')
+      setFechaAdquisicion('')
+      setPrecioCompra('')
+      setProveedor('')
+      setNumeroFactura('')
       setNotas('')
     }
   }, [articulo, open])
@@ -176,6 +197,11 @@ export function ArticuloFormSheet({
       material_type: materialType || undefined,
       capacity_ml: capacityMl !== '' ? Number(capacityMl) : undefined,
       expiration_date: expirationDate || undefined,
+      // Campos de adquisición
+      fecha_adquisicion: fechaAdquisicion || undefined,
+      precio_compra: precioCompra !== '' ? Number(precioCompra) : undefined,
+      proveedor: proveedor.trim() || undefined,
+      numero_factura: numeroFactura.trim() || undefined,
     }
 
     if (stockMinimo !== '') datos.stock_minimo = Number(stockMinimo)
@@ -343,13 +369,63 @@ export function ArticuloFormSheet({
             </div>
 
             <div className="space-y-2">
-              <Label htmlFor="expirationDate">Fecha de caducidad</Label>
-              <Input
-                id="expirationDate"
-                type="date"
+              <Label>Fecha de caducidad</Label>
+              <DatePickerSimple
                 value={expirationDate}
-                onChange={(e) => setExpirationDate(e.target.value)}
+                onChange={setExpirationDate}
+                placeholder="Seleccionar fecha"
               />
+            </div>
+          </div>
+
+          <Separator />
+
+          {/* ── Información de adquisición ── */}
+          <div className="space-y-4">
+            <SectionTitle icon={ShoppingCart} label="Información de adquisición" />
+
+            <div className="grid grid-cols-2 gap-3">
+              <div className="space-y-2">
+                <Label>Fecha de adquisición</Label>
+                <DatePickerSimple
+                  value={fechaAdquisicion}
+                  onChange={setFechaAdquisicion}
+                  placeholder="Seleccionar fecha"
+                />
+              </div>
+              <div className="space-y-2">
+                <Label htmlFor="precioCompra">Precio de compra (€)</Label>
+                <Input
+                  id="precioCompra"
+                  type="number"
+                  min="0"
+                  step="0.01"
+                  placeholder="Ej. 150.00"
+                  value={precioCompra}
+                  onChange={(e) => setPrecioCompra(e.target.value)}
+                />
+              </div>
+            </div>
+
+            <div className="grid grid-cols-2 gap-3">
+              <div className="space-y-2">
+                <Label htmlFor="proveedor">Proveedor / Fabricante</Label>
+                <Input
+                  id="proveedor"
+                  placeholder="Ej. Thermo Fisher Scientific"
+                  value={proveedor}
+                  onChange={(e) => setProveedor(e.target.value)}
+                />
+              </div>
+              <div className="space-y-2">
+                <Label htmlFor="numeroFactura">Nº de factura</Label>
+                <Input
+                  id="numeroFactura"
+                  placeholder="Ej. FAC-2024-001"
+                  value={numeroFactura}
+                  onChange={(e) => setNumeroFactura(e.target.value)}
+                />
+              </div>
             </div>
           </div>
 

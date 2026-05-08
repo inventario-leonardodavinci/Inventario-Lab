@@ -4,7 +4,7 @@
  * Si el usuario no tiene el rol requerido, no renderiza nada (null).
  *
  * Uso:
- *   <GuardRol roles={['administrador']}>
+ *   <GuardRol roles={['profesor']}>
  *     <EnlaceAdministracion />
  *   </GuardRol>
  */

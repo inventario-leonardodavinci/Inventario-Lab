@@ -20,21 +20,13 @@ function iniciales(nombre: string): string {
 }
 
 const COLORES_ROL: Record<string, string> = {
-  administrador: 'bg-primary/10 text-primary',
-  admin: 'bg-primary/10 text-primary',
-  profesor: 'bg-blue-500/10 text-blue-600',
-  tecnico: 'bg-blue-500/10 text-blue-600',
+  profesor: 'bg-primary/10 text-primary',
   consultor: 'bg-muted text-muted-foreground',
-  consulta: 'bg-muted text-muted-foreground',
 }
 
 const ETIQUETA_ROL: Record<string, string> = {
-  administrador: 'Administrador',
-  admin: 'Administrador',
   profesor: 'Profesor',
-  tecnico: 'Técnico',
   consultor: 'Consultor',
-  consulta: 'Consultor',
 }
 
 export function MenuUsuario() {

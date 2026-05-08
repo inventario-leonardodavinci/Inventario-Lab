@@ -2,6 +2,7 @@ import {
   Package, Pencil, Trash2, ArrowRightLeft, History, MapPin,
   TrendingUp, TrendingDown, Activity, Layers, FlaskConical,
   FileText, Hash, Barcode, CalendarClock, RefreshCw, AlertTriangle,
+  ShoppingCart,
 } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { Badge } from '@/components/ui/badge'
@@ -25,9 +26,9 @@ interface ArticuloDrawerProps {
   isLoadingStock?: boolean
   open: boolean
   onClose: () => void
-  onEditar: () => void
-  onDesactivar: () => void
-  onMovimiento: (tipo: 'entrada' | 'salida') => void
+  onEditar?: () => void
+  onDesactivar?: () => void
+  onMovimiento?: (tipo: 'entrada' | 'salida') => void
 }
 
 function SectionTitle({ icon: Icon, label }: { icon: React.ElementType; label: string }) {
@@ -188,25 +189,27 @@ export function ArticuloDrawer({
                   </span>
                 </p>
               </div>
-              <div className="flex flex-col gap-2">
-                <Button
-                  size="sm"
-                  className="gap-1.5 h-8 text-xs"
-                  disabled={esInactivo}
-                  onClick={() => onMovimiento('entrada')}
-                >
-                  <TrendingUp className="size-3.5" /> Entrada
-                </Button>
-                <Button
-                  size="sm"
-                  variant="outline"
-                  className="gap-1.5 h-8 text-xs"
-                  disabled={esInactivo || articulo.stock_total === 0}
-                  onClick={() => onMovimiento('salida')}
-                >
-                  <TrendingDown className="size-3.5" /> Salida
-                </Button>
-              </div>
+              {onMovimiento && (
+                <div className="flex flex-col gap-2">
+                  <Button
+                    size="sm"
+                    className="gap-1.5 h-8 text-xs"
+                    disabled={esInactivo}
+                    onClick={() => onMovimiento('entrada')}
+                  >
+                    <TrendingUp className="size-3.5" /> Entrada
+                  </Button>
+                  <Button
+                    size="sm"
+                    variant="outline"
+                    className="gap-1.5 h-8 text-xs"
+                    disabled={esInactivo || articulo.stock_total === 0}
+                    onClick={() => onMovimiento('salida')}
+                  >
+                    <TrendingDown className="size-3.5" /> Salida
+                  </Button>
+                </div>
+              )}
             </div>
 
             {/* Stock por ubicación */}
@@ -318,6 +321,28 @@ export function ArticuloDrawer({
             </>
           )}
 
+          {/* ── Información de adquisición (solo si hay alguno) ── */}
+          {(articulo.fecha_adquisicion || articulo.precio_compra != null || articulo.proveedor || articulo.numero_factura) && (
+            <>
+              <Separator />
+              <div className="space-y-1">
+                <SectionTitle icon={ShoppingCart} label="Información de adquisición" />
+                <div className="divide-y">
+                  {articulo.fecha_adquisicion && (
+                    <InfoRow label="Fecha de adquisición" value={formatFecha(articulo.fecha_adquisicion)} />
+                  )}
+                  {articulo.precio_compra != null && (
+                    <InfoRow label="Precio de compra" value={`${articulo.precio_compra.toFixed(2)} €`} />
+                  )}
+                  {articulo.proveedor && <InfoRow label="Proveedor" value={articulo.proveedor} />}
+                  {articulo.numero_factura && (
+                    <InfoRow label="Nº de factura" value={<span className="font-mono">{articulo.numero_factura}</span>} />
+                  )}
+                </div>
+              </div>
+            </>
+          )}
+
           {/* ── Notas ── */}
           {articulo.notas && (
             <>
@@ -380,25 +405,31 @@ export function ArticuloDrawer({
           </div>
 
           {/* ── Gestión ── */}
-          <Separator />
-          <div className="space-y-2 pb-1">
-            <div className="flex gap-2">
-              <Button variant="outline" className="flex-1 gap-2" onClick={onEditar}>
-                <Pencil className="size-3.5" />
-                Editar artículo
-              </Button>
-              {!esInactivo && (
-                <Button
-                  variant="outline"
-                  className="gap-2 text-destructive hover:text-destructive hover:bg-destructive/5 border-destructive/30"
-                  onClick={onDesactivar}
-                >
-                  <Trash2 className="size-3.5" />
-                  Desactivar
-                </Button>
-              )}
-            </div>
-          </div>
+          {(onEditar || onDesactivar) && (
+            <>
+              <Separator />
+              <div className="space-y-2 pb-1">
+                <div className="flex gap-2">
+                  {onEditar && (
+                    <Button variant="outline" className="flex-1 gap-2" onClick={onEditar}>
+                      <Pencil className="size-3.5" />
+                      Editar artículo
+                    </Button>
+                  )}
+                  {onDesactivar && !esInactivo && (
+                    <Button
+                      variant="outline"
+                      className="gap-2 text-destructive hover:text-destructive hover:bg-destructive/5 border-destructive/30"
+                      onClick={onDesactivar}
+                    >
+                      <Trash2 className="size-3.5" />
+                      Desactivar
+                    </Button>
+                  )}
+                </div>
+              </div>
+            </>
+          )}
         </motion.div>
       </DialogContent>
     </Dialog>

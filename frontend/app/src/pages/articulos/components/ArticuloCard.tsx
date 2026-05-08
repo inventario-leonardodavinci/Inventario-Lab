@@ -17,14 +17,21 @@ function diasParaCaducar(fecha: string): number {
 
 interface ArticuloCardProps {
   articulo: Articulo
-  onEntrada: (articulo: Articulo) => void
-  onSalida: (articulo: Articulo) => void
-  onTraslado: (articulo: Articulo) => void
+  onEntrada?: (articulo: Articulo) => void
+  onSalida?: (articulo: Articulo) => void
+  onTraslado?: (articulo: Articulo) => void
   onVerDetalle: (articulo: Articulo) => void
   onEditar?: (articulo: Articulo) => void
 }
 
-export function ArticuloCard({ articulo, onEntrada, onSalida, onTraslado, onVerDetalle, onEditar }: ArticuloCardProps) {
+export function ArticuloCard({ 
+  articulo, 
+  onEntrada, 
+  onSalida, 
+  onTraslado, 
+  onVerDetalle, 
+  onEditar 
+}: ArticuloCardProps) {
   const esInactivo = !articulo.activo
   const esCritico = articulo.estado_stock === 'critico' && articulo.activo
   const diasCad = articulo.fecha_caducidad ? diasParaCaducar(articulo.fecha_caducidad) : null
@@ -122,39 +129,50 @@ export function ArticuloCard({ articulo, onEntrada, onSalida, onTraslado, onVerD
       
       {/* Acciones rápidas */}
       <div className="flex flex-col gap-2 pt-2 border-t" onClick={(e) => e.stopPropagation()}>
-        {/* Fila 1: Movimientos */}
-        <div className="flex gap-2">
-          <Button
-            variant="outline"
-            size="sm"
-            className="flex-1 h-8 text-xs gap-1 border-green-200 dark:border-green-800 hover:bg-green-50 dark:hover:bg-green-950 text-green-700 dark:text-green-400"
-            onClick={() => onEntrada(articulo)}
-            disabled={esInactivo}
-          >
-            <Plus className="size-3.5" />
-            Entrada
-          </Button>
-          <Button
-            variant="outline"
-            size="sm"
-            className="flex-1 h-8 text-xs gap-1 border-amber-200 dark:border-amber-800 hover:bg-amber-50 dark:hover:bg-amber-950 text-amber-700 dark:text-amber-400"
-            onClick={() => onSalida(articulo)}
-            disabled={esInactivo || articulo.stock_total === 0}
-          >
-            <Minus className="size-3.5" />
-            Salida
-          </Button>
-          <Button
-            variant="outline"
-            size="sm"
-            className="flex-1 h-8 text-xs gap-1 border-blue-200 dark:border-blue-800 hover:bg-blue-50 dark:hover:bg-blue-950 text-blue-700 dark:text-blue-400"
-            onClick={() => onTraslado(articulo)}
-            disabled={esInactivo || articulo.stock_total === 0}
-          >
-            <ArrowRightLeft className="size-3.5" />
-            Traslado
-          </Button>
-        </div>
+        {/* Fila 1: Movimientos - solo para profesor */}
+        {(onEntrada || onSalida || onTraslado) && (
+          <div className="grid grid-cols-3 gap-1.5">
+            {onEntrada && (
+              <Button
+                variant="outline"
+                size="sm"
+                className="h-8 px-1 text-[11px] gap-0.5 border-green-200 dark:border-green-800 hover:bg-green-50 dark:hover:bg-green-950 text-green-700 dark:text-green-400"
+                onClick={() => onEntrada(articulo)}
+                disabled={esInactivo}
+              >
+                <Plus className="size-3 shrink-0" />
+                <span className="hidden sm:inline">Entrada</span>
+                <span className="sm:hidden">Ent</span>
+              </Button>
+            )}
+            {onSalida && (
+              <Button
+                variant="outline"
+                size="sm"
+                className="h-8 px-1 text-[11px] gap-0.5 border-amber-200 dark:border-amber-800 hover:bg-amber-50 dark:hover:bg-amber-950 text-amber-700 dark:text-amber-400"
+                onClick={() => onSalida(articulo)}
+                disabled={esInactivo || articulo.stock_total === 0}
+              >
+                <Minus className="size-3 shrink-0" />
+                <span className="hidden sm:inline">Salida</span>
+                <span className="sm:hidden">Sal</span>
+              </Button>
+            )}
+            {onTraslado && (
+              <Button
+                variant="outline"
+                size="sm"
+                className="h-8 px-1 text-[11px] gap-0.5 border-blue-200 dark:border-blue-800 hover:bg-blue-50 dark:hover:bg-blue-950 text-blue-700 dark:text-blue-400"
+                onClick={() => onTraslado(articulo)}
+                disabled={esInactivo || articulo.stock_total === 0}
+              >
+                <ArrowRightLeft className="size-3 shrink-0" />
+                <span className="hidden sm:inline">Traslado</span>
+                <span className="sm:hidden">Tras</span>
+              </Button>
+            )}
+          </div>
+        )}
 
         {/* Fila 2: Ver y Editar */}
         <div className="flex gap-2">

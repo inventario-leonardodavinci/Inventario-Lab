@@ -42,7 +42,8 @@ function useDebounce<T>(value: T, delay: number): T {
 }
 
 export default function Articulos() {
-  useAuth()
+  const { user } = useAuth()
+  const esProfesor = user?.role === 'profesor'
   const view = useArticulosView()
   
   // Debounce para la búsqueda
@@ -209,8 +210,11 @@ export default function Articulos() {
 
   if (isLoading) {
     return (
-      <main className="flex flex-1 flex-col gap-6 bg-muted/20 p-4 lg:p-6">
-        <div className="h-8 w-48 bg-muted animate-pulse rounded" />
+      <main className="flex flex-1 flex-col gap-4 md:gap-6 bg-muted/20 p-3 sm:p-4 lg:p-6">
+        <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+          <div className="h-8 w-48 bg-muted animate-pulse rounded" />
+          <div className="h-9 w-32 bg-muted animate-pulse rounded hidden sm:block" />
+        </div>
         <div className="h-20 bg-muted animate-pulse rounded-lg" />
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 2xl:grid-cols-5 gap-4">
           {Array.from({ length: SKELETON_COUNT }).map((_, i) => (
@@ -222,29 +226,32 @@ export default function Articulos() {
   }
   
   return (
-    <main className="flex flex-1 flex-col gap-6 bg-muted/20 p-4 lg:p-6">
-      <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
-        <div className="flex items-center gap-3">
-          <div>
-            <h1 className="text-2xl font-semibold tracking-tight">Inventario</h1>
-            <p className="text-sm text-muted-foreground">
+    <main className="flex flex-1 flex-col gap-4 md:gap-6 bg-muted/20 p-3 sm:p-4 lg:p-6">
+      {/* Header - mejorado para responsive */}
+      <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+        <div className="flex items-center gap-3 min-w-0">
+          <div className="min-w-0">
+            <h1 className="text-xl sm:text-2xl font-semibold tracking-tight truncate">Inventario</h1>
+            <p className="text-xs sm:text-sm text-muted-foreground">
               {articulos.length} artículos · {alertasAbiertas} alertas
             </p>
           </div>
-          {/* Indicador sutil de carga (solo refetch, no carga inicial) */}
+          {/* Indicador sutil de carga */}
           {isFetching && !isLoading && (
-            <div className="flex items-center gap-1.5 text-xs text-muted-foreground">
+            <div className="hidden sm:flex items-center gap-1.5 text-xs text-muted-foreground">
               <div className="size-3 animate-spin rounded-full border-2 border-primary border-t-transparent" />
               <span>Actualizando...</span>
             </div>
           )}
         </div>
 
-        <div className="flex gap-2">
-          <Button variant="outline" size="sm">
-            <ArrowRightLeft className="size-4 mr-2" />
-            Historial
-          </Button>
+        <div className="flex flex-wrap items-center gap-2">
+          {esProfesor && (
+            <Button variant="outline" size="sm" className="hidden sm:inline-flex">
+              <ArrowRightLeft className="size-4 mr-2" />
+              Historial
+            </Button>
+          )}
           {alertasAbiertas > 0 && (
             <Button 
               variant="outline" 
@@ -253,13 +260,17 @@ export default function Articulos() {
               onClick={() => view.setFiltro('alertas')}
             >
               <Bell className="size-4 mr-2" />
-              {alertasAbiertas} alertas
+              <span className="hidden sm:inline">{alertasAbiertas} alertas</span>
+              <span className="sm:hidden">{alertasAbiertas}</span>
             </Button>
           )}
-          <Button size="sm" onClick={view.abrirCrear}>
-            <Plus className="size-4 mr-2" />
-            Nuevo artículo
-          </Button>
+          {esProfesor && (
+            <Button size="sm" onClick={view.abrirCrear} className="ml-auto sm:ml-0">
+              <Plus className="size-4 mr-2" />
+              <span className="hidden sm:inline">Nuevo artículo</span>
+              <span className="sm:hidden">Nuevo</span>
+            </Button>
+          )}
         </div>
       </div>
       
@@ -284,6 +295,7 @@ export default function Articulos() {
       <ArticulosGrid
         articulos={articulosFiltrados}
         modo={view.modo}
+        esProfesor={esProfesor}
         onEntrada={(art) => {
           view.seleccionarArticulo(art, 'entrada')
           view.setTipoMovimiento('entrada')
@@ -300,7 +312,7 @@ export default function Articulos() {
         onCrear={view.abrirCrear}
       />
       
-      {view.mostrarPanelAccion && view.articuloSeleccionado && (
+      {esProfesor && view.mostrarPanelAccion && view.articuloSeleccionado && (
         <PanelAccionRapida
           open={view.mostrarPanelAccion}
           articulo={view.articuloSeleccionado}
@@ -322,30 +334,32 @@ export default function Articulos() {
         nivelesStock={articuloDetalle?.data?.niveles_stock ?? []}
         open={view.drawerAbierto}
         onClose={view.cerrarDetalle}
-        onEditar={() => {
+        onEditar={esProfesor ? () => {
           if (view.articuloDetalle) {
             view.abrirEditar(view.articuloDetalle)
             view.cerrarDetalle()
           }
-        }}
-        onDesactivar={handleDesactivar}
-        onMovimiento={(tipo) => {
+        } : undefined}
+        onDesactivar={esProfesor ? handleDesactivar : undefined}
+        onMovimiento={esProfesor ? (tipo) => {
           if (view.articuloDetalle) {
             view.seleccionarArticulo(view.articuloDetalle, tipo)
             view.setTipoMovimiento(tipo)
             view.cerrarDetalle()
           }
-        }}
+        } : undefined}
       />
       
-      <ArticuloFormSheet
-        articulo={view.articuloEditando}
-        categorias={categorias}
-        ubicaciones={ubicaciones}
-        open={view.formAbierto}
-        onClose={view.cerrarForm}
-        onSubmit={view.articuloEditando ? handleActualizarArticulo : handleCrearArticulo}
-      />
+      {esProfesor && (
+        <ArticuloFormSheet
+          articulo={view.articuloEditando}
+          categorias={categorias}
+          ubicaciones={ubicaciones}
+          open={view.formAbierto}
+          onClose={view.cerrarForm}
+          onSubmit={view.articuloEditando ? handleActualizarArticulo : handleCrearArticulo}
+        />
+      )}
     </main>
   )
 }

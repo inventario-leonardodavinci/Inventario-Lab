@@ -64,7 +64,7 @@ export default function ListaCategorias() {
             Clasificación temática de los artículos del inventario.
           </p>
         </div>
-        <GuardRol roles={['administrador']}>
+        <GuardRol roles={['profesor']}>
           <Button onClick={() => setDialogAbierto(true)}>Nueva categoría</Button>
         </GuardRol>
       </div>
@@ -98,7 +98,7 @@ export default function ListaCategorias() {
                 <TableRow>
                   <TableHead>Nombre</TableHead>
                   <TableHead className="text-right">Artículos activos</TableHead>
-                  <GuardRol roles={['administrador']}>
+                  <GuardRol roles={['profesor']}>
                     <TableHead className="text-right">Acciones</TableHead>
                   </GuardRol>
                 </TableRow>
@@ -112,7 +112,7 @@ export default function ListaCategorias() {
                         {cat.total_articulos}
                       </Badge>
                     </TableCell>
-                    <GuardRol roles={['administrador']}>
+                    <GuardRol roles={['profesor']}>
                       <TableCell className="text-right">
                         <Button
                           variant="ghost"

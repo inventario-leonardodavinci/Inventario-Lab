@@ -128,11 +128,10 @@ export function formatearEstadoActivo(estado: EstadoActivo): string {
 
 /**
  * Formatea el rol de usuario a etiqueta legible en español.
- * 'administrador'→'Administrador', 'profesor'→'Profesor', 'consultor'→'Consultor'
+ * 'profesor'→'Profesor', 'consultor'→'Consultor'
  */
 export function formatearRol(rol: Rol): string {
   const mapa: Record<Rol, string> = {
-    administrador: 'Administrador',
     profesor: 'Profesor',
     consultor: 'Consultor',
   }

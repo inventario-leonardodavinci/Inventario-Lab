@@ -1,5 +1,5 @@
 /**
- * Página de auditoría del sistema (solo administrador).
+ * Página de auditoría del sistema (solo profesor).
  * Requisitos: 8.5, 8.6
  */
 import { useState } from 'react'
@@ -415,11 +415,11 @@ export default function Auditoria() {
   const totalUpdates = registros.filter(r => r.tipo_evento === 'UPDATE').length
   const totalDeletes = registros.filter(r => r.tipo_evento === 'DELETE').length
 
-  const esAdmin = user?.role === 'administrador'
+  const esProfesor = user?.role === 'profesor'
 
   if (isLoading) return <SkeletonAuditoria />
 
-  if (!esAdmin) {
+  if (!esProfesor) {
     return (
       <main className="flex flex-1 flex-col items-center justify-center bg-muted/20 p-4 lg:p-6">
         <Card className="w-full max-w-sm text-center shadow-sm">
@@ -429,7 +429,7 @@ export default function Auditoria() {
             </div>
             <CardTitle>Acceso restringido</CardTitle>
             <CardDescription>
-              Esta sección solo está disponible para administradores del sistema.
+              Esta sección solo está disponible para profesores del sistema.
             </CardDescription>
           </CardHeader>
         </Card>
@@ -467,7 +467,7 @@ export default function Auditoria() {
         <div>
           <h2 className="text-2xl font-semibold tracking-tight">Auditoría</h2>
           <p className="text-sm text-muted-foreground">
-            Trazabilidad completa de cambios del sistema. Solo visible para administradores.
+            Trazabilidad completa de cambios del sistema. Solo visible para profesores.
           </p>
         </div>
         {isFetching && !isLoading && (
