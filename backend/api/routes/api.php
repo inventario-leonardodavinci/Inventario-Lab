@@ -1,6 +1,5 @@
 <?php
 
-use App\Http\Controllers\Api\AlertaController;
 use App\Http\Controllers\Api\ArticuloController;
 use App\Http\Controllers\Api\AuditoriaController;
 use App\Http\Controllers\Api\CategoriaController;
@@ -73,10 +72,4 @@ Route::prefix('v1')->middleware(['throttle:api', 'app.user', 'audit.write'])->gr
 
     // ── Auditoría (solo profesor) ─────────────────────────────────────────────
     Route::get('/auditoria', [AuditoriaController::class, 'index'])->middleware('role:profesor');
-
-    // ── Alertas ────────────────────────────────────────────────────────────────
-    Route::get('/alertas', [AlertaController::class, 'index']);
-    Route::get('/alertas/resumen', [AlertaController::class, 'resumen']);
-    Route::post('/alertas/{alerta}/confirmar', [AlertaController::class, 'confirmar'])->middleware('role:profesor');
-    Route::post('/alertas/{alerta}/resolver', [AlertaController::class, 'resolver'])->middleware('role:profesor');
 });

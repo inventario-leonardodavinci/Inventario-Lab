@@ -10,10 +10,6 @@ use RuntimeException;
 
 class MovimientoService
 {
-    public function __construct(private readonly AlertaService $alertaService)
-    {
-    }
-
     /**
      * Crea un movimiento completo dentro de una transacción atómica.
      *
@@ -57,8 +53,6 @@ class MovimientoService
                     origenId: $datos['ubicacion_origen_id'] ?? null,
                     destinoId: $datos['ubicacion_destino_id'] ?? null,
                 );
-
-                $this->alertaService->evaluarStockBajo((int) $linea['articulo_id']);
             }
 
             return $movimiento->load(['lineas.articulo', 'usuario']);

@@ -64,12 +64,19 @@ Sanitizar el codebase eliminando código muerto, duplicaciones, archivos huérfa
 
 ## 3. FRONTEND - Servicios API
 
-### 3.1 Servicios potencialmente huérfanos
-- [ ] **`alertasApi.ts`** - ⚠️ **CÓDIGO MUERTO CONFIRMADO**
-  - `useAlertas` ya no se usa en página Artículos (eliminado en refactor)
-  - **Verificación:** No hay página `/alertas.tsx` ni componentes que usen los hooks de alertas
-  - **Solo se usan en:** tests (`queries.test.tsx`) y sus propias definiciones en `queries.ts`
-  - **Recomendación:** Eliminar `alertasApi.ts`, hooks relacionados de `queries.ts`, y tests asociados
+### 3.1 Servicios potencialmente huérfanos ✅ COMPLETADO
+- [x] **`alertasApi.ts`** - ~~⚠️ CÓDIGO MUERTO CONFIRMADO~~ ✅ **ELIMINADO**
+  - ~~`useAlertas` ya no se usa en página Artículos~~
+  - ~~**Verificación:** No hay página `/alertas.tsx`~~
+  - **Completado:** Eliminado todo el sistema de alertas del frontend
+    - `alertasApi.ts` (archivo eliminado)
+    - Hooks `useAlertas`, `useResolverAlerta`, `useConfirmarAlerta` de `queries.ts`
+    - Query key `queryKeys.alertas`
+    - Tests huérfanos `queries.test.tsx` (archivo eliminado)
+    - Funciones de formateo de alertas de `formatters.ts`
+    - Utilidades UI `iconoTipoAlerta`, `colorSeveridad`, `estadoAlertaConfig`
+    - Tipos TypeScript `TipoAlerta`, `Severidad`, `EstadoAlerta`, `Alerta`, `FiltrosAlerta`
+    - Constantes `ESTADOS_ALERTA`, `TIPOS_ALERTA`, `SEVERIDADES_ALERTA`
   - **Nota:** La tabla `alertas` en BD queda como registro histórico (no hay interfaz para consultarla)
 
 - [ ] **`notificacionesApi.ts`** - Parcialmente eliminado

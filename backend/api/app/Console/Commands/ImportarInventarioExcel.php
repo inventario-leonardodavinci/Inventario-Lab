@@ -6,7 +6,6 @@ use App\Models\Articulo;
 use App\Models\Categoria;
 use App\Models\Ubicacion;
 use App\Models\NivelStock;
-use App\Services\AlertaService;
 use Illuminate\Console\Command;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
@@ -90,7 +89,7 @@ class ImportarInventarioExcel extends Command
         $this->warn('Limpiando tablas de inventario...');
 
         if ($this->option('dry-run')) {
-            $this->info('[DRY-RUN] Se limpiarían: articulos, niveles_stock, alertas');
+            $this->info('[DRY-RUN] Se limpiarían: articulos, niveles_stock');
             return;
         }
 
@@ -104,7 +103,7 @@ class ImportarInventarioExcel extends Command
             }
 
             NivelStock::query()->delete();
-            \App\Models\Alerta::query()->delete();
+            // Alerta::query()->delete(); // Tabla alertas eliminada del sistema
             \App\Models\Movimiento::query()->delete();
             \App\Models\LineaMovimiento::query()->delete();
             Articulo::query()->delete();
