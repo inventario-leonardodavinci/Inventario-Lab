@@ -159,9 +159,7 @@ export function ProveedorAutenticacion({ children }: { children: React.ReactNode
           // Sincronizar perfil (solo nombre/avatar, no volver a pedir rol)
           const eraOAuth = procesandoOAuth;
           if (eraOAuth) {
-            enviarEventoLogin(resultado.sesion.authUserId, 'oauth').catch((err) => {
-              console.warn("[historial] evento-login falló (oauth):", err);
-            });
+            enviarEventoLogin(resultado.sesion.authUserId, 'oauth').catch(() => {});
           }
           try {
             const sincronizar = eraOAuth
@@ -222,10 +220,8 @@ export function ProveedorAutenticacion({ children }: { children: React.ReactNode
     setUser(sesion);
     await queryClient.invalidateQueries({ queryKey: ['perfil'] });
     await queryClient.invalidateQueries({ queryKey: ['historial-sesiones'] });
-    enviarEventoLogin(sesion.authUserId).catch((err) => {
-      console.warn("[historial] evento-login falló:", err);
-    });
-    
+    enviarEventoLogin(sesion.authUserId).catch(() => {});
+
     // Sincronizar perfil y obtener rol UNA sola vez
     try {
       await sincronizarPerfil(sesion.authUserId, sesion.displayName, sesion.email, sesion.role);
@@ -248,10 +244,8 @@ export function ProveedorAutenticacion({ children }: { children: React.ReactNode
       setUser(resultado.sesion);
       await queryClient.invalidateQueries({ queryKey: ['perfil'] });
       await queryClient.invalidateQueries({ queryKey: ['historial-sesiones'] });
-      enviarEventoLogin(resultado.sesion.authUserId).catch((err) => {
-        console.warn("[historial] evento-login falló (registro):", err);
-      });
-      
+      enviarEventoLogin(resultado.sesion.authUserId).catch(() => {});
+
       // Sincronizar perfil y obtener rol UNA sola vez
       try {
         await sincronizarPerfil(resultado.sesion.authUserId, resultado.sesion.displayName, resultado.sesion.email, resultado.sesion.role);
@@ -274,10 +268,8 @@ export function ProveedorAutenticacion({ children }: { children: React.ReactNode
     setUser(sesion);
     await queryClient.invalidateQueries({ queryKey: ['perfil'] });
     await queryClient.invalidateQueries({ queryKey: ['historial-sesiones'] });
-    enviarEventoLogin(sesion.authUserId).catch((err) => {
-      console.warn("[historial] evento-login falló (verificarEmail):", err);
-    });
-    
+    enviarEventoLogin(sesion.authUserId).catch(() => {});
+
     // Sincronizar perfil y obtener rol UNA sola vez
     try {
       await sincronizarPerfil(sesion.authUserId, sesion.displayName, sesion.email, sesion.role);

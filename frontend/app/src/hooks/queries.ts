@@ -21,7 +21,7 @@ import {
 import { getMovimientos, getResumenHoy, crearMovimiento } from '@/services/movimientosApi'
 import { getUbicaciones, crearUbicacion, actualizarUbicacion } from '@/services/ubicacionesApi'
 import { getCategorias, crearCategoria, actualizarCategoria, eliminarCategoria } from '@/services/categoriasApi'
-import { getUsuarios, actualizarRolUsuario, actualizarEstadoUsuario, eliminarUsuario, getPerfil, actualizarPerfil, getHistorialSesiones, eliminarSesion } from '@/services/usuariosApi'
+import { getUsuarios, actualizarRolUsuario, actualizarEstadoUsuario, eliminarUsuario, getPerfil, actualizarPerfil } from '@/services/usuariosApi'
 import { getAuditoria } from '@/services/auditoriaApi'
 import { apiClient } from '@/services/clienteApi'
 import { insforge } from '@/services/insforgeClient'
@@ -541,7 +541,23 @@ export function useHistorialSesiones() {
   const { user } = useAuth()
   return useQuery({
     queryKey: queryKeys.historialSesiones(user?.authUserId),
-    queryFn: () => getHistorialSesiones(user!.authUserId),
+    queryFn: () =>
+      apiClient<{ data: Array<{
+        id: number
+        tipo_evento: string
+        dispositivo: string
+        sistema_operativo: string
+        navegador: string
+        ip_address: string
+        pais: string | null
+        ciudad: string | null
+        exitoso: boolean
+        iniciada_en: string
+      }> }>(
+        '/notificaciones',
+        {},
+        { authUserId: user!.authUserId }
+      ),
     enabled: !!user,
   })
 }
@@ -550,13 +566,12 @@ export function useEliminarSesion() {
   const { user } = useAuth()
   const queryClient = useQueryClient()
   return useMutation({
-    mutationFn: (sesionId: number) => eliminarSesion(user!.authUserId, sesionId),
+    mutationFn: (sesionId: number) =>
+      apiClient(`/notificaciones/${sesionId}`, {
+        method: 'DELETE',
+      }, { authUserId: user!.authUserId }),
     onSuccess: () => {
       void queryClient.invalidateQueries({ queryKey: queryKeys.historialSesiones(user?.authUserId) })
     },
-    onError: () => {
-      // El componente puede mostrar su propio toast si lo necesita
-    },
   })
 }
-

@@ -6,6 +6,7 @@ use App\Http\Controllers\Api\CategoriaController;
 use App\Http\Controllers\Api\InventarioController;
 use App\Http\Controllers\Api\MantenimientoController;
 use App\Http\Controllers\Api\MovimientoController;
+use App\Http\Controllers\Api\NotificacionController;
 use App\Http\Controllers\Api\PerfilController;
 use App\Http\Controllers\Api\UbicacionController;
 use App\Http\Controllers\Api\UsuarioController;
@@ -72,4 +73,9 @@ Route::prefix('v1')->middleware(['throttle:api', 'app.user', 'audit.write'])->gr
 
     // ── Auditoría (solo profesor) ─────────────────────────────────────────────
     Route::get('/auditoria', [AuditoriaController::class, 'index'])->middleware('role:profesor');
+
+    // ── Historial de sesiones ─────────────────────────────────────────────────
+    Route::get('/notificaciones', [NotificacionController::class, 'index']);
+    Route::post('/notificaciones/evento-login', [NotificacionController::class, 'guardarEventoLogin']);
+    Route::delete('/notificaciones/{id}', [NotificacionController::class, 'destroy']);
 });
