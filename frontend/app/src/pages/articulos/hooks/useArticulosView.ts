@@ -1,7 +1,7 @@
 import { useState, useCallback, useMemo } from 'react'
 import type { Articulo, TipoMovimiento } from '@/types'
 
-type FiltroVista = 'todos' | 'critico' | 'inactivos' | 'alertas'
+type FiltroVista = 'todos' | 'critico' | 'inactivos'
 type VistaModo = 'grid' | 'lista'
 
 export function useArticulosView() {

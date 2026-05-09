@@ -3,7 +3,7 @@
  * Apple/Meta style: Todo integrado sin tabs, acciones rápidas, UI minimalista
  */
 import { useMemo, useState, useEffect } from 'react'
-import { Plus, ArrowRightLeft, Bell } from 'lucide-react'
+import { Plus, ArrowRightLeft } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { useAuth } from '@/context/ContextoAutenticacion'
 import {
@@ -16,7 +16,6 @@ import {
   useCrearMovimiento,
   useMovimientos,
   useArticulo,
-  useAlertas,
 } from '@/hooks/queries'
 import { useArticulosView } from './articulos/hooks/useArticulosView'
 import { FiltrosBar } from './articulos/components/FiltrosBar'
@@ -61,7 +60,6 @@ export default function Articulos() {
   
   const { data: categoriasData, isLoading: _isLoadingCategorias } = useCategorias()
   const { data: ubicacionesData, isLoading: isLoadingUbicaciones } = useUbicaciones()
-  const { data: alertasData, isLoading: _isLoadingAlertas } = useAlertas({ estado: 'abierta' })
   const { data: movimientosData } = useMovimientos({ per_page: 50 })
   const { data: articuloDetalle } = useArticulo(view.articuloDetalle?.id ?? 0)
   // Query para obtener stock del artículo seleccionado en panel de acción
@@ -77,26 +75,14 @@ export default function Articulos() {
   const articulos = articulosData?.data ?? []
   const categorias = categoriasData?.data ?? []
   const ubicaciones = ubicacionesData?.data ?? []
-  const alertasAbiertas = alertasData?.data?.length ?? 0
   const movimientos = movimientosData?.data ?? []
-  
-  // Filtrado adicional para alertas
-  const articulosFiltrados = useMemo(() => {
-    if (view.filtro !== 'alertas') return articulos
-    
-    // Artículos que tienen alertas abiertas
-    const alertas = alertasData?.data ?? []
-    const articulosConAlerta = new Set(alertas.map((a) => a.articulo_id))
-    return articulos.filter((a) => articulosConAlerta.has(a.id))
-  }, [articulos, alertasData, view.filtro])
   
   // Contadores para filtros
   const contadores = useMemo(() => ({
     todos: articulosData?.meta?.total ?? articulos.length,
     critico: articulos.filter((a) => a.estado_stock === 'critico' && a.activo).length,
-    alertas: alertasAbiertas,
     inactivos: articulos.filter((a) => !a.activo).length,
-  }), [articulos, articulosData, alertasAbiertas])
+  }), [articulos, articulosData])
   
   // Movimientos del artículo seleccionado
   const movimientosArticulo = useMemo(() => {
@@ -233,7 +219,7 @@ export default function Articulos() {
           <div className="min-w-0">
             <h1 className="text-xl sm:text-2xl font-semibold tracking-tight truncate">Inventario</h1>
             <p className="text-xs sm:text-sm text-muted-foreground">
-              {articulos.length} artículos · {alertasAbiertas} alertas
+              {articulosData?.meta?.total ?? articulos.length} artículos · {contadores.critico > 0 ? `${contadores.critico} con stock bajo` : 'todo en orden'}
             </p>
           </div>
           {/* Indicador sutil de carga */}
@@ -250,18 +236,6 @@ export default function Articulos() {
             <Button variant="outline" size="sm" className="hidden sm:inline-flex">
               <ArrowRightLeft className="size-4 mr-2" />
               Historial
-            </Button>
-          )}
-          {alertasAbiertas > 0 && (
-            <Button 
-              variant="outline" 
-              size="sm" 
-              className="text-destructive border-destructive/50"
-              onClick={() => view.setFiltro('alertas')}
-            >
-              <Bell className="size-4 mr-2" />
-              <span className="hidden sm:inline">{alertasAbiertas} alertas</span>
-              <span className="sm:hidden">{alertasAbiertas}</span>
             </Button>
           )}
           {esProfesor && (
@@ -293,7 +267,7 @@ export default function Articulos() {
       />
       
       <ArticulosGrid
-        articulos={articulosFiltrados}
+        articulos={articulos}
         modo={view.modo}
         esProfesor={esProfesor}
         onEntrada={(art) => {
