@@ -1,9 +1,6 @@
 import { describe, it, expect } from 'vitest'
 import {
   formatearTipoMovimiento,
-  formatearTipoAlerta,
-  formatearSeveridad,
-  formatearEstadoAlerta,
   formatearFechaRelativa,
   formatearFechaHora,
 } from '@/utils/formatters'
@@ -19,33 +16,6 @@ describe('formatearTipoMovimiento', () => {
 
   it('maneja valores desconocidos', () => {
     expect(formatearTipoMovimiento('desconocido' as TipoMovimiento)).toBe('desconocido')
-  })
-})
-
-describe('formatearTipoAlerta', () => {
-  it('formatea tipos correctamente', () => {
-    expect(formatearTipoAlerta('stock_bajo')).toBe('Stock bajo')
-    expect(formatearTipoAlerta('caducidad')).toBe('Caducidad')
-    expect(formatearTipoAlerta('mantenimiento')).toBe('Mantenimiento')
-    expect(formatearTipoAlerta('inactividad')).toBe('Inactividad')
-  })
-})
-
-describe('formatearSeveridad', () => {
-  it('formatea severidades correctamente', () => {
-    expect(formatearSeveridad('baja')).toBe('Baja')
-    expect(formatearSeveridad('media')).toBe('Media')
-    expect(formatearSeveridad('alta')).toBe('Alta')
-    expect(formatearSeveridad('critica')).toBe('Crítica')
-  })
-})
-
-describe('formatearEstadoAlerta', () => {
-  it('formatea estados correctamente', () => {
-    expect(formatearEstadoAlerta('abierta')).toBe('Abierta')
-    expect(formatearEstadoAlerta('confirmada')).toBe('Confirmada')
-    expect(formatearEstadoAlerta('resuelta')).toBe('Resuelta')
-    expect(formatearEstadoAlerta('ignorada')).toBe('Ignorada')
   })
 })
 

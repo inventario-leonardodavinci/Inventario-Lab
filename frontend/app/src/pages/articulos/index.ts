@@ -13,7 +13,4 @@ export { ArticuloFormSheet } from './components/ArticuloFormSheet'
 export {
   iconoTipoMovimiento,
   colorTipoMovimiento,
-  iconoTipoAlerta,
-  colorSeveridad,
-  estadoAlertaConfig,
 } from './utils'

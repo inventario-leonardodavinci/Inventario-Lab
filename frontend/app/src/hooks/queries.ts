@@ -23,7 +23,6 @@ import { getUbicaciones, crearUbicacion, actualizarUbicacion } from '@/services/
 import { getCategorias, crearCategoria, actualizarCategoria, eliminarCategoria } from '@/services/categoriasApi'
 import { getUsuarios, actualizarRolUsuario, actualizarEstadoUsuario, eliminarUsuario, getPerfil, actualizarPerfil, getHistorialSesiones, eliminarSesion } from '@/services/usuariosApi'
 import { getAuditoria } from '@/services/auditoriaApi'
-import { getAlertas, resolverAlerta, confirmarAlerta } from '@/services/alertasApi'
 import { apiClient } from '@/services/clienteApi'
 import { insforge } from '@/services/insforgeClient'
 import { unwrapPaginated } from '@/services/apiUtils'
@@ -37,7 +36,6 @@ import type {
   FiltrosArticulos,
   FiltrosMovimiento,
   FiltrosAuditoria,
-  FiltrosAlerta,
   ActivoMantenimiento,
   Rol,
 } from '@/types'
@@ -125,8 +123,6 @@ export const queryKeys = {
     ['mantenimiento'] as const,
   resumenHoy: () =>
     ['resumen-hoy'] as const,
-  alertas: (filtros?: FiltrosAlerta) =>
-    ['alertas', filtros] as const,
   historialSesiones: (authUserId?: string) =>
     ['historial-sesiones', authUserId ?? ''] as const,
 }
@@ -564,32 +560,3 @@ export function useEliminarSesion() {
   })
 }
 
-// ─── Alertas ──────────────────────────────────────────────────────────────────
-
-export function useAlertas(filtros?: FiltrosAlerta) {
-  const { user } = useAuth()
-  return useQuery({
-    queryKey: queryKeys.alertas(filtros),
-    queryFn: () => getAlertas(user!.authUserId, filtros),
-    enabled: !!user,
-  })
-}
-
-export function useResolverAlerta() {
-  const { user } = useAuth()
-  const queryClient = useQueryClient()
-  return useMutation({
-    mutationFn: ({ id, notas }: { id: number; notas?: string }) =>
-      resolverAlerta(user!.authUserId, id, notas),
-    onSuccess: () => queryClient.invalidateQueries({ queryKey: ['alertas'] }),
-  })
-}
-
-export function useConfirmarAlerta() {
-  const { user } = useAuth()
-  const queryClient = useQueryClient()
-  return useMutation({
-    mutationFn: (id: number) => confirmarAlerta(user!.authUserId, id),
-    onSuccess: () => queryClient.invalidateQueries({ queryKey: ['alertas'] }),
-  })
-}

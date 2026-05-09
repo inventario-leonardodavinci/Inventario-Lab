@@ -9,9 +9,6 @@ import { es } from 'date-fns/locale'
 
 import type {
   TipoMovimiento,
-  TipoAlerta,
-  Severidad,
-  EstadoAlerta,
   EstadoActivo,
   Rol,
   TipoUbicacion,
@@ -68,48 +65,6 @@ export function formatearTipoMovimiento(tipo: TipoMovimiento): string {
     ajuste: 'Ajuste',
   }
   return mapa[tipo]
-}
-
-/**
- * Formatea el tipo de alerta a etiqueta legible en español.
- * 'stock_bajo'→'Stock bajo', 'caducidad'→'Caducidad', 'mantenimiento'→'Mantenimiento', 'inactividad'→'Inactividad'
- */
-export function formatearTipoAlerta(tipo: TipoAlerta): string {
-  const mapa: Record<TipoAlerta, string> = {
-    stock_bajo: 'Stock bajo',
-    caducidad: 'Caducidad',
-    mantenimiento: 'Mantenimiento',
-    inactividad: 'Inactividad',
-  }
-  return mapa[tipo]
-}
-
-/**
- * Formatea la severidad a etiqueta legible en español.
- * 'baja'→'Baja', 'media'→'Media', 'alta'→'Alta', 'critica'→'Crítica'
- */
-export function formatearSeveridad(sev: Severidad): string {
-  const mapa: Record<Severidad, string> = {
-    baja: 'Baja',
-    media: 'Media',
-    alta: 'Alta',
-    critica: 'Crítica',
-  }
-  return mapa[sev]
-}
-
-/**
- * Formatea el estado de alerta a etiqueta legible en español.
- * 'abierta'→'Abierta', 'confirmada'→'Confirmada', 'resuelta'→'Resuelta', 'ignorada'→'Ignorada'
- */
-export function formatearEstadoAlerta(estado: EstadoAlerta): string {
-  const mapa: Record<EstadoAlerta, string> = {
-    abierta: 'Abierta',
-    confirmada: 'Confirmada',
-    resuelta: 'Resuelta',
-    ignorada: 'Ignorada',
-  }
-  return mapa[estado]
 }
 
 /**

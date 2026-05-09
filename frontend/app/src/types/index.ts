@@ -6,9 +6,6 @@
 // ─── Enums ────────────────────────────────────────────────────────────────────
 
 export type TipoMovimiento = 'entrada' | 'salida' | 'traslado' | 'ajuste'
-export type TipoAlerta = 'stock_bajo' | 'caducidad' | 'mantenimiento' | 'inactividad'
-export type Severidad = 'baja' | 'media' | 'alta' | 'critica'
-export type EstadoAlerta = 'abierta' | 'confirmada' | 'resuelta' | 'ignorada'
 export type EstadoActivo = 'operativo' | 'mantenimiento_pendiente' | 'en_mantenimiento' | 'fuera_servicio' | 'retirado'
 export type Rol = 'profesor' | 'consultor'
 export type RolLegado = 'admin' | 'tecnico' | 'consulta'
@@ -101,22 +98,6 @@ export interface Movimiento {
   created_at: string
 }
 
-export interface Alerta {
-  id: number
-  tipo: TipoAlerta
-  severidad: Severidad
-  estado: EstadoAlerta
-  articulo_id: number | null
-  articulo: { id: number; nombre: string; categoria?: { id: number; nombre: string } | null } | null
-  datos_json: Record<string, unknown> | null
-  generada_en: string
-  confirmada_por_id: number | null
-  confirmada_en: string | null
-  resuelta_por_id: number | null
-  resuelta_en: string | null
-  notas_resolucion: string | null
-}
-
 export interface RegistroAuditoria {
   id: number
   usuario_id: number | null
@@ -189,12 +170,6 @@ export interface FiltrosMovimiento {
   desde?: string
   hasta?: string
   per_page?: number
-}
-
-export interface FiltrosAlerta {
-  tipo?: TipoAlerta
-  severidad?: Severidad
-  estado?: EstadoAlerta
 }
 
 export interface FiltrosAuditoria {

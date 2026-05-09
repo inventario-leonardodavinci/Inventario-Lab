@@ -26,18 +26,8 @@ export const LOGIN_EVENT_RATE_LIMIT_PER_MINUTE = 10
 export const TIPOS_MOVIMIENTO = ['entrada', 'salida', 'traslado', 'ajuste'] as const
 export type TipoMovimiento = (typeof TIPOS_MOVIMIENTO)[number]
 
-// ── Alertas ─────────────────────────────────────────────────────────────────
-export const ESTADOS_ALERTA = ['abierta', 'confirmada', 'resuelta'] as const
-export type EstadoAlerta = (typeof ESTADOS_ALERTA)[number]
-
-export const TIPOS_ALERTA = ['stock_bajo', 'mantenimiento', 'vencimiento'] as const
-export type TipoAlerta = (typeof TIPOS_ALERTA)[number]
-
-export const SEVERIDADES_ALERTA = ['baja', 'media', 'alta', 'critica'] as const
-export type SeveridadAlerta = (typeof SEVERIDADES_ALERTA)[number]
-
 // ── Filtros de Artículos ───────────────────────────────────────────────────
-export const FILTROS_ARTICULO = ['todos', 'critico', 'alertas', 'inactivos'] as const
+export const FILTROS_ARTICULO = ['todos', 'critico', 'inactivos'] as const
 export type FiltroArticulo = (typeof FILTROS_ARTICULO)[number]
 
 // ── UI ─────────────────────────────────────────────────────────────────────
