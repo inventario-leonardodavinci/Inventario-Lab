@@ -3,7 +3,7 @@
  * Usa TanStack Query para lanzar las 4 peticiones en paralelo con caché y
  * estados de carga/error por sección, sin reducer manual.
  */
-import { useInventario, useResumenHoy, useMovimientos } from '@/hooks/queries'
+import { useArticulos, useResumenHoy, useMovimientos } from '@/hooks/queries'
 import { extraerCriticos, mapearAlertas, mapearMovimientosRecientes } from '@/utils/panelUtils'
 
 export type PanelData = {
@@ -24,7 +24,7 @@ export type PanelData = {
 
 export function usePanelData(): PanelData {
   // Los nuevos hooks obtienen authUserId del contexto internamente
-  const inv = useInventario()
+  const inv = useArticulos()
   const resumen = useResumenHoy()
   const movimientos = useMovimientos({ per_page: 5 })
   const cargando =

@@ -564,23 +564,6 @@ export function useEliminarSesion() {
   })
 }
 
-// ─── Compatibilidad con código anterior ──────────────────────────────────────
-
-/**
- * @deprecated Usar useArticulos() en su lugar.
- * Mantenido para no romper usePanelData.ts y otros consumidores existentes.
- * Acepta authUserId opcional para compatibilidad; si se omite, usa el contexto.
- */
-export function useInventario(authUserId?: string | undefined, search = '') {
-  const { user } = useAuth()
-  const uid = authUserId ?? user?.authUserId
-  return useQuery({
-    queryKey: ['inventario', uid ?? '', search],
-    queryFn: () => getArticulos(uid!, { search }),
-    enabled: !!uid,
-  })
-}
-
 // ─── Alertas ──────────────────────────────────────────────────────────────────
 
 export function useAlertas(filtros?: FiltrosAlerta) {
