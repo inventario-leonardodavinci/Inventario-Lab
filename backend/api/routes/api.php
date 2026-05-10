@@ -3,7 +3,6 @@
 use App\Http\Controllers\Api\ArticuloController;
 use App\Http\Controllers\Api\AuditoriaController;
 use App\Http\Controllers\Api\CategoriaController;
-use App\Http\Controllers\Api\InventarioController;
 use App\Http\Controllers\Api\MantenimientoController;
 use App\Http\Controllers\Api\MovimientoController;
 use App\Http\Controllers\Api\NotificacionController;
@@ -19,10 +18,6 @@ Route::prefix('v1')->middleware(['throttle:api', 'app.user', 'audit.write'])->gr
     Route::patch('/perfil', [PerfilController::class, 'actualizar']);
     Route::get('/perfil/historial-sesiones', [PerfilController::class, 'historialSesiones']);
     Route::delete('/perfil/sesiones/{sesionId}', [PerfilController::class, 'eliminarSesion']);
-
-    // ── Inventario (ruta legacy — se mantiene para compatibilidad) ────────────
-    Route::get('/inventario', [InventarioController::class, 'index']);
-    Route::post('/inventario', [InventarioController::class, 'store'])->middleware('role:profesor');
 
     // ── Artículos ─────────────────────────────────────────────────────────────
     Route::prefix('/articulos')->group(function (): void {
@@ -74,8 +69,6 @@ Route::prefix('v1')->middleware(['throttle:api', 'app.user', 'audit.write'])->gr
     // ── Auditoría (solo profesor) ─────────────────────────────────────────────
     Route::get('/auditoria', [AuditoriaController::class, 'index'])->middleware('role:profesor');
 
-    // ── Historial de sesiones ─────────────────────────────────────────────────
-    Route::get('/perfil/historial-sesiones', [NotificacionController::class, 'index']);
+    // ── Evento login (registro de acceso) ─────────────────────────────────────
     Route::post('/notificaciones/evento-login', [NotificacionController::class, 'guardarEventoLogin']);
-    Route::delete('/perfil/historial-sesiones/{id}', [NotificacionController::class, 'destroy']);
 });

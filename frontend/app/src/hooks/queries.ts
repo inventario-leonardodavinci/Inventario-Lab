@@ -571,7 +571,7 @@ export function useEliminarSesion() {
   const queryClient = useQueryClient()
   return useMutation({
     mutationFn: (sesionId: number) =>
-      apiClient(`/perfil/historial-sesiones/${sesionId}`, {
+      apiClient(`/perfil/sesiones/${sesionId}`, {
         method: 'DELETE',
       }, { authUserId: user!.authUserId }),
     onSuccess: () => {
