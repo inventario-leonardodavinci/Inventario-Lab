@@ -8,7 +8,6 @@
 export type TipoMovimiento = 'entrada' | 'salida' | 'traslado' | 'ajuste'
 export type EstadoActivo = 'operativo' | 'mantenimiento_pendiente' | 'en_mantenimiento' | 'fuera_servicio' | 'retirado'
 export type Rol = 'profesor' | 'consultor'
-export type RolLegado = 'admin' | 'tecnico' | 'consulta'
 export type TipoUbicacion = 'armario' | 'nevera' | 'estanteria' | 'cajon' | 'vitrina' | 'otro'
 
 // ─── Paginación ───────────────────────────────────────────────────────────────
