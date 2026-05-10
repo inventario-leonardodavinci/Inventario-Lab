@@ -75,7 +75,7 @@ Route::prefix('v1')->middleware(['throttle:api', 'app.user', 'audit.write'])->gr
     Route::get('/auditoria', [AuditoriaController::class, 'index'])->middleware('role:profesor');
 
     // ── Historial de sesiones ─────────────────────────────────────────────────
-    Route::get('/notificaciones', [NotificacionController::class, 'index']);
+    Route::get('/perfil/historial-sesiones', [NotificacionController::class, 'index']);
     Route::post('/notificaciones/evento-login', [NotificacionController::class, 'guardarEventoLogin']);
-    Route::delete('/notificaciones/{id}', [NotificacionController::class, 'destroy']);
+    Route::delete('/perfil/historial-sesiones/{id}', [NotificacionController::class, 'destroy']);
 });

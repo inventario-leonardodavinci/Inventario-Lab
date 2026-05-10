@@ -537,28 +537,32 @@ export function useEliminarActivo() {
 
 // ─── Historial de sesiones ────────────────────────────────────────────────────
 
+export type SesionHistorial = {
+  id: number
+  tipo_evento: string
+  dispositivo: string
+  sistema_operativo: string
+  navegador: string
+  ip_address: string
+  pais: string | null
+  ciudad: string | null
+  exitoso: boolean
+  iniciada_en: string
+}
+
 export function useHistorialSesiones() {
   const { user } = useAuth()
-  return useQuery({
+  return useQuery<{ data: SesionHistorial[] }>({
     queryKey: queryKeys.historialSesiones(user?.authUserId),
     queryFn: () =>
-      apiClient<{ data: Array<{
-        id: number
-        tipo_evento: string
-        dispositivo: string
-        sistema_operativo: string
-        navegador: string
-        ip_address: string
-        pais: string | null
-        ciudad: string | null
-        exitoso: boolean
-        iniciada_en: string
-      }> }>(
-        '/notificaciones',
+      apiClient<{ data: SesionHistorial[] }>(
+        '/perfil/historial-sesiones',
         {},
         { authUserId: user!.authUserId }
       ),
     enabled: !!user,
+    staleTime: 5 * 60 * 1000, // 5 minutos
+    gcTime: 10 * 60 * 1000, // 10 minutos
   })
 }
 
@@ -567,7 +571,7 @@ export function useEliminarSesion() {
   const queryClient = useQueryClient()
   return useMutation({
     mutationFn: (sesionId: number) =>
-      apiClient(`/notificaciones/${sesionId}`, {
+      apiClient(`/perfil/historial-sesiones/${sesionId}`, {
         method: 'DELETE',
       }, { authUserId: user!.authUserId }),
     onSuccess: () => {

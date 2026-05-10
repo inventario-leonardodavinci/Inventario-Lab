@@ -40,12 +40,10 @@ class NotificacionController extends Controller
                 'pais' => $s->pais,
                 'ciudad' => $s->ciudad,
                 'exitoso' => $s->exitoso,
-                'iniciada_en' => $s->iniciada_en,
+                'iniciada_en' => $s->iniciada_en?->toISOString(),
             ]);
 
-        return ApiResponse::success([
-            'data' => $historial,
-        ]);
+        return ApiResponse::success($historial->toArray());
     }
 
     /**

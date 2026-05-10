@@ -13,15 +13,13 @@ Sanitizar el codebase eliminando código muerto, duplicaciones, archivos huérfa
   - ~~**Solo se usa en:** `usePanelData.ts`~~
   - **Completado:** Reemplazado en `usePanelData.ts` por `useArticulos()` y eliminada la función (commit `312a7ca`)
 
-### 1.2 Funciones duplicadas/consolidables
-- [ ] **`extraerCriticos()` en `panelUtils.ts`** vs lógica directa en componentes
-  - La API ya devuelve `estado_stock: 'critico' | 'ok'` calculado
-  - Filtrar directamente con `articulos.filter(a => a.estado_stock === 'critico')` es más directo
-  - **Usado en:** `usePanelData.ts` (línea 35), `PanelPrincipal.tsx`
-
-- [ ] **`mapearAlertas()` en `panelUtils.ts`**
-  - Transforma datos para una tabla que ya no existe (tabla de alertas del panel)
-  - Verificar si el componente `TablaAlertas` del panel usa esto o tiene su propio mapeo
+### 1.2 Funciones duplicadas/consolidables ✅ COMPLETADO
+- [x] **`panelUtils.ts`** - ✅ **ELIMINADO**
+  - Funciones integradas directamente en `usePanelData.ts`
+  - `extraerCriticos()` → filtro inline con `filter()`
+  - `mapearAlertas()` → renombrado a `mapearLowStock()` y movido al hook
+  - `mapearMovimientosRecientes()` → movido al hook
+  - `construirKpiCards()` y `formatearKpi()` → eliminados (no se usaban)
 
 ### 1.3 Query keys huérfanos
 - [ ] `queryKeys.notificaciones` - Eliminado en refactor Novu, verificar si queda alguna referencia
@@ -79,9 +77,11 @@ Sanitizar el codebase eliminando código muerto, duplicaciones, archivos huérfa
     - Constantes `ESTADOS_ALERTA`, `TIPOS_ALERTA`, `SEVERIDADES_ALERTA`
   - **Nota:** La tabla `alertas` en BD queda como registro histórico (no hay interfaz para consultarla)
 
-- [ ] **`notificacionesApi.ts`** - Parcialmente eliminado
-  - Ya eliminamos `getNotificaciones` y tipos relacionados
-  - Solo queda `enviarEventoLogin` - verificar que aún se use en `ContextoAutenticacion.tsx`
+- [x] **`notificacionesApi.ts`** - ✅ **RESTAURADO / MANTENIDO**
+  - ~~Parcialmente eliminado~~
+  - **Decisión:** Mantener `enviarEventoLogin` y sistema de historial de sesiones
+  - **Motivo:** Útil para que administradores vean último acceso de usuarios
+  - Se restauró `NotificacionController.php` simplificado (sin alertas, solo historial)
 
 ### 3.2 Consolidar clientes HTTP
 - [ ] **`clienteApi.ts`** vs **`insforgeClient.ts`**
