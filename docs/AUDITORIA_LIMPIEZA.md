@@ -35,10 +35,8 @@
 
 ---
 
-## PENDIENTE
-
 ### Base de datos
-- [ ] Tabla `alertas` — sin interfaz, decidir si se limpia con migración o se deja como histórico
+- [x] Tabla `alertas` — eliminada con migración `2026_05_10_eliminar_tabla_alertas` (DROP TABLE CASCADE)
 
 ---
 
@@ -46,4 +44,3 @@
 
 - **`estado_stock`** en artículos es la única fuente de verdad para stock bajo (no alertas)
 - Tablas Spatie (`spatie_roles`, etc.) existen como infraestructura inactiva, no mezclar con el flujo de `roles`/`usuario_roles`
-- Tabla `alertas` queda como registro histórico hasta decisión explícita
