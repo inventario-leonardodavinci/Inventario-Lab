@@ -11,6 +11,7 @@ import { BadgePremium } from '@/components/ui/badge-premium'
 import { useCrearSubUbicacion, useActualizarSubUbicacion, useEliminarSubUbicacion, useSubUbicacionesPorUbicacion } from '@/hooks/queries'
 import { formatearTipoUbicacion } from '@/utils/formatters'
 import type { Ubicacion, SubUbicacion } from '@/types'
+import { GuardRol } from '@/components/auth/GuardRol'
 import { toast } from 'sonner'
 import { Archive, Refrigerator, Layers, Box, Eye, HelpCircle, Pencil, Trash2, Plus } from 'lucide-react'
 
@@ -119,10 +120,12 @@ export function TarjetaUbicacion({ ub, onEdit }: TarjetaUbicacionProps) {
                 <span className="text-xs text-muted-foreground truncate">{ub.descripcion}</span>
               )}
             </div>
-            <Button variant="ghost" size="icon" className="size-7 shrink-0 opacity-0 group-hover:opacity-100 transition-opacity"
-              onClick={() => onEdit(ub)} aria-label="Editar ubicación">
-              <Pencil className="size-3.5" />
-            </Button>
+            <GuardRol roles={['profesor']}>
+              <Button variant="ghost" size="icon" className="size-7 shrink-0 opacity-0 group-hover:opacity-100 transition-opacity"
+                onClick={() => onEdit(ub)} aria-label="Editar ubicación">
+                <Pencil className="size-3.5" />
+              </Button>
+            </GuardRol>
           </div>
 
           {/* Sub-ubicaciones */}
@@ -131,24 +134,28 @@ export function TarjetaUbicacion({ ub, onEdit }: TarjetaUbicacionProps) {
               {subUbicaciones.map((sub) => (
                 <BadgePremium key={sub.id} variant="soft" size="sm">
                   <span className="text-xs">{sub.nombre}</span>
-                  <button onClick={() => { setEditarSub(sub); setSubNombre(sub.nombre); setSubDescripcion(sub.descripcion ?? '') }}
-                    className="ml-0.5 rounded p-0.5 hover:bg-foreground/10 transition-colors" aria-label="Editar sub-ubicación">
-                    <Pencil className="size-2.5" />
-                  </button>
-                  <button onClick={() => setEliminarSub(sub)}
-                    className="rounded p-0.5 hover:bg-destructive/20 text-destructive/60 hover:text-destructive transition-colors" aria-label="Eliminar sub-ubicación">
-                    <Trash2 className="size-2.5" />
-                  </button>
+                  <GuardRol roles={['profesor']}>
+                    <button onClick={() => { setEditarSub(sub); setSubNombre(sub.nombre); setSubDescripcion(sub.descripcion ?? '') }}
+                      className="ml-0.5 rounded p-0.5 hover:bg-foreground/10 transition-colors" aria-label="Editar sub-ubicación">
+                      <Pencil className="size-2.5" />
+                    </button>
+                    <button onClick={() => setEliminarSub(sub)}
+                      className="rounded p-0.5 hover:bg-destructive/20 text-destructive/60 hover:text-destructive transition-colors" aria-label="Eliminar sub-ubicación">
+                      <Trash2 className="size-2.5" />
+                    </button>
+                  </GuardRol>
                 </BadgePremium>
               ))}
             </div>
           )}
 
           {/* Add sub-ubicacion button */}
-          <button onClick={() => { setCrearSubDialog(true); setSubNombre(''); setSubDescripcion('') }}
-            className="flex items-center gap-1.5 text-[11px] text-muted-foreground hover:text-foreground transition-colors self-start">
-            <Plus className="size-3" /> Añadir sub-ubicación
-          </button>
+          <GuardRol roles={['profesor']}>
+            <button onClick={() => { setCrearSubDialog(true); setSubNombre(''); setSubDescripcion('') }}
+              className="flex items-center gap-1.5 text-[11px] text-muted-foreground hover:text-foreground transition-colors self-start">
+              <Plus className="size-3" /> Añadir sub-ubicación
+            </button>
+          </GuardRol>
         </div>
       </CardPremium>
 
