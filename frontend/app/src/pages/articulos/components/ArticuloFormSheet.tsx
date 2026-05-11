@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useMemo } from 'react'
 import { Package, Layers, MapPin, FlaskConical, FileText, Loader2, ShoppingCart } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
@@ -80,6 +80,7 @@ export type DatosFormArticulo = {
   stock_inicial?: number
   stock_minimo?: number
   ubicacion_id?: number
+  sub_ubicacion_id?: number
   serial_number?: string
   material_type?: string
   capacity_ml?: number
@@ -124,6 +125,14 @@ export function ArticuloFormSheet({
   const [stockInicial, setStockInicial] = useState('')
   const [stockMinimo, setStockMinimo] = useState('')
   const [ubicacionId, setUbicacionId] = useState('')
+  const [subUbicacionId, setSubUbicacionId] = useState('')
+
+  // Sub-ubicaciones disponibles según ubicación seleccionada (del prop ubicaciones)
+  const subUbicaciones = useMemo(() => {
+    if (!ubicacionId) return []
+    const ubicacion = ubicaciones.find(u => String(u.id) === ubicacionId)
+    return ubicacion?.sub_ubicaciones ?? []
+  }, [ubicacionId, ubicaciones])
 
   // Detalles físicos / químicos
   const [materialType, setMaterialType] = useState('')
@@ -143,6 +152,7 @@ export function ArticuloFormSheet({
 
   useEffect(() => {
     if (articulo) {
+      // eslint-disable-next-line react-hooks/set-state-in-effect
       setNombre(articulo.nombre)
       setCodigo(articulo.codigo ?? '')
       setSerialNumber(articulo.numero_serie ?? '')
@@ -151,6 +161,7 @@ export function ArticuloFormSheet({
       setUnidad(articulo.unidad ?? '')
       setStockInicial('')
       setUbicacionId('')
+      setSubUbicacionId('')
       setMaterialType(articulo.tipo_material ?? '')
       setCapacityMl(articulo.capacidad_ml != null ? String(articulo.capacidad_ml) : '')
       setExpirationDate(articulo.fecha_caducidad ?? '')
@@ -171,6 +182,7 @@ export function ArticuloFormSheet({
       setStockInicial('')
       setStockMinimo('')
       setUbicacionId('')
+      setSubUbicacionId('')
       setMaterialType('')
       setCapacityMl('')
       setExpirationDate('')
@@ -209,6 +221,7 @@ export function ArticuloFormSheet({
     if (!esEditar) {
       if (stockInicial !== '') datos.stock_inicial = Number(stockInicial)
       if (ubicacionId !== '') datos.ubicacion_id = Number(ubicacionId)
+      if (subUbicacionId !== '') datos.sub_ubicacion_id = Number(subUbicacionId)
     }
 
     onSubmit(datos)
@@ -471,22 +484,52 @@ export function ArticuloFormSheet({
             </div>
 
             {!esEditar && (
-              <div className="space-y-2">
-                <Label>Ubicación inicial</Label>
-                <Select value={ubicacionId} onValueChange={setUbicacionId}>
-                  <SelectTrigger className="w-full h-10">
-                    <SelectValue placeholder="Seleccionar ubicación..." />
-                  </SelectTrigger>
-                  <SelectContent>
-                    {ubicaciones.map((u) => (
-                      <SelectItem key={u.id} value={String(u.id)}>
-                        {u.nombre}
-                        {u.tipo ? ` · ${u.tipo}` : ''}
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-              </div>
+              <>
+                <div className="space-y-2">
+                  <Label>Ubicación inicial</Label>
+                  <Select
+                    value={ubicacionId}
+                    onValueChange={(val) => {
+                      setUbicacionId(val)
+                      setSubUbicacionId('') // Reset sub-ubicación al cambiar ubicación
+                    }}
+                  >
+                    <SelectTrigger className="w-full h-10">
+                      <SelectValue placeholder="Seleccionar ubicación..." />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {ubicaciones.map((u) => (
+                        <SelectItem key={u.id} value={String(u.id)}>
+                          {u.nombre}
+                          {u.tipo ? ` · ${u.tipo}` : ''}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </div>
+
+                {ubicacionId && subUbicaciones.length > 0 && (
+                  <div className="space-y-2">
+                    <Label>Subcategoría / Estante</Label>
+                    <Select
+                      value={subUbicacionId || 'none'}
+                      onValueChange={(val) => setSubUbicacionId(val === 'none' ? '' : val)}
+                    >
+                      <SelectTrigger className="w-full h-10">
+                        <SelectValue placeholder="Seleccionar subcategoría (opcional)..." />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="none">Sin subcategoría específica</SelectItem>
+                        {subUbicaciones.map((sub) => (
+                          <SelectItem key={sub.id} value={String(sub.id)}>
+                            {sub.nombre}
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                  </div>
+                )}
+              </>
             )}
           </div>
 

@@ -150,9 +150,9 @@ function ModalDetalleLog({
                 <p className="text-sm font-semibold">Campos modificados ({lineas.length})</p>
                 <Separator />
                 <div className="flex flex-col gap-0 rounded-lg border overflow-hidden">
-                  {lineas.map((l, i) => (
+                  {lineas.map((l) => (
                     <div
-                      key={i}
+                      key={l.campo}
                       className="flex items-start gap-3 px-3 py-2.5 text-sm hover:bg-muted/40 transition-colors
                         border-b last:border-b-0"
                     >
@@ -243,11 +243,13 @@ function etiqueta(campo: string): string {
   return ETIQUETAS_CAMPO[campo] ?? campo.replace(/_/g, ' ')
 }
 
+const formatearFecha = new Intl.DateTimeFormat('es-ES', { dateStyle: 'medium', timeStyle: 'short' })
+
 function formatearValor(val: unknown): string {
   if (val === null || val === undefined) return '—'
   if (typeof val === 'boolean') return val ? 'Sí' : 'No'
   if (typeof val === 'string' && val.match(/^\d{4}-\d{2}-\d{2}T/)) {
-    return new Intl.DateTimeFormat('es-ES', { dateStyle: 'medium', timeStyle: 'short' }).format(new Date(val))
+    return formatearFecha.format(new Date(val))
   }
   return String(val)
 }

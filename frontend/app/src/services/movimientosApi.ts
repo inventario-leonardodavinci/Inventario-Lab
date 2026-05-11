@@ -12,6 +12,8 @@ export type EntradaCrearMovimiento = {
   motivo?: string
   ubicacion_origen_id?: number
   ubicacion_destino_id?: number
+  sub_ubicacion_origen_id?: number
+  sub_ubicacion_destino_id?: number
   lineas: Array<{ articulo_id: number; cantidad: number }>
 }
 

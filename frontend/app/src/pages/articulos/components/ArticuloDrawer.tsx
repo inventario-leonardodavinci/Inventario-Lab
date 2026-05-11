@@ -1,5 +1,5 @@
 import {
-  Package, Pencil, Trash2, ArrowRightLeft, History, MapPin,
+  Package, Pencil, ArrowRightLeft, History, MapPin,
   TrendingUp, TrendingDown, Activity, Layers, FlaskConical,
   FileText, Hash, Barcode, CalendarClock, RefreshCw, AlertTriangle,
   ShoppingCart,
@@ -27,8 +27,7 @@ interface ArticuloDrawerProps {
   open: boolean
   onClose: () => void
   onEditar?: () => void
-  onDesactivar?: () => void
-  onMovimiento?: (tipo: 'entrada' | 'salida') => void
+  onMovimiento?: (tipo: 'entrada' | 'salida' | 'traslado') => void
 }
 
 function SectionTitle({ icon: Icon, label }: { icon: React.ElementType; label: string }) {
@@ -99,13 +98,11 @@ export function ArticuloDrawer({
   open,
   onClose,
   onEditar,
-  onDesactivar,
   onMovimiento,
 }: ArticuloDrawerProps) {
   if (!articulo) return null
 
-  const esCritico = articulo.estado_stock === 'critico' && articulo.activo
-  const esInactivo = !articulo.activo
+  const esCritico = articulo.estado_stock === 'critico'
   const caducidad = articulo.fecha_caducidad ? proximaCaducidad(articulo.fecha_caducidad) : null
 
   return (
@@ -118,7 +115,6 @@ export function ArticuloDrawer({
             <div className={cn(
               "flex size-12 items-center justify-center rounded-xl shrink-0",
               esCritico ? "bg-destructive/10 text-destructive"
-                : esInactivo ? "bg-muted/50 text-muted-foreground/50"
                 : "bg-primary/10 text-primary"
             )}>
               <Package className="size-6" />
@@ -150,9 +146,6 @@ export function ArticuloDrawer({
                 )}
                 {esCritico && (
                   <Badge variant="destructive" className="text-xs">Stock crítico</Badge>
-                )}
-                {esInactivo && (
-                  <Badge variant="outline" className="text-xs text-muted-foreground">Inactivo</Badge>
                 )}
                 {caducidad?.urgente && (
                   <Badge variant="destructive" className="text-xs gap-1">
@@ -194,7 +187,6 @@ export function ArticuloDrawer({
                   <Button
                     size="sm"
                     className="gap-1.5 h-8 text-xs"
-                    disabled={esInactivo}
                     onClick={() => onMovimiento('entrada')}
                   >
                     <TrendingUp className="size-3.5" /> Entrada
@@ -203,10 +195,19 @@ export function ArticuloDrawer({
                     size="sm"
                     variant="outline"
                     className="gap-1.5 h-8 text-xs"
-                    disabled={esInactivo || articulo.stock_total === 0}
+                    disabled={articulo.stock_total === 0}
                     onClick={() => onMovimiento('salida')}
                   >
                     <TrendingDown className="size-3.5" /> Salida
+                  </Button>
+                  <Button
+                    size="sm"
+                    variant="outline"
+                    className="gap-1.5 h-8 text-xs"
+                    disabled={articulo.stock_total === 0}
+                    onClick={() => onMovimiento('traslado')}
+                  >
+                    <ArrowRightLeft className="size-3.5" /> Traslado
                   </Button>
                 </div>
               )}
@@ -243,9 +244,16 @@ export function ArticuloDrawer({
                   return (
                     <div key={nivel.id} className="rounded-md border p-3 space-y-1.5">
                       <div className="flex items-center justify-between text-sm">
-                        <span className="font-medium truncate">
-                          {nivel.ubicacion ?? `Ubicación #${nivel.ubicacion_id}`}
-                        </span>
+                        <div className="flex flex-col min-w-0">
+                          <span className="font-medium truncate">
+                            {nivel.ubicacion ?? `Ubicación #${nivel.ubicacion_id}`}
+                          </span>
+                          {nivel.sub_ubicacion && (
+                            <span className="text-xs text-muted-foreground">
+                              📦 {nivel.sub_ubicacion}
+                            </span>
+                          )}
+                        </div>
                         <span className={cn("font-mono font-semibold tabular-nums", bajo && "text-destructive")}>
                           {nivel.cantidad}
                           {articulo.unidad && <span className="text-xs font-normal text-muted-foreground ml-1">{articulo.unidad}</span>}
@@ -332,7 +340,7 @@ export function ArticuloDrawer({
                     <InfoRow label="Fecha de adquisición" value={formatFecha(articulo.fecha_adquisicion)} />
                   )}
                   {articulo.precio_compra != null && (
-                    <InfoRow label="Precio de compra" value={`${articulo.precio_compra.toFixed(2)} €`} />
+                    <InfoRow label="Precio de compra" value={`${Number(articulo.precio_compra).toFixed(2)} €`} />
                   )}
                   {articulo.proveedor && <InfoRow label="Proveedor" value={articulo.proveedor} />}
                   {articulo.numero_factura && (
@@ -405,7 +413,7 @@ export function ArticuloDrawer({
           </div>
 
           {/* ── Gestión ── */}
-          {(onEditar || onDesactivar) && (
+          {onEditar && (
             <>
               <Separator />
               <div className="space-y-2 pb-1">
@@ -414,16 +422,6 @@ export function ArticuloDrawer({
                     <Button variant="outline" className="flex-1 gap-2" onClick={onEditar}>
                       <Pencil className="size-3.5" />
                       Editar artículo
-                    </Button>
-                  )}
-                  {onDesactivar && !esInactivo && (
-                    <Button
-                      variant="outline"
-                      className="gap-2 text-destructive hover:text-destructive hover:bg-destructive/5 border-destructive/30"
-                      onClick={onDesactivar}
-                    >
-                      <Trash2 className="size-3.5" />
-                      Desactivar
                     </Button>
                   )}
                 </div>

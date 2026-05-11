@@ -34,7 +34,6 @@ export interface Articulo {
   categoria: string | null
   unidad: string | null
   notas: string | null
-  activo: boolean
   stock_total: number
   stock_minimo: number
   estado_stock: 'critico' | 'ok'
@@ -57,6 +56,8 @@ export interface NivelStock {
   articulo_id: number
   ubicacion_id: number
   ubicacion: string | null
+  sub_ubicacion_id: number | null
+  sub_ubicacion: string | null
   cantidad: number
   cantidad_minima: number
 }
@@ -70,6 +71,14 @@ export interface Ubicacion {
   nombre: string
   descripcion: string | null
   tipo: TipoUbicacion
+  sub_ubicaciones: Array<{
+    id: number
+    ubicacion_id: number
+    nombre: string
+    descripcion: string | null
+    orden: number
+    activo: boolean
+  }>
 }
 
 export interface Categoria {
@@ -155,9 +164,9 @@ export interface FiltrosArticulos {
   search?: string
   pagina?: number
   per_page?: number
-  activo?: boolean
   categoria_id?: number
   ubicacion_id?: number
+  sub_ubicacion_id?: number
   estado_stock?: 'critico' | 'ok'
   order_by?: OrdenarArticuloPor
   order_dir?: DireccionOrden
@@ -178,3 +187,9 @@ export interface FiltrosAuditoria {
   hasta?: string
   pagina?: number
 }
+
+// ─── Re-exports de tipos modulares ──────────────────────────────────────────────
+export type { SubUbicacion, SubUbicacionConArticulos, EntradaCrearSubUbicacion, EntradaActualizarSubUbicacion } from './subUbicaciones'
+
+// Helper type para sub-ubicación inline
+export type SubUbicacionInline = Ubicacion['sub_ubicaciones'][number]

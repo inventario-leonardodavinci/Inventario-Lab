@@ -10,6 +10,7 @@ import { Toaster } from './components/ui/sonner.tsx'
 import { ProveedorAutenticacion } from './context/ContextoAutenticacion.tsx'
 import { ProveedorTema } from './context/ContextoTema.tsx'
 import { ApiError } from './services/clienteApi.ts'
+import { STALE_TIME_MS, GC_TIME_MS } from './constants'
 
 document.title = 'Inventario Salud Ambiental'
 
@@ -66,8 +67,8 @@ function manejarErrorGlobal(error: unknown) {
 const queryClient = new QueryClient({
   defaultOptions: {
     queries: {
-      staleTime: 60_000,
-      gcTime: 5 * 60_000,
+      staleTime: STALE_TIME_MS,
+      gcTime: GC_TIME_MS,
       refetchOnWindowFocus: false,
       retry: (failureCount, error) => {
         if (error instanceof ApiError && [401, 403, 404, 422].includes(error.status)) {

@@ -16,10 +16,16 @@ import {
   getArticulo,
   crearArticulo,
   actualizarArticulo,
-  desactivarArticulo,
 } from '@/services/inventarioApi'
 import { getMovimientos, getResumenHoy, crearMovimiento } from '@/services/movimientosApi'
 import { getUbicaciones, crearUbicacion, actualizarUbicacion } from '@/services/ubicacionesApi'
+import {
+  getSubUbicaciones,
+  getSubUbicacionesPorUbicacion,
+  crearSubUbicacion,
+  actualizarSubUbicacion,
+  eliminarSubUbicacion,
+} from '@/services/subUbicacionesApi'
 import { getCategorias, crearCategoria, actualizarCategoria, eliminarCategoria } from '@/services/categoriasApi'
 import { getUsuarios, actualizarRolUsuario, actualizarEstadoUsuario, eliminarUsuario, getPerfil, actualizarPerfil } from '@/services/usuariosApi'
 import { getAuditoria } from '@/services/auditoriaApi'
@@ -95,14 +101,13 @@ export const queryKeys = {
   articulos: (
     search?: string,
     pagina?: number,
-    activo?: boolean,
     categoria_id?: number,
     ubicacion_id?: number,
     estado_stock?: 'critico' | 'ok',
     order_by?: string,
     order_dir?: string,
   ) =>
-    ['articulos', search ?? '', pagina ?? 1, activo, categoria_id, ubicacion_id, estado_stock, order_by, order_dir] as const,
+    ['articulos', search ?? '', pagina ?? 1, categoria_id, ubicacion_id, estado_stock, order_by, order_dir] as const,
   articulo: (id: number) =>
     ['articulos', id] as const,
   perfil: (authUserId?: string) =>
@@ -125,6 +130,10 @@ export const queryKeys = {
     ['resumen-hoy'] as const,
   historialSesiones: (authUserId?: string) =>
     ['historial-sesiones', authUserId ?? ''] as const,
+  subUbicaciones: (ubicacionId?: number) =>
+    ['sub-ubicaciones', ubicacionId ?? 'all'] as const,
+  subUbicacionesPorUbicacion: (ubicacionId: number) =>
+    ['sub-ubicaciones-por-ubicacion', ubicacionId] as const,
 }
 
 // ─── Artículos ────────────────────────────────────────────────────────────────
@@ -135,7 +144,6 @@ export function useArticulos(filtros?: FiltrosArticulos) {
     queryKey: queryKeys.articulos(
       filtros?.search,
       filtros?.pagina,
-      filtros?.activo,
       filtros?.categoria_id,
       filtros?.ubicacion_id,
       filtros?.estado_stock,
@@ -151,10 +159,21 @@ export function useArticulos(filtros?: FiltrosArticulos) {
 
 export function useArticulo(id: number) {
   const { user } = useAuth()
+  const queryClient = useQueryClient()
   return useQuery({
     queryKey: queryKeys.articulo(id),
     queryFn: () => getArticulo(user!.authUserId, id),
     enabled: !!user && id > 0,
+    placeholderData: () => {
+      // Serve cached list data instantly while the detail request is in-flight
+      // getArticulos → unwrapPaginated → { data: Articulo[], meta }
+      const lists = queryClient.getQueriesData<{ data: { id: number }[] }>({ queryKey: ['articulos'] })
+      for (const [, cached] of lists) {
+        const arr = Array.isArray(cached?.data) ? cached.data : null
+        const found = arr?.find((a) => a.id === id)
+        if (found) return { data: found } as Awaited<ReturnType<typeof getArticulo>>
+      }
+    },
   })
 }
 
@@ -183,17 +202,6 @@ export function useActualizarArticulo() {
   })
 }
 
-export function useDesactivarArticulo() {
-  const { user } = useAuth()
-  const queryClient = useQueryClient()
-  return useMutation({
-    mutationFn: (id: number) => desactivarArticulo(user!.authUserId, id),
-    onSuccess: () => {
-      void queryClient.invalidateQueries({ queryKey: ['articulos'] })
-    },
-  })
-}
-
 // ─── Ubicaciones ──────────────────────────────────────────────────────────────
 
 export function useUbicaciones() {
@@ -202,6 +210,8 @@ export function useUbicaciones() {
     queryKey: queryKeys.ubicaciones(),
     queryFn: () => getUbicaciones(user!.authUserId),
     enabled: !!user,
+    staleTime: STALE_TIME_LONG_MS,
+    placeholderData: (prev) => prev,
   })
 }
 
@@ -229,6 +239,66 @@ export function useActualizarUbicacion() {
   })
 }
 
+// ─── Sub-ubicaciones ──────────────────────────────────────────────────────────
+
+export function useSubUbicaciones(ubicacionId?: number) {
+  const { user } = useAuth()
+  return useQuery({
+    queryKey: queryKeys.subUbicaciones(ubicacionId),
+    queryFn: () => getSubUbicaciones(user!.authUserId, { ubicacion_id: ubicacionId }),
+    enabled: !!user,
+    staleTime: STALE_TIME_MS,
+  })
+}
+
+export function useSubUbicacionesPorUbicacion(
+  ubicacionId: number,
+  options?: { enabled?: boolean }
+) {
+  const { user } = useAuth()
+  return useQuery({
+    queryKey: queryKeys.subUbicacionesPorUbicacion(ubicacionId),
+    queryFn: () => getSubUbicacionesPorUbicacion(user!.authUserId, ubicacionId),
+    enabled: !!user && ubicacionId > 0 && (options?.enabled ?? true),
+    staleTime: STALE_TIME_MS,
+  })
+}
+
+export function useCrearSubUbicacion() {
+  const { user } = useAuth()
+  const queryClient = useQueryClient()
+  return useMutation({
+    mutationFn: (datos: Parameters<typeof crearSubUbicacion>[1]) =>
+      crearSubUbicacion(user!.authUserId, datos),
+    onSuccess: () => {
+      void queryClient.invalidateQueries({ queryKey: ['sub-ubicaciones'] })
+    },
+  })
+}
+
+export function useActualizarSubUbicacion() {
+  const { user } = useAuth()
+  const queryClient = useQueryClient()
+  return useMutation({
+    mutationFn: ({ id, datos }: { id: number; datos: Parameters<typeof actualizarSubUbicacion>[2] }) =>
+      actualizarSubUbicacion(user!.authUserId, id, datos),
+    onSuccess: () => {
+      void queryClient.invalidateQueries({ queryKey: ['sub-ubicaciones'] })
+    },
+  })
+}
+
+export function useEliminarSubUbicacion() {
+  const { user } = useAuth()
+  const queryClient = useQueryClient()
+  return useMutation({
+    mutationFn: (id: number) => eliminarSubUbicacion(user!.authUserId, id),
+    onSuccess: () => {
+      void queryClient.invalidateQueries({ queryKey: ['sub-ubicaciones'] })
+    },
+  })
+}
+
 // ─── Categorías ───────────────────────────────────────────────────────────────
 
 export function useCategorias() {
@@ -237,6 +307,8 @@ export function useCategorias() {
     queryKey: queryKeys.categorias(),
     queryFn: () => getCategorias(user!.authUserId),
     enabled: !!user,
+    staleTime: STALE_TIME_LONG_MS,
+    placeholderData: (prev) => prev,
   })
 }
 
@@ -284,6 +356,7 @@ export function useMovimientos(filtros?: FiltrosMovimiento) {
     queryKey: queryKeys.movimientos(filtros),
     queryFn: () => getMovimientos(user!.authUserId, filtros),
     enabled: !!user,
+    placeholderData: (prev) => prev,
   })
 }
 
@@ -309,6 +382,8 @@ export function useResumenHoy() {
     queryKey: queryKeys.resumenHoy(),
     queryFn: () => getResumenHoy(user!.authUserId),
     enabled: !!user,
+    placeholderData: (prev) => prev,
+    staleTime: STALE_TIME_MS,
   })
 }
 
@@ -320,6 +395,7 @@ export function useAuditoria(filtros?: FiltrosAuditoria) {
     queryKey: queryKeys.auditoria(filtros),
     queryFn: () => getAuditoria(user!.authUserId, filtros),
     enabled: !!user,
+    placeholderData: (prev) => prev,
   })
 }
 
@@ -454,6 +530,8 @@ export function useMantenimiento() {
         { authUserId: user!.authUserId },
       ).then(unwrapPaginated),
     enabled: !!user,
+    staleTime: STALE_TIME_LONG_MS,
+    placeholderData: (prev) => prev,
   })
 }
 

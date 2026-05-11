@@ -58,13 +58,13 @@ export function formatearFechaRelativa(iso: string | null | undefined): string {
  * 'entrada'→'Entrada', 'salida'→'Salida', 'traslado'→'Traslado', 'ajuste'→'Ajuste'
  */
 export function formatearTipoMovimiento(tipo: TipoMovimiento): string {
-  const mapa: Record<TipoMovimiento, string> = {
+  const mapa: Record<string, string> = {
     entrada: 'Entrada',
     salida: 'Salida',
     traslado: 'Traslado',
     ajuste: 'Ajuste',
   }
-  return mapa[tipo]
+  return mapa[tipo] ?? tipo
 }
 
 /**
@@ -108,6 +108,38 @@ export function formatearTipoUbicacion(tipo: TipoUbicacion): string {
     otro: 'Otro',
   }
   return mapa[tipo]
+}
+
+// ─── Alertas (legacy — módulo no activo en API actual) ────────────────────────
+
+export function formatearTipoAlerta(tipo: string): string {
+  const mapa: Record<string, string> = {
+    stock_bajo: 'Stock bajo',
+    caducidad: 'Caducidad',
+    mantenimiento: 'Mantenimiento',
+    inactividad: 'Inactividad',
+  }
+  return mapa[tipo] ?? tipo
+}
+
+export function formatearSeveridad(severidad: string): string {
+  const mapa: Record<string, string> = {
+    baja: 'Baja',
+    media: 'Media',
+    alta: 'Alta',
+    critica: 'Crítica',
+  }
+  return mapa[severidad] ?? severidad
+}
+
+export function formatearEstadoAlerta(estado: string): string {
+  const mapa: Record<string, string> = {
+    abierta: 'Abierta',
+    confirmada: 'Confirmada',
+    resuelta: 'Resuelta',
+    ignorada: 'Ignorada',
+  }
+  return mapa[estado] ?? estado
 }
 
 // ─── Números ──────────────────────────────────────────────────────────────────

@@ -1,4 +1,4 @@
-import { Plus, Minus, ArrowRightLeft, Pencil, Eye, TrendingDown, CheckCircle2, XCircle, FlaskConical, AlertTriangle } from 'lucide-react'
+import { Plus, Minus, ArrowRightLeft, Pencil, Eye, TrendingDown, CheckCircle2, FlaskConical, AlertTriangle } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { Badge } from '@/components/ui/badge'
 import {
@@ -34,7 +34,7 @@ export function ArticulosTabla({
   onEditar,
 }: ArticulosTablaProps) {
   return (
-    <div className="rounded-lg border bg-card overflow-hidden">
+    <div className="rounded-lg border bg-card overflow-x-auto min-w-0">
       <Table>
         <TableHeader>
           <TableRow className="hover:bg-transparent">
@@ -44,13 +44,13 @@ export function ArticulosTabla({
             <TableHead>Material / Cap.</TableHead>
             <TableHead>Caducidad</TableHead>
             <TableHead className="text-right">Stock</TableHead>
+            <TableHead>Unidad</TableHead>
             <TableHead>Estado</TableHead>
             <TableHead className="text-right pr-4">Acciones</TableHead>
           </TableRow>
         </TableHeader>
         <TableBody>
           {articulos.map((articulo) => {
-            const esInactivo = !articulo.activo
             const esCritico = articulo.estado_stock === 'critico'
 
             return (
@@ -58,8 +58,7 @@ export function ArticulosTabla({
                 key={articulo.id}
                 className={cn(
                   "stagger-row cursor-pointer",
-                  esInactivo && "opacity-50",
-                  esCritico && !esInactivo && "bg-destructive/5 hover:bg-destructive/10 border-l-2 border-l-destructive"
+                  esCritico && "bg-destructive/5 hover:bg-destructive/10 border-l-2 border-l-destructive"
                 )}
                 onClick={() => onVerDetalle(articulo)}
               >
@@ -165,12 +164,7 @@ export function ArticulosTabla({
 
                 {/* Estado */}
                 <TableCell>
-                  {esInactivo ? (
-                    <div className="flex items-center gap-1.5 text-muted-foreground">
-                      <XCircle className="size-3.5 shrink-0" />
-                      <span className="text-xs">Inactivo</span>
-                    </div>
-                  ) : esCritico ? (
+                  {esCritico ? (
                     <div className="flex items-center gap-1.5 text-destructive">
                       <TrendingDown className="size-3.5 shrink-0" />
                       <span className="text-xs font-medium">Stock crítico</span>
@@ -191,7 +185,7 @@ export function ArticulosTabla({
                       size="icon"
                       className="size-7 text-green-600 dark:text-green-400 hover:text-green-700 hover:bg-green-50 dark:hover:bg-green-950"
                       title="Entrada"
-                      disabled={esInactivo || !onEntrada}
+                      disabled={!onEntrada}
                       onClick={() => onEntrada?.(articulo)}
                     >
                       <Plus className="size-3.5" />
@@ -201,7 +195,7 @@ export function ArticulosTabla({
                       size="icon"
                       className="size-7 text-amber-600 dark:text-amber-400 hover:text-amber-700 hover:bg-amber-50 dark:hover:bg-amber-950"
                       title="Salida"
-                      disabled={esInactivo || articulo.stock_total === 0 || !onSalida}
+                      disabled={articulo.stock_total === 0 || !onSalida}
                       onClick={() => onSalida?.(articulo)}
                     >
                       <Minus className="size-3.5" />
@@ -211,7 +205,7 @@ export function ArticulosTabla({
                       size="icon"
                       className="size-7 text-blue-600 dark:text-blue-400 hover:text-blue-700 hover:bg-blue-50 dark:hover:bg-blue-950"
                       title="Traslado"
-                      disabled={esInactivo || articulo.stock_total === 0 || !onTraslado}
+                      disabled={articulo.stock_total === 0 || !onTraslado}
                       onClick={() => onTraslado?.(articulo)}
                     >
                       <ArrowRightLeft className="size-3.5" />

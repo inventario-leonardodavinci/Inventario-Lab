@@ -80,6 +80,7 @@ export function ArticuloCombobox({
           variant="outline"
           role="combobox"
           aria-expanded={open}
+          aria-controls="articulo-listbox"
           disabled={disabled}
           className={cn(
             "w-full justify-between",
@@ -96,6 +97,7 @@ export function ArticuloCombobox({
                 role="button"
                 tabIndex={0}
                 onClick={handleClear}
+                onKeyDown={(e) => { if (e.key === "Enter" || e.key === " ") handleClear(e as unknown as React.MouseEvent) }}
                 className="rounded-sm opacity-50 hover:opacity-100"
                 aria-label="Limpiar selección"
               >
@@ -103,7 +105,7 @@ export function ArticuloCombobox({
                 ×
               </div>
             )}
-            <ChevronsUpDown className="h-4 w-4 shrink-0 opacity-50" />
+            <ChevronsUpDown className="size-4 shrink-0 opacity-50" />
           </div>
         </Button>
       </PopoverTrigger>
@@ -114,11 +116,11 @@ export function ArticuloCombobox({
             value={search}
             onValueChange={setSearch}
           />
-          <CommandList>
+          <CommandList id="articulo-listbox">
             {isFetching ? (
               <div className="flex items-center justify-center gap-2 py-6">
-                <Loader2 className="h-4 w-4 animate-spin text-muted-foreground" />
-                <span className="text-sm text-muted-foreground">Buscando...</span>
+                <Loader2 className="size-4 animate-spin text-muted-foreground" />
+                <span className="text-sm text-muted-foreground">Buscando…</span>
               </div>
             ) : search.length > 0 && search.length < 2 ? (
               <div className="py-6 text-center text-sm text-muted-foreground">
@@ -140,7 +142,7 @@ export function ArticuloCombobox({
                   >
                     <Check
                       className={cn(
-                        "mr-2 h-4 w-4",
+                        "mr-2 size-4",
                         value?.id === articulo.id ? "opacity-100" : "opacity-0"
                       )}
                     />

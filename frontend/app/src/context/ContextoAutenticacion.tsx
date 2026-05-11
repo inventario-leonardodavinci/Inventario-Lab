@@ -159,7 +159,7 @@ export function ProveedorAutenticacion({ children }: { children: React.ReactNode
           // Sincronizar perfil (solo nombre/avatar, no volver a pedir rol)
           const eraOAuth = procesandoOAuth;
           if (eraOAuth) {
-            enviarEventoLogin(resultado.sesion.authUserId, 'oauth').catch(() => {});
+            enviarEventoLogin(resultado.sesion.authUserId, 'oauth').catch((e) => console.warn('[Auth] Sesión no registrada:', e));
           }
           try {
             const sincronizar = eraOAuth
@@ -220,7 +220,7 @@ export function ProveedorAutenticacion({ children }: { children: React.ReactNode
     setUser(sesion);
     await queryClient.invalidateQueries({ queryKey: ['perfil'] });
     await queryClient.invalidateQueries({ queryKey: ['historial-sesiones'] });
-    enviarEventoLogin(sesion.authUserId).catch(() => {});
+    enviarEventoLogin(sesion.authUserId).catch((e) => console.warn('[Auth] Sesión no registrada:', e));
 
     // Sincronizar perfil y obtener rol UNA sola vez
     try {
@@ -244,7 +244,7 @@ export function ProveedorAutenticacion({ children }: { children: React.ReactNode
       setUser(resultado.sesion);
       await queryClient.invalidateQueries({ queryKey: ['perfil'] });
       await queryClient.invalidateQueries({ queryKey: ['historial-sesiones'] });
-      enviarEventoLogin(resultado.sesion.authUserId).catch(() => {});
+      enviarEventoLogin(resultado.sesion.authUserId).catch((e) => console.warn('[Auth] Sesión no registrada:', e));
 
       // Sincronizar perfil y obtener rol UNA sola vez
       try {
@@ -268,7 +268,7 @@ export function ProveedorAutenticacion({ children }: { children: React.ReactNode
     setUser(sesion);
     await queryClient.invalidateQueries({ queryKey: ['perfil'] });
     await queryClient.invalidateQueries({ queryKey: ['historial-sesiones'] });
-    enviarEventoLogin(sesion.authUserId).catch(() => {});
+    enviarEventoLogin(sesion.authUserId).catch((e) => console.warn('[Auth] Sesión no registrada:', e));
 
     // Sincronizar perfil y obtener rol UNA sola vez
     try {
@@ -283,7 +283,7 @@ export function ProveedorAutenticacion({ children }: { children: React.ReactNode
     } catch (err) {
       console.error('[Auth] Error en verificarEmail sincronizando perfil:', err);
     }
-  }, []);
+  }, [queryClient]);
 
   const loginConOAuthFn = useCallback(async (provider: string) => {
     await loginConOAuth(provider, `${window.location.origin}/login`);

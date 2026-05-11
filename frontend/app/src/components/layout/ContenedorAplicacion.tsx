@@ -33,7 +33,7 @@ export function ContenedorAplicacion({ children }: { children: React.ReactNode }
   return (
     <SidebarProvider>
       <BarraLateralAplicacion />
-      <SidebarInset className="flex flex-col min-h-screen">
+      <SidebarInset className="flex flex-col min-h-svh min-w-0">
         <header className="flex h-16 shrink-0 items-center justify-between gap-2 border-b bg-background/80 px-4 backdrop-blur-sm sticky top-0 z-30">
           <div className="flex items-center gap-2 min-w-0">
             <SidebarTrigger className="-ml-1 shrink-0" />
@@ -48,7 +48,7 @@ export function ContenedorAplicacion({ children }: { children: React.ReactNode }
             <MenuUsuario />
           </div>
         </header>
-        <div className="flex flex-1 flex-col overflow-auto">
+        <div className="flex flex-1 flex-col overflow-y-auto overflow-x-hidden">
           {children}
         </div>
       </SidebarInset>

@@ -16,10 +16,15 @@ export type EntradaCrearArticulo = {
   stock_inicial?: number
   stock_minimo?: number
   ubicacion_id?: number
+  sub_ubicacion_id?: number
   serial_number?: string
   material_type?: string
   capacity_ml?: number
   expiration_date?: string
+  fecha_adquisicion?: string
+  precio_compra?: number
+  proveedor?: string
+  numero_factura?: string
 }
 
 export type EntradaActualizarArticulo = Partial<EntradaCrearArticulo>
@@ -30,7 +35,6 @@ export function getArticulos(
     search?: string
     pagina?: number
     per_page?: number
-    activo?: boolean
     categoria_id?: number
     ubicacion_id?: number
     estado_stock?: 'critico' | 'ok'
@@ -42,7 +46,6 @@ export function getArticulos(
     search: filtros?.search,
     page: filtros?.pagina && filtros.pagina > 1 ? filtros.pagina : undefined,
     per_page: filtros?.per_page,
-    activo: filtros?.activo,
     categoria_id: filtros?.categoria_id,
     ubicacion_id: filtros?.ubicacion_id,
     estado_stock: filtros?.estado_stock,
@@ -74,14 +77,6 @@ export function actualizarArticulo(
     { method: 'PATCH', body: JSON.stringify(entrada) },
     { authUserId },
   ).then((res) => ({ data: unwrapData(res) }))
-}
-
-export function desactivarArticulo(authUserId: string, id: number) {
-  return apiClient<{ message: string }>(
-    `/articulos/${id}`,
-    { method: 'DELETE' },
-    { authUserId },
-  )
 }
 
 // ─── Compatibilidad con código anterior ──────────────────────────────────────

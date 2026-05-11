@@ -1,5 +1,5 @@
 import { useState, useMemo, useEffect, useRef } from 'react'
-import { Plus, Minus, ArrowRightLeft, RotateCcw, Package, AlertCircle, Loader2 } from 'lucide-react'
+import { Plus, Minus, ArrowRightLeft, RotateCcw, Package, AlertCircle, Loader2, Grid3X3 } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
@@ -23,14 +23,14 @@ interface PanelAccionRapidaProps {
   articulo: Articulo | null
   tipo: TipoMovimiento | null
   cantidad: number
-  ubicaciones: { id: number; nombre: string }[]
+  ubicaciones: { id: number; nombre: string; sub_ubicaciones?: Array<{id: number; nombre: string}> }[]
   nivelesStock: NivelStock[] // Stock del artículo por ubicación
   isLoadingUbicaciones?: boolean
   isLoadingStock?: boolean
   isPending?: boolean
   open: boolean
   onCantidadChange: (cantidad: number) => void
-  onSubmit: (tipo: TipoMovimiento, cantidad: number, ubicacionOrigenId?: string, ubicacionDestinoId?: string) => void
+  onSubmit: (tipo: TipoMovimiento, cantidad: number, ubicacionOrigenId?: string, ubicacionDestinoId?: string, subUbicacionOrigenId?: string, subUbicacionDestinoId?: string) => void
   onSuccess?: () => void
   onCancel: () => void
 }
@@ -54,25 +54,60 @@ export function PanelAccionRapida({
   const isLoading = isLoadingUbicaciones || isLoadingStock || isInicializando
   const [ubicacionOrigen, setUbicacionOrigen] = useState('')
   const [ubicacionDestino, setUbicacionDestino] = useState('')
+  const [subUbicacionOrigen, setSubUbicacionOrigen] = useState('')
+  const [subUbicacionDestino, setSubUbicacionDestino] = useState('')
   const [step, setStep] = useState<'tipo' | 'cantidad' | 'ubicacion'>('tipo')
 
-  // Ubicaciones con stock > 0 para salidas y traslados origen
-  const ubicacionesConStock = useMemo(() => {
-    if (!articulo) return []
-    return ubicaciones.filter(ub => {
-      const nivel = nivelesStock.find(n => n.ubicacion_id === ub.id)
-      return (nivel?.cantidad ?? 0) > 0
+  // Stock agrupado por ubicación y sección para mostrar en selectores
+  const stockPorUbicacion = useMemo(() => {
+    const resultado: Record<number, {
+      ubicacion: typeof ubicaciones[0],
+      stockTotal: number,
+      secciones: Array<{ id: number | null; nombre: string; cantidad: number; stockId: number }>
+    }> = {}
+
+    // Agrupar nivelesStock por ubicación
+    nivelesStock.forEach(nivel => {
+      const ubId = nivel.ubicacion_id
+      if (!resultado[ubId]) {
+        resultado[ubId] = {
+          ubicacion: ubicaciones.find(u => u.id === ubId)!,
+          stockTotal: 0,
+          secciones: []
+        }
+      }
+
+      const seccionNombre = nivel.sub_ubicacion || 'Sin sección específica'
+      resultado[ubId].secciones.push({
+        id: nivel.sub_ubicacion_id,
+        nombre: seccionNombre,
+        cantidad: nivel.cantidad,
+        stockId: nivel.id
+      })
+      resultado[ubId].stockTotal += nivel.cantidad
     })
-  }, [ubicaciones, nivelesStock, articulo])
+
+    return resultado
+  }, [nivelesStock, ubicaciones])
+
+  // Ubicaciones con stock > 0
+  const ubicacionesConStock = useMemo(() => {
+    return Object.values(stockPorUbicacion)
+      .filter(item => item.stockTotal > 0)
+      .map(item => item.ubicacion)
+  }, [stockPorUbicacion])
 
   const reset = () => {
     setStep('tipo')
     setUbicacionOrigen('')
     setUbicacionDestino('')
+    setSubUbicacionOrigen('')
+    setSubUbicacionDestino('')
   }
 
   // Forzar estado de carga inicial visible durante 300ms
   useEffect(() => {
+    // eslint-disable-next-line react-hooks/set-state-in-effect
     setIsInicializando(true)
     const timer = setTimeout(() => setIsInicializando(false), 300)
     return () => clearTimeout(timer)
@@ -87,12 +122,15 @@ export function PanelAccionRapida({
       onSuccess?.()
     }
     prevIsPendingRef.current = isPending
-  }, [isPending])
+  }, [isPending, onSuccess])
 
   // Resetear selecciones cuando cambia el artículo o se abre/cierra el modal
   useEffect(() => {
+    // eslint-disable-next-line react-hooks/set-state-in-effect
     setUbicacionOrigen('')
     setUbicacionDestino('')
+    setSubUbicacionOrigen('')
+    setSubUbicacionDestino('')
 
     // Si el tipo ya viene preseleccionado, saltar al paso correspondiente
     if (tipo && open) {
@@ -116,7 +154,7 @@ export function PanelAccionRapida({
     } else {
       setStep('tipo')
     }
-  }, [articulo?.id, tipo, open, ubicaciones.length, ubicacionesConStock.length])
+  }, [articulo?.id, tipo, open, ubicaciones, ubicacionesConStock])
 
   if (!articulo) return null
 
@@ -155,11 +193,11 @@ export function PanelAccionRapida({
     const tipoFinal = tipo || 'entrada'
     
     if (tipoFinal === 'entrada') {
-      onSubmit(tipoFinal, cantidad, undefined, ubicacionDestino)
+      onSubmit(tipoFinal, cantidad, undefined, ubicacionDestino, undefined, subUbicacionDestino || undefined)
     } else if (tipoFinal === 'salida') {
-      onSubmit(tipoFinal, cantidad, ubicacionOrigen, undefined)
+      onSubmit(tipoFinal, cantidad, ubicacionOrigen, undefined, subUbicacionOrigen || undefined, undefined)
     } else if (tipoFinal === 'traslado') {
-      onSubmit(tipoFinal, cantidad, ubicacionOrigen, ubicacionDestino)
+      onSubmit(tipoFinal, cantidad, ubicacionOrigen, ubicacionDestino, subUbicacionOrigen || undefined, subUbicacionDestino || undefined)
     }
   }
 
@@ -309,6 +347,44 @@ export function PanelAccionRapida({
                   )}
                 </div>
 
+                {/* Selector de sección para entrada */}
+                {ubicacionDestino && (
+                  <div>
+                    <Label className="text-sm mb-2 font-medium block">
+                      <Grid3X3 className="size-3 inline mr-1" />
+                      Sección destino (opcional)
+                    </Label>
+                    <Select
+                      value={subUbicacionDestino || 'none'}
+                      onValueChange={(val) => setSubUbicacionDestino(val === 'none' ? '' : val)}
+                    >
+                      <SelectTrigger className="w-full h-10">
+                        <SelectValue placeholder="Seleccionar sección..." />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="none">
+                          <span className="italic">Sin sección específica</span>
+                        </SelectItem>
+                        {stockPorUbicacion[Number(ubicacionDestino)]?.secciones
+                          .filter(s => s.id !== null)
+                          .map((seccion) => (
+                            <SelectItem key={seccion.id} value={String(seccion.id)}>
+                              {seccion.nombre} (actual: {seccion.cantidad})
+                            </SelectItem>
+                          ))}
+                        {/* Si no hay secciones con stock, mostrar todas las secciones disponibles */}
+                        {(!stockPorUbicacion[Number(ubicacionDestino)]?.secciones.some(s => s.id !== null)) &&
+                          ubicaciones.find(u => String(u.id) === ubicacionDestino)?.sub_ubicaciones?.map((sub) => (
+                            <SelectItem key={sub.id} value={String(sub.id)}>
+                              {sub.nombre}
+                            </SelectItem>
+                          ))
+                        }
+                      </SelectContent>
+                    </Select>
+                  </div>
+                )}
+
                 {/* Cantidad para entrada */}
                 <div>
                   <Label className="text-sm mb-2 font-medium block">Cantidad</Label>
@@ -360,33 +436,62 @@ export function PanelAccionRapida({
               <div className="space-y-4">
                 <div>
                   <Label className="text-sm mb-2 font-medium block">
-                    Ubicación origen <span className="text-destructive">*</span>
+                    <Grid3X3 className="size-3 inline mr-1" />
+                    Seleccionar ubicación y sección <span className="text-destructive">*</span>
                   </Label>
-                  <Select value={ubicacionOrigen} onValueChange={setUbicacionOrigen} disabled={isLoading}>
+                  <Select
+                    value={ubicacionOrigen ? `${ubicacionOrigen}:${subUbicacionOrigen || 'none'}` : ''}
+                    onValueChange={(val) => {
+                      if (!val) return
+                      const [ubId, seccionId] = val.split(':')
+                      setUbicacionOrigen(ubId)
+                      setSubUbicacionOrigen(seccionId === 'none' ? '' : seccionId)
+                    }}
+                    disabled={isLoading}
+                  >
                     <SelectTrigger className="w-full h-11">
                       {isLoading ? (
                         <span className="h-4 w-32 rounded bg-muted animate-pulse" />
                       ) : (
-                        <SelectValue placeholder="Seleccionar almacén..." />
+                        <SelectValue placeholder="Seleccionar ubicación y sección..." />
                       )}
                     </SelectTrigger>
                     <SelectContent>
-                      {ubicacionesConStock.map((ub) => {
-                        const nivel = nivelesStock.find(n => n.ubicacion_id === ub.id)
-                        const cantidad = nivel?.cantidad ?? 0
-                        return (
-                          <SelectItem key={ub.id} value={String(ub.id)}>
-                            <span className="font-medium">{ub.nombre}</span>
-                            <span className="ml-2 text-muted-foreground">({cantidad} disponibles)</span>
-                          </SelectItem>
-                        )
-                      })}
+                      {Object.values(stockPorUbicacion)
+                        .filter(item => item.stockTotal > 0)
+                        .map(({ ubicacion, secciones }) => (
+                          <div key={ubicacion.id}>
+                            <div className="px-2 py-1.5 text-xs font-semibold text-muted-foreground bg-muted">
+                              {ubicacion.nombre} (Total: {secciones.reduce((sum, s) => sum + s.cantidad, 0)})
+                            </div>
+                            {secciones.map((seccion) => (
+                              <SelectItem
+                                key={`${ubicacion.id}:${seccion.id || 'none'}`}
+                                value={`${ubicacion.id}:${seccion.id || 'none'}`}
+                              >
+                                <div className="flex items-center justify-between w-full">
+                                  <span>{seccion.nombre}</span>
+                                  <span className="ml-4 text-xs text-muted-foreground font-mono">
+                                    {seccion.cantidad} disp.
+                                  </span>
+                                </div>
+                              </SelectItem>
+                            ))}
+                          </div>
+                        ))}
                     </SelectContent>
                   </Select>
                   {ubicacionesConStock.length === 0 && (
                     <p className="text-xs text-destructive mt-2">
                       <AlertCircle className="size-3 inline mr-1" />
                       No hay stock disponible en ninguna ubicación
+                    </p>
+                  )}
+                  {ubicacionOrigen && stockPorUbicacion[Number(ubicacionOrigen)] && (
+                    <p className="text-xs text-muted-foreground mt-2">
+                      Stock disponible: {stockPorUbicacion[Number(ubicacionOrigen)]?.secciones
+                        .filter(s => (subUbicacionOrigen ? String(s.id) === subUbicacionOrigen : s.id === null))
+                        .reduce((sum, s) => sum + s.cantidad, 0)} unidades
                     </p>
                   )}
                 </div>
@@ -440,17 +545,22 @@ export function PanelAccionRapida({
 
             {tipo === 'traslado' && (
               <div className="space-y-4">
-                <div className="grid grid-cols-2 gap-3">
+                <div className="grid grid-cols-1 gap-3">
                   <div>
                     <Label className="text-sm mb-2 font-medium block">
-                      Origen <span className="text-destructive">*</span>
+                      <Grid3X3 className="size-3 inline mr-1" />
+                      Origen (ubicación + sección) <span className="text-destructive">*</span>
                     </Label>
                     <Select
-                      value={ubicacionOrigen}
+                      value={ubicacionOrigen ? `${ubicacionOrigen}:${subUbicacionOrigen || 'none'}` : ''}
                       onValueChange={(val) => {
-                        setUbicacionOrigen(val)
-                        if (ubicacionDestino === val) {
+                        if (!val) return
+                        const [ubId, seccionId] = val.split(':')
+                        setUbicacionOrigen(ubId)
+                        setSubUbicacionOrigen(seccionId === 'none' ? '' : seccionId)
+                        if (ubicacionDestino === ubId) {
                           setUbicacionDestino('')
+                          setSubUbicacionDestino('')
                         }
                       }}
                       disabled={isLoading}
@@ -459,48 +569,80 @@ export function PanelAccionRapida({
                         {isLoading ? (
                           <span className="h-4 w-32 rounded bg-muted animate-pulse" />
                         ) : (
-                          <SelectValue placeholder="Seleccionar..." />
+                          <SelectValue placeholder="Seleccionar origen..." />
                         )}
                       </SelectTrigger>
                       <SelectContent>
-                        {ubicacionesConStock.map((ub) => {
-                          const nivel = nivelesStock.find(n => n.ubicacion_id === ub.id)
-                          return (
-                            <SelectItem key={ub.id} value={String(ub.id)}>
-                              {ub.nombre} (Stock: {nivel?.cantidad ?? 0})
-                            </SelectItem>
-                          )
-                        })}
+                        {Object.values(stockPorUbicacion)
+                          .filter(item => item.stockTotal > 0)
+                          .map(({ ubicacion, secciones }) => (
+                            <div key={ubicacion.id}>
+                              <div className="px-2 py-1.5 text-xs font-semibold text-muted-foreground bg-muted">
+                                {ubicacion.nombre}
+                              </div>
+                              {secciones.filter(s => s.cantidad > 0).map((seccion) => (
+                                <SelectItem
+                                  key={`${ubicacion.id}:${seccion.id || 'none'}`}
+                                  value={`${ubicacion.id}:${seccion.id || 'none'}`}
+                                >
+                                  <div className="flex items-center justify-between w-full">
+                                    <span>{seccion.nombre}</span>
+                                    <span className="ml-4 text-xs text-muted-foreground font-mono">
+                                      {seccion.cantidad} disp.
+                                    </span>
+                                  </div>
+                                </SelectItem>
+                              ))}
+                            </div>
+                          ))}
                       </SelectContent>
                     </Select>
                   </div>
+
                   <div>
                     <Label className="text-sm mb-2 font-medium block">
-                      Destino <span className="text-destructive">*</span>
+                      <Grid3X3 className="size-3 inline mr-1" />
+                      Destino (ubicación + sección) <span className="text-destructive">*</span>
                     </Label>
-                    <Select value={ubicacionDestino} onValueChange={setUbicacionDestino} disabled={isLoading}>
+                    <Select
+                      value={ubicacionDestino ? `${ubicacionDestino}:${subUbicacionDestino || 'none'}` : ''}
+                      onValueChange={(val) => {
+                        if (!val) return
+                        const [ubId, seccionId] = val.split(':')
+                        setUbicacionDestino(ubId)
+                        setSubUbicacionDestino(seccionId === 'none' ? '' : seccionId)
+                      }}
+                      disabled={isLoading || !ubicacionOrigen}
+                    >
                       <SelectTrigger className="w-full h-11">
                         {isLoading ? (
                           <span className="h-4 w-32 rounded bg-muted animate-pulse" />
+                        ) : !ubicacionOrigen ? (
+                          <span className="text-muted-foreground">Primero selecciona origen...</span>
                         ) : (
-                          <SelectValue placeholder="Seleccionar..." />
+                          <SelectValue placeholder="Seleccionar destino..." />
                         )}
                       </SelectTrigger>
                       <SelectContent>
                         {ubicaciones
                           .filter((ub) => String(ub.id) !== ubicacionOrigen)
-                          .map((ub) => {
-                            const nivel = nivelesStock.find(n => n.ubicacion_id === ub.id)
-                            const cantidad = nivel?.cantidad ?? 0
-                            return (
-                              <SelectItem key={ub.id} value={String(ub.id)}>
-                                <span className="font-medium">{ub.nombre}</span>
-                                {cantidad > 0 && (
-                                  <span className="ml-2 text-muted-foreground">(Stock: {cantidad})</span>
-                                )}
+                          .map((ub) => (
+                            <div key={ub.id}>
+                              <div className="px-2 py-1.5 text-xs font-semibold text-muted-foreground bg-muted">
+                                {ub.nombre}
+                              </div>
+                              {/* Opción: Sin sección específica */}
+                              <SelectItem value={`${ub.id}:none`}>
+                                <span className="italic">Sin sección específica</span>
                               </SelectItem>
-                            )
-                          })}
+                              {/* Secciones disponibles */}
+                              {ub.sub_ubicaciones?.map((sub) => (
+                                <SelectItem key={`${ub.id}:${sub.id}`} value={`${ub.id}:${sub.id}`}>
+                                  {sub.nombre}
+                                </SelectItem>
+                              ))}
+                            </div>
+                          ))}
                       </SelectContent>
                     </Select>
                   </div>

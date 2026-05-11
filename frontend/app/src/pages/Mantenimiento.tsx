@@ -260,9 +260,9 @@ export default function Mantenimiento() {
       setNumeroSerieCrear('')
       setFabricanteCrear('')
       setModeloCrear('')
-    } catch (error: any) {
+    } catch (error: unknown) {
       console.error('Error al crear mantenimiento:', error)
-      const message = error?.message || 'Error al programar el mantenimiento'
+      const message = error instanceof Error ? error.message : 'Error al programar el mantenimiento'
       toast.error(message)
     }
   }

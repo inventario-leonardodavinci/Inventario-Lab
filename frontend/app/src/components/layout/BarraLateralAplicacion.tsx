@@ -32,8 +32,7 @@ function iniciales(nombre: string): string {
   return nombre.split(' ').slice(0, 2).map((p) => p[0]?.toUpperCase() ?? '').join('')
 }
 
-function useRutaActiva(url: string, end = false): boolean {
-  const { pathname } = useLocation()
+function esRutaActiva(pathname: string, url: string, end = false): boolean {
   if (end) {
     return pathname === url
   }
@@ -42,6 +41,7 @@ function useRutaActiva(url: string, end = false): boolean {
 
 export function BarraLateralAplicacion() {
   const { user } = useAuth()
+  const { pathname } = useLocation()
 
   return (
     <Sidebar>
@@ -61,24 +61,21 @@ export function BarraLateralAplicacion() {
           <SidebarGroupLabel>Menú Principal</SidebarGroupLabel>
           <SidebarGroupContent>
             <SidebarMenu>
-              {menuItems.map((item) => {
-                const activo = useRutaActiva(item.url, item.url === '/')
-                return (
-                  <SidebarMenuItem key={item.title}>
-                    <SidebarMenuButton asChild isActive={activo}>
-                      <NavLink to={item.url}>
-                        <item.icon />
-                        <span className="flex-1">{item.title}</span>
-                      </NavLink>
-                    </SidebarMenuButton>
-                  </SidebarMenuItem>
-                )
-              })}
+              {menuItems.map((item) => (
+                <SidebarMenuItem key={item.title}>
+                  <SidebarMenuButton asChild isActive={esRutaActiva(pathname, item.url, item.url === '/')}>
+                    <NavLink to={item.url}>
+                      <item.icon />
+                      <span className="flex-1">{item.title}</span>
+                    </NavLink>
+                  </SidebarMenuButton>
+                </SidebarMenuItem>
+              ))}
 
               {/* Auditoría — solo profesor */}
               <GuardRol roles={['profesor']}>
                 <SidebarMenuItem>
-                  <SidebarMenuButton asChild isActive={useRutaActiva('/auditoria')}>
+                  <SidebarMenuButton asChild isActive={esRutaActiva(pathname, '/auditoria')}>
                     <NavLink to="/auditoria">
                       <Shield />
                       <span>Auditoría</span>
@@ -90,7 +87,7 @@ export function BarraLateralAplicacion() {
               {/* Usuarios — solo profesor */}
               <GuardRol roles={['profesor']}>
                 <SidebarMenuItem>
-                  <SidebarMenuButton asChild isActive={useRutaActiva('/usuarios')}>
+                  <SidebarMenuButton asChild isActive={esRutaActiva(pathname, '/usuarios')}>
                     <NavLink to="/usuarios">
                       <Users />
                       <span>Usuarios</span>
@@ -107,7 +104,7 @@ export function BarraLateralAplicacion() {
         <SidebarFooter className="border-t p-3">
           <SidebarMenu>
             <SidebarMenuItem>
-              <SidebarMenuButton asChild isActive={useRutaActiva('/perfil')} className="h-auto rounded-lg px-3 py-2.5 hover:bg-sidebar-accent">
+              <SidebarMenuButton asChild isActive={esRutaActiva(pathname, '/perfil')} className="h-auto rounded-lg px-3 py-2.5 hover:bg-sidebar-accent">
                 <NavLink to="/perfil" className="group">
                   <Avatar className="size-8 shrink-0 ring-2 ring-primary/20 transition-all group-hover:ring-primary/40">
                     <AvatarImage src={user.avatarUrl} alt={user.displayName} />

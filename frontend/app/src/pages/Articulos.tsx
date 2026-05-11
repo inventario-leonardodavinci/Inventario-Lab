@@ -2,7 +2,7 @@
  * Página unificada de Artículos - Vista Kanban/Grid
  * Apple/Meta style: Todo integrado sin tabs, acciones rápidas, UI minimalista
  */
-import { useMemo, useState, useEffect } from 'react'
+import { useMemo } from 'react'
 import { Plus, ArrowRightLeft } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { useAuth } from '@/context/ContextoAutenticacion'
@@ -12,7 +12,6 @@ import {
   useUbicaciones,
   useCrearArticulo,
   useActualizarArticulo,
-  useDesactivarArticulo,
   useCrearMovimiento,
   useMovimientos,
   useArticulo,
@@ -23,22 +22,11 @@ import type { TipoMovimiento } from '@/types'
 import { ArticulosGrid } from './articulos/components/ArticulosGrid'
 import { PanelAccionRapida } from './articulos/components/PanelAccionRapida'
 import { ArticuloDrawer } from './articulos/components/ArticuloDrawer'
-import { ArticuloFormSheet } from './articulos/components/ArticuloFormSheet'
-import { validarMovimiento } from '@/services/movimientosApi'
+import { ArticuloFormSheet, type DatosFormArticulo } from './articulos/components/ArticuloFormSheet'
+import { validarMovimiento, type EntradaCrearMovimiento } from '@/services/movimientosApi'
 import { toast } from 'sonner'
 import { DEBOUNCE_DELAY_MS } from '@/constants'
-
-// Hook personalizado para debounce
-function useDebounce<T>(value: T, delay: number): T {
-  const [debouncedValue, setDebouncedValue] = useState(value)
-  
-  useEffect(() => {
-    const timer = setTimeout(() => setDebouncedValue(value), delay)
-    return () => clearTimeout(timer)
-  }, [value, delay])
-  
-  return debouncedValue
-}
+import { useDebounce } from '@/hooks/useDebounce'
 
 export default function Articulos() {
   const { user } = useAuth()
@@ -55,10 +43,9 @@ export default function Articulos() {
     ...(view.categoriaId ? { categoria_id: Number(view.categoriaId) } : {}),
     ...(view.ubicacionId ? { ubicacion_id: Number(view.ubicacionId) } : {}),
     ...(view.filtro === 'critico' ? { estado_stock: 'critico' as const } : {}),
-    ...(view.filtro === 'inactivos' ? { activo: false } : {}),
   })
   
-  const { data: categoriasData, isLoading: _isLoadingCategorias } = useCategorias()
+  const { data: categoriasData } = useCategorias()
   const { data: ubicacionesData, isLoading: isLoadingUbicaciones } = useUbicaciones()
   const { data: movimientosData } = useMovimientos({ per_page: 50 })
   const { data: articuloDetalle } = useArticulo(view.articuloDetalle?.id ?? 0)
@@ -68,20 +55,18 @@ export default function Articulos() {
   // Mutations
   const crearArticulo = useCrearArticulo()
   const actualizarArticulo = useActualizarArticulo()
-  const desactivarArticulo = useDesactivarArticulo()
   const crearMovimiento = useCrearMovimiento()
   
   // Datos
-  const articulos = articulosData?.data ?? []
-  const categorias = categoriasData?.data ?? []
-  const ubicaciones = ubicacionesData?.data ?? []
-  const movimientos = movimientosData?.data ?? []
+  const articulos = useMemo(() => articulosData?.data ?? [], [articulosData])
+  const categorias = useMemo(() => categoriasData?.data ?? [], [categoriasData])
+  const ubicaciones = useMemo(() => ubicacionesData?.data ?? [], [ubicacionesData])
+  const movimientos = useMemo(() => movimientosData?.data ?? [], [movimientosData])
   
   // Contadores para filtros
   const contadores = useMemo(() => ({
     todos: articulosData?.meta?.total ?? articulos.length,
-    critico: articulos.filter((a) => a.estado_stock === 'critico' && a.activo).length,
-    inactivos: articulos.filter((a) => !a.activo).length,
+    critico: articulos.filter((a) => a.estado_stock === 'critico').length,
   }), [articulos, articulosData])
   
   // Movimientos del artículo seleccionado
@@ -93,14 +78,7 @@ export default function Articulos() {
   }, [movimientos, view.articuloDetalle])
   
   // Handlers
-  const handleCrearArticulo = async (datos: {
-    nombre: string
-    codigo?: string
-    descripcion?: string
-    categoria_id: number
-    unidad?: string
-    notas?: string
-  }) => {
+  const handleCrearArticulo = async (datos: DatosFormArticulo) => {
     try {
       await crearArticulo.mutateAsync(datos)
       toast.success('Artículo creado correctamente')
@@ -110,14 +88,7 @@ export default function Articulos() {
     }
   }
   
-  const handleActualizarArticulo = async (datos: {
-    nombre: string
-    codigo?: string
-    descripcion?: string
-    categoria_id: number
-    unidad?: string
-    notas?: string
-  }) => {
+  const handleActualizarArticulo = async (datos: DatosFormArticulo) => {
     if (!view.articuloEditando) return
     try {
       await actualizarArticulo.mutateAsync({
@@ -131,47 +102,51 @@ export default function Articulos() {
     }
   }
   
-  const handleDesactivar = async () => {
-    if (!view.articuloDetalle) return
-    try {
-      await desactivarArticulo.mutateAsync(view.articuloDetalle.id)
-      toast.success('Artículo desactivado')
-      view.cerrarDetalle()
-    } catch (error) {
-      toast.error(error instanceof Error ? error.message : 'Error al desactivar')
-    }
-  }
-  
   const handleMovimiento = async (
     tipo: TipoMovimiento,
     cantidad: number,
     ubicacionOrigenId?: string,
-    ubicacionDestinoId?: string
+    ubicacionDestinoId?: string,
+    subUbicacionOrigenId?: string,
+    subUbicacionDestinoId?: string
   ) => {
     if (!view.articuloSeleccionado) return
-    
+
     // Construir objeto de movimiento
-    const datosMovimiento = {
+    const datosMovimiento: EntradaCrearMovimiento = {
       tipo,
-      lineas: [{ 
-        articulo_id: view.articuloSeleccionado.id, 
-        cantidad 
+      lineas: [{
+        articulo_id: view.articuloSeleccionado.id,
+        cantidad
       }],
-      // ENTRADA requiere ubicacion_destino_id
-      ...(tipo === 'entrada' && ubicacionDestinoId 
-        ? { ubicacion_destino_id: Number(ubicacionDestinoId) } 
-        : {}),
-      // SALIDA requiere ubicacion_origen_id
-      ...(tipo === 'salida' && ubicacionOrigenId 
-        ? { ubicacion_origen_id: Number(ubicacionOrigenId) } 
-        : {}),
-      // TRASLADO requiere ambas
-      ...(tipo === 'traslado' && ubicacionOrigenId && ubicacionDestinoId
-        ? { 
-            ubicacion_origen_id: Number(ubicacionOrigenId),
-            ubicacion_destino_id: Number(ubicacionDestinoId)
-          } 
-        : {}),
+    }
+
+    // ENTRADA requiere ubicacion_destino_id
+    if (tipo === 'entrada' && ubicacionDestinoId) {
+      datosMovimiento.ubicacion_destino_id = Number(ubicacionDestinoId)
+      if (subUbicacionDestinoId) {
+        datosMovimiento.sub_ubicacion_destino_id = Number(subUbicacionDestinoId)
+      }
+    }
+
+    // SALIDA requiere ubicacion_origen_id
+    if (tipo === 'salida' && ubicacionOrigenId) {
+      datosMovimiento.ubicacion_origen_id = Number(ubicacionOrigenId)
+      if (subUbicacionOrigenId) {
+        datosMovimiento.sub_ubicacion_origen_id = Number(subUbicacionOrigenId)
+      }
+    }
+
+    // TRASLADO requiere ambas
+    if (tipo === 'traslado' && ubicacionOrigenId && ubicacionDestinoId) {
+      datosMovimiento.ubicacion_origen_id = Number(ubicacionOrigenId)
+      datosMovimiento.ubicacion_destino_id = Number(ubicacionDestinoId)
+      if (subUbicacionOrigenId) {
+        datosMovimiento.sub_ubicacion_origen_id = Number(subUbicacionOrigenId)
+      }
+      if (subUbicacionDestinoId) {
+        datosMovimiento.sub_ubicacion_destino_id = Number(subUbicacionDestinoId)
+      }
     }
     
     // Validar antes de enviar
@@ -283,6 +258,7 @@ export default function Articulos() {
           view.setTipoMovimiento('traslado')
         }}
         onVerDetalle={view.abrirDetalle}
+        onEditar={esProfesor ? view.abrirEditar : undefined}
         onCrear={view.abrirCrear}
       />
       
@@ -314,7 +290,6 @@ export default function Articulos() {
             view.cerrarDetalle()
           }
         } : undefined}
-        onDesactivar={esProfesor ? handleDesactivar : undefined}
         onMovimiento={esProfesor ? (tipo) => {
           if (view.articuloDetalle) {
             view.seleccionarArticulo(view.articuloDetalle, tipo)
@@ -330,6 +305,7 @@ export default function Articulos() {
           categorias={categorias}
           ubicaciones={ubicaciones}
           open={view.formAbierto}
+          isPending={crearArticulo.isPending || actualizarArticulo.isPending}
           onClose={view.cerrarForm}
           onSubmit={view.articuloEditando ? handleActualizarArticulo : handleCrearArticulo}
         />

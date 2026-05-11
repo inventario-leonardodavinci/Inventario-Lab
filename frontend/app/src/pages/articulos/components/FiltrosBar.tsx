@@ -14,7 +14,7 @@ import {
 import { cn } from '@/lib/utils'
 import type { Categoria, Ubicacion } from '@/types'
 
-type FiltroVista = 'todos' | 'critico' | 'inactivos'
+type FiltroVista = 'todos' | 'critico'
 
 interface FiltrosBarProps {
   filtro: FiltroVista
@@ -27,7 +27,6 @@ interface FiltrosBarProps {
   contadores: {
     todos: number
     critico: number
-    inactivos: number
   }
   categorias: Categoria[]
   ubicaciones: Ubicacion[]
@@ -42,7 +41,6 @@ interface FiltrosBarProps {
 const FILTROS_RAPIDOS = [
   { key: 'todos', label: 'Todos' },
   { key: 'critico', label: 'Stock bajo' },
-  { key: 'inactivos', label: 'Inactivos' },
 ] as const
 
 export function FiltrosBar({
