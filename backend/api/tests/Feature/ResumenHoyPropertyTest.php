@@ -4,6 +4,7 @@ namespace Tests\Feature;
 
 use App\Models\Movimiento;
 use App\Models\UsuarioApp;
+use Illuminate\Foundation\Testing\RefreshDatabase;
 use Tests\TestCase;
 
 /**
@@ -18,6 +19,7 @@ use Tests\TestCase;
  */
 class ResumenHoyPropertyTest extends TestCase
 {
+    use RefreshDatabase;
     private UsuarioApp $usuario;
 
     protected function setUp(): void
@@ -88,16 +90,16 @@ class ResumenHoyPropertyTest extends TestCase
                 ->getJson('/api/v1/movimientos/resumen-hoy');
 
             $response->assertStatus(200);
-            $data = $response->json();
+            $data = $response->json('data');
 
             $this->assertSame(
-                $baseline['entradas_hoy'] + $n,
+                $baseline['data']['entradas_hoy'] + $n,
                 $data['entradas_hoy'],
                 "Iteración {$iter}: esperaba delta +{$n} entradas"
             );
 
             $this->assertSame(
-                $baseline['salidas_hoy'] + $m,
+                $baseline['data']['salidas_hoy'] + $m,
                 $data['salidas_hoy'],
                 "Iteración {$iter}: esperaba delta +{$m} salidas"
             );

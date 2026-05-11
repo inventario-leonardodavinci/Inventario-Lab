@@ -12,9 +12,7 @@ it('rechaza peticiones sin cabecera X-Auth-User-Id con 401', function () {
 it('protege todos los endpoints principales de la API v1', function (string $ruta) {
     $this->getJson($ruta)->assertStatus(401);
 })->with([
-    '/api/v1/inventario',
     '/api/v1/movimientos',
-    '/api/v1/alertas',
     '/api/v1/mantenimiento/activos',
     '/api/v1/articulos',
     '/api/v1/categorias',

@@ -4,6 +4,7 @@ namespace Tests\Feature;
 
 use App\Models\Movimiento;
 use App\Models\UsuarioApp;
+use Illuminate\Foundation\Testing\RefreshDatabase;
 use Tests\TestCase;
 
 /**
@@ -12,6 +13,7 @@ use Tests\TestCase;
  */
 class ResumenHoyTest extends TestCase
 {
+    use RefreshDatabase;
     private UsuarioApp $usuario;
 
     protected function setUp(): void
@@ -39,11 +41,11 @@ class ResumenHoyTest extends TestCase
             ->getJson('/api/v1/movimientos/resumen-hoy');
 
         $response->assertStatus(200)
-            ->assertJsonStructure(['entradas_hoy', 'salidas_hoy', 'ajustes_hoy', 'traslados_hoy'])
-            ->assertJsonPath('entradas_hoy',  fn ($v) => is_int($v) && $v >= 0)
-            ->assertJsonPath('salidas_hoy',   fn ($v) => is_int($v) && $v >= 0)
-            ->assertJsonPath('ajustes_hoy',   fn ($v) => is_int($v) && $v >= 0)
-            ->assertJsonPath('traslados_hoy', fn ($v) => is_int($v) && $v >= 0);
+            ->assertJsonStructure(['data' => ['entradas_hoy', 'salidas_hoy', 'ajustes_hoy', 'traslados_hoy']])
+            ->assertJsonPath('data.entradas_hoy',  fn ($v) => is_int($v) && $v >= 0)
+            ->assertJsonPath('data.salidas_hoy',   fn ($v) => is_int($v) && $v >= 0)
+            ->assertJsonPath('data.ajustes_hoy',   fn ($v) => is_int($v) && $v >= 0)
+            ->assertJsonPath('data.traslados_hoy', fn ($v) => is_int($v) && $v >= 0);
     }
 
     /** Requisito 1.5: sin cabecera de autenticación devuelve 401 */
@@ -86,12 +88,12 @@ class ResumenHoyTest extends TestCase
             ->getJson('/api/v1/movimientos/resumen-hoy');
 
         $response->assertStatus(200);
-        $data = $response->json();
+        $data = $response->json('data');
 
-        $this->assertSame($baseline['entradas_hoy']  + 3, $data['entradas_hoy'],  'Entradas deben incrementar en 3');
-        $this->assertSame($baseline['salidas_hoy']   + 2, $data['salidas_hoy'],   'Salidas deben incrementar en 2');
-        $this->assertSame($baseline['traslados_hoy'] + 1, $data['traslados_hoy'], 'Traslados deben incrementar en 1');
-        $this->assertSame($baseline['ajustes_hoy']   + 1, $data['ajustes_hoy'],   'Ajustes deben incrementar en 1');
+        $this->assertSame($baseline['data']['entradas_hoy']  + 3, $data['entradas_hoy'],  'Entradas deben incrementar en 3');
+        $this->assertSame($baseline['data']['salidas_hoy']   + 2, $data['salidas_hoy'],   'Salidas deben incrementar en 2');
+        $this->assertSame($baseline['data']['traslados_hoy'] + 1, $data['traslados_hoy'], 'Traslados deben incrementar en 1');
+        $this->assertSame($baseline['data']['ajustes_hoy']   + 1, $data['ajustes_hoy'],   'Ajustes deben incrementar en 1');
     }
 
     /** Requisito 1.1: la ruta existe, devuelve 200 y los 4 campos del resumen */
@@ -101,10 +103,10 @@ class ResumenHoyTest extends TestCase
             ->getJson('/api/v1/movimientos/resumen-hoy');
 
         $response->assertStatus(200)
-            ->assertJsonStructure(['entradas_hoy', 'salidas_hoy', 'ajustes_hoy', 'traslados_hoy'])
-            ->assertJsonPath('entradas_hoy',  fn ($v) => is_int($v) && $v >= 0)
-            ->assertJsonPath('salidas_hoy',   fn ($v) => is_int($v) && $v >= 0)
-            ->assertJsonPath('ajustes_hoy',   fn ($v) => is_int($v) && $v >= 0)
-            ->assertJsonPath('traslados_hoy', fn ($v) => is_int($v) && $v >= 0);
+            ->assertJsonStructure(['data' => ['entradas_hoy', 'salidas_hoy', 'ajustes_hoy', 'traslados_hoy']])
+            ->assertJsonPath('data.entradas_hoy',  fn ($v) => is_int($v) && $v >= 0)
+            ->assertJsonPath('data.salidas_hoy',   fn ($v) => is_int($v) && $v >= 0)
+            ->assertJsonPath('data.ajustes_hoy',   fn ($v) => is_int($v) && $v >= 0)
+            ->assertJsonPath('data.traslados_hoy', fn ($v) => is_int($v) && $v >= 0);
     }
 }
