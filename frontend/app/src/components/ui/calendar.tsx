@@ -12,7 +12,7 @@ import { cn } from "@/lib/utils"
 import { Button, buttonVariants } from "@/components/ui/button"
 import { ChevronLeftIcon, ChevronRightIcon, ChevronDownIcon } from "lucide-react"
 
-const currentYear = new Date().getFullYear()
+const today = new Date()
 
 function Calendar({
   className,
@@ -22,8 +22,8 @@ function Calendar({
   buttonVariant = "ghost",
   locale,
   formatters,
-  fromYear = 2000,
-  toYear = currentYear + 50,
+  startMonth = new Date(2000, 0, 1),
+  endMonth = new Date(today.getFullYear() + 50, 11, 31),
   components,
   ...props
 }: React.ComponentProps<typeof DayPicker> & {
@@ -41,8 +41,8 @@ function Calendar({
         className
       )}
       captionLayout={captionLayout}
-      fromYear={fromYear}
-      toYear={toYear}
+      startMonth={startMonth}
+      endMonth={endMonth}
       locale={locale}
       formatters={{
         formatMonthDropdown: (date) =>
