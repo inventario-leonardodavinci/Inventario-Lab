@@ -143,8 +143,15 @@ export function PanelAccionRapida({
         }
       } else if (tipo === 'salida') {
         if (ubicacionesConStock.length === 1) {
-          setUbicacionOrigen(String(ubicacionesConStock[0].id))
-          setStep('cantidad')
+          const ubId = ubicacionesConStock[0].id
+          const secciones = stockPorUbicacion[ubId]?.secciones?.filter(s => s.cantidad > 0) || []
+          setUbicacionOrigen(String(ubId))
+          if (secciones.length === 1) {
+            setSubUbicacionOrigen(secciones[0].id !== null ? String(secciones[0].id) : '')
+            setStep('cantidad')
+          } else {
+            setStep('ubicacion')
+          }
         } else {
           setStep('ubicacion')
         }
@@ -176,8 +183,15 @@ export function PanelAccionRapida({
     // Para salida: siempre mostrar selector de origen (con stock)
     else if (t === 'salida') {
       if (ubicacionesConStock.length === 1) {
-        setUbicacionOrigen(String(ubicacionesConStock[0].id))
-        setStep('cantidad')
+        const ubId = ubicacionesConStock[0].id
+        const secciones = stockPorUbicacion[ubId]?.secciones?.filter(s => s.cantidad > 0) || []
+        setUbicacionOrigen(String(ubId))
+        if (secciones.length === 1) {
+          setSubUbicacionOrigen(secciones[0].id !== null ? String(secciones[0].id) : '')
+          setStep('cantidad')
+        } else {
+          setStep('ubicacion')
+        }
       } else {
         setStep('ubicacion')
       }
