@@ -4,13 +4,27 @@ namespace App\Http\Requests;
 
 use Illuminate\Foundation\Http\FormRequest;
 
+/**
+ * Request para validación de creación de movimientos de inventario.
+ *
+ * Valida que el movimiento tenga tipo válido, ubicaciones existentes
+ * y al menos una línea con artículos y cantidades positivas.
+ */
 class MovimientoRequest extends FormRequest
 {
+    /**
+     * La autorización se maneja a nivel de middleware (role:profesor).
+     */
     public function authorize(): bool
     {
         return true;
     }
 
+    /**
+     * Reglas de validación para el movimiento.
+     *
+     * @return array<string, array<int, mixed>> Reglas de validación
+     */
     public function rules(): array
     {
         return [
@@ -24,6 +38,11 @@ class MovimientoRequest extends FormRequest
         ];
     }
 
+    /**
+     * Mensajes de error personalizados en español.
+     *
+     * @return array<string, string> Mensajes de error
+     */
     public function messages(): array
     {
         return [

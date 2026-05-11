@@ -5,13 +5,27 @@ namespace App\Http\Requests;
 use Illuminate\Foundation\Http\FormRequest;
 use Illuminate\Validation\Rule;
 
+/**
+ * Request para validación de creación y actualización de ubicaciones.
+ *
+ * Valida que el nombre sea único en el sistema y el tipo esté
+ * dentro de los valores permitidos.
+ */
 class UbicacionRequest extends FormRequest
 {
+    /**
+     * La autorización se maneja a nivel de middleware/rutas (role:profesor).
+     */
     public function authorize(): bool
     {
         return true;
     }
 
+    /**
+     * Reglas de validación para la ubicación.
+     *
+     * @return array<string, array<int, mixed>> Reglas de validación
+     */
     public function rules(): array
     {
         $esCreacion = $this->isMethod('POST');
@@ -33,6 +47,11 @@ class UbicacionRequest extends FormRequest
         ];
     }
 
+    /**
+     * Mensajes de error personalizados en español.
+     *
+     * @return array<string, string> Mensajes de error
+     */
     public function messages(): array
     {
         return [

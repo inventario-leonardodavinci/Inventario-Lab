@@ -43,10 +43,12 @@ class AuditarEscritura
         $urlEsc   = addslashes($url);
 
         return DB::transaction(function () use ($request, $next, $userId, $ipEsc, $agentEsc, $urlEsc): Response {
-            DB::statement("SET LOCAL app.current_user_id = {$userId}");
-            DB::statement("SET LOCAL app.ip_address = '{$ipEsc}'");
-            DB::statement("SET LOCAL app.user_agent = '{$agentEsc}'");
-            DB::statement("SET LOCAL app.url_accion = '{$urlEsc}'");
+            if (DB::getDriverName() === 'pgsql') {
+                DB::statement("SET LOCAL app.current_user_id = {$userId}");
+                DB::statement("SET LOCAL app.ip_address = '{$ipEsc}'");
+                DB::statement("SET LOCAL app.user_agent = '{$agentEsc}'");
+                DB::statement("SET LOCAL app.url_accion = '{$urlEsc}'");
+            }
             return $next($request);
         });
     }

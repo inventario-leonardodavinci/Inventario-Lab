@@ -5,22 +5,40 @@ namespace App\Http\Controllers\Api;
 use App\Http\Controllers\Controller;
 use App\Http\Helpers\ApiResponse;
 use App\Http\Requests\MovimientoRequest;
-use App\Models\UsuarioApp;
 use App\Models\Movimiento;
+use App\Models\UsuarioApp;
 use App\Services\MovimientoService;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use RuntimeException;
 
+/**
+ * Controlador para la gestión de movimientos de inventario.
+ *
+ * Los movimientos representan entradas, salidas, traslados y ajustes
+ * de stock. Cada movimiento es atómico y afecta los niveles de stock.
+ */
 class MovimientoController extends Controller
 {
+    /**
+     * @param MovimientoService $movimientoService Servicio para operaciones de stock
+     */
     public function __construct(private readonly MovimientoService $movimientoService)
     {
     }
 
+    /**
+     * Obtener resumen de movimientos del día actual.
+     *
+     * Si el usuario está autenticado, filtra solo sus movimientos.
+     *
+     * @param Request $request Request con el usuario autenticado
+     * @return JsonResponse Conteo de entradas, salidas, ajustes y traslados de hoy
+     */
     public function resumenHoy(Request $request): JsonResponse
     {
         $hoy = now()->toDateString();
+        /** @var UsuarioApp|null $usuarioApp */
         $usuarioApp = $request->attributes->get('app_user');
 
         $conteosPorTipo = Movimiento::query()
@@ -38,6 +56,12 @@ class MovimientoController extends Controller
         ]);
     }
 
+    /**
+     * Obtener resumen de movimientos en un rango de fechas.
+     *
+     * @param Request $request Request con parámetros 'desde' y 'hasta'
+     * @return JsonResponse Estadísticas de movimientos en el rango especificado
+     */
     public function resumenRango(Request $request): JsonResponse
     {
         $validados = $request->validate([
@@ -47,6 +71,7 @@ class MovimientoController extends Controller
 
         $desde = $validados['desde'];
         $hasta = $validados['hasta'];
+        /** @var UsuarioApp|null $usuarioApp */
         $usuarioApp = $request->attributes->get('app_user');
 
         $base = Movimiento::query()
@@ -70,6 +95,12 @@ class MovimientoController extends Controller
         ]);
     }
 
+    /**
+     * Listar movimientos paginados con sus relaciones.
+     *
+     * @param Request $request Request con parámetro opcional 'per_page'
+     * @return JsonResponse Listado paginado de movimientos
+     */
     public function index(Request $request): JsonResponse
     {
         $paginacion = Movimiento::query()
@@ -110,6 +141,15 @@ class MovimientoController extends Controller
         );
     }
 
+    /**
+     * Crear un nuevo movimiento de inventario.
+     *
+     * La creación es atómica: todas las líneas y actualizaciones de stock
+     * se ejecutan dentro de una transacción de base de datos.
+     *
+     * @param MovimientoRequest $request Datos validados del movimiento
+     * @return JsonResponse Respuesta con código 201 Created
+     */
     public function store(MovimientoRequest $request): JsonResponse
     {
         /** @var UsuarioApp $usuarioApp */

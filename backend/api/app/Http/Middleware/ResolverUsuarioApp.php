@@ -6,10 +6,37 @@ use App\Models\UsuarioApp;
 use Closure;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
+use Spatie\Permission\PermissionRegistrar;
 use Symfony\Component\HttpFoundation\Response;
 
+/**
+ * Middleware para resolver el usuario autenticado desde cabeceras InsForge.
+ *
+ * Este middleware:
+ * 1. Extrae el user_id de la cabecera X-Auth-User-Id
+ * 2. Crea automáticamente el usuario en BD si es primer acceso
+ * 3. Asigna rol 'consultor' por defecto si no tiene ninguno
+ * 4. Sincroniza roles elevados desde InsForge
+ * 5. Promueve a profesor si el email está en la lista de admins
+ *
+ * El usuario resuelto se almacena en $request->attributes->get('app_user')
+ */
 class ResolverUsuarioApp
 {
+    /**
+     * Cabeceras requeridas para identificar al usuario.
+     *
+     * @var array<string>
+     */
+    private const CABECERAS_REQUERIDAS = ['X-Auth-User-Id'];
+
+    /**
+     * Manejar la solicitud entrante.
+     *
+     * @param Request $request Request HTTP entrante
+     * @param Closure $next Closure para continuar con la siguiente capa
+     * @return Response Respuesta procesada
+     */
     public function handle(Request $request, Closure $next): Response
     {
         $idUsuarioAutenticado = $request->header('X-Auth-User-Id');

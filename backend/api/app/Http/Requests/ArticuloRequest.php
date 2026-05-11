@@ -5,13 +5,31 @@ namespace App\Http\Requests;
 use Illuminate\Foundation\Http\FormRequest;
 use Illuminate\Validation\Rule;
 
+/**
+ * Request para validación de creación y actualización de artículos.
+ *
+ * Valida los datos del artículo incluyendo campos opcionales
+ * para stock inicial y ubicación en creación.
+ */
 class ArticuloRequest extends FormRequest
 {
+    /**
+     * Determina si el usuario está autorizado para hacer esta solicitud.
+     * La autorización se maneja a nivel de middleware/rutas.
+     */
     public function authorize(): bool
     {
         return true;
     }
 
+    /**
+     * Reglas de validación para el request.
+     *
+     * En creación (POST): nombre y categoría son requeridos.
+     * En actualización (PATCH): todos los campos son opcionales (sometimes).
+     *
+     * @return array<string, array<int, mixed>> Reglas de validación
+     */
     public function rules(): array
     {
         $esCreacion = $this->isMethod('POST');
@@ -29,14 +47,14 @@ class ArticuloRequest extends FormRequest
             'categoria_id'    => [$esCreacion ? 'required' : 'sometimes', 'integer', 'exists:categorias,id'],
             'unidad'          => ['nullable', 'string', 'max:40'],
             'notas'           => ['nullable', 'string', 'max:' . config('constantes.notas_max_length')],
-            'activo'          => ['nullable', 'boolean'],
             'serial_number'   => ['nullable', 'string', 'max:120'],
             'material_type'   => ['nullable', 'string', 'max:80'],
             'capacity_ml'     => ['nullable', 'numeric', 'min:0'],
             'expiration_date' => ['nullable', 'date'],
-            'stock_minimo'    => ['nullable', 'numeric', 'min:0'],
-            'stock_inicial'   => ['nullable', 'numeric', 'min:0'],
-            'ubicacion_id'    => ['nullable', 'integer', 'exists:ubicaciones,id'],
+            'stock_minimo'      => ['nullable', 'numeric', 'min:0'],
+            'stock_inicial'     => ['nullable', 'numeric', 'min:0'],
+            'ubicacion_id'      => ['nullable', 'integer', 'exists:ubicaciones,id'],
+            'sub_ubicacion_id'  => ['nullable', 'integer', 'exists:sub_ubicaciones,id'],
             // Campos para equipos y máquinas inventariables
             'fecha_adquisicion' => ['nullable', 'date'],
             'precio_compra'     => ['nullable', 'numeric', 'min:0'],
@@ -45,6 +63,11 @@ class ArticuloRequest extends FormRequest
         ];
     }
 
+    /**
+     * Mensajes de error personalizados para las reglas de validación.
+     *
+     * @return array<string, string> Mensajes de error en español
+     */
     public function messages(): array
     {
         return [
@@ -60,7 +83,6 @@ class ArticuloRequest extends FormRequest
             'unidad.string' => 'La unidad debe ser una cadena de texto.',
             'unidad.max' => 'La unidad no puede superar los 40 caracteres.',
             'notas.string' => 'Las notas deben ser una cadena de texto.',
-            'activo.boolean' => 'El campo activo debe ser verdadero o falso.',
         ];
     }
 }

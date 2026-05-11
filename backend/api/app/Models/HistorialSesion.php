@@ -5,6 +5,25 @@ namespace App\Models;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 
+/**
+ * Modelo HistorialSesion - Registra los eventos de sesión de usuarios.
+ *
+ * Almacena información de inicio de sesión, dispositivo utilizado,
+ * ubicación geográfica aproximada y otros metadatos de seguridad.
+ *
+ * @property int $id
+ * @property int $usuario_id
+ * @property string|null $ip_address
+ * @property string|null $user_agent
+ * @property string|null $dispositivo Tipo de dispositivo (Móvil, Tablet, Escritorio)
+ * @property string|null $navegador Navegador y versión detectada
+ * @property string|null $sistema_operativo SO detectado
+ * @property string|null $pais País detectado por geolocalización
+ * @property string|null $ciudad Ciudad detectada por geolocalización
+ * @property string $tipo_evento login, logout, refresh, oauth
+ * @property bool $exitoso
+ * @property \Carbon\Carbon $iniciada_en
+ */
 class HistorialSesion extends Model
 {
     public $timestamps = false;

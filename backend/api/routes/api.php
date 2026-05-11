@@ -8,6 +8,7 @@ use App\Http\Controllers\Api\MovimientoController;
 use App\Http\Controllers\Api\NotificacionController;
 use App\Http\Controllers\Api\PerfilController;
 use App\Http\Controllers\Api\UbicacionController;
+use App\Http\Controllers\Api\SubUbicacionController;
 use App\Http\Controllers\Api\UsuarioController;
 use Illuminate\Support\Facades\Route;
 
@@ -34,6 +35,14 @@ Route::prefix('v1')->middleware(['throttle:api', 'app.user', 'audit.write'])->gr
     Route::post('/ubicaciones', [UbicacionController::class, 'store'])->middleware('role:profesor');
     Route::get('/ubicaciones/{ubicacion}', [UbicacionController::class, 'show']);
     Route::patch('/ubicaciones/{ubicacion}', [UbicacionController::class, 'update'])->middleware('role:profesor');
+    Route::get('/ubicaciones/{ubicacion}/sub-ubicaciones', [SubUbicacionController::class, 'porUbicacion']);
+
+    // ── Sub-ubicaciones ───────────────────────────────────────────────────────
+    Route::get('/sub-ubicaciones', [SubUbicacionController::class, 'index']);
+    Route::post('/sub-ubicaciones', [SubUbicacionController::class, 'store'])->middleware('role:profesor');
+    Route::get('/sub-ubicaciones/{subUbicacion}', [SubUbicacionController::class, 'show']);
+    Route::patch('/sub-ubicaciones/{subUbicacion}', [SubUbicacionController::class, 'update'])->middleware('role:profesor');
+    Route::delete('/sub-ubicaciones/{subUbicacion}', [SubUbicacionController::class, 'destroy'])->middleware('role:profesor');
 
     // ── Categorías ────────────────────────────────────────────────────────────
     Route::get('/categorias', [CategoriaController::class, 'index']);

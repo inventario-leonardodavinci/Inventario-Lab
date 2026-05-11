@@ -9,13 +9,32 @@ use App\Http\Requests\ArticuloRequest;
 use App\Models\Articulo;
 use App\Models\NivelStock;
 use Illuminate\Http\JsonResponse;
-use Illuminate\Support\Facades\DB;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\DB;
 
+/**
+ * Controlador para la gestión de artículos del inventario.
+ *
+ * Proporciona endpoints CRUD completos con filtrado, ordenamiento
+ * y gestión de stock asociado.
+ */
 class ArticuloController extends Controller
 {
     /**
-     * Serializa un artículo al formato de respuesta estándar.
+     * Campos permitidos para ordenamiento en el listado.
+     *
+     * @var array<string>
+     */
+    private const CAMPOS_ORDENAMIENTO_PERMITIDOS = ['nombre', 'codigo', 'stock_total', 'categoria', 'created_at'];
+    /**
+     * Serializa un artículo al formato de respuesta estándar de la API.
+     *
+     * Incluye información de stock calculada y estado del inventario.
+     *
+     * @param Articulo $articulo Artículo a serializar
+     * @param float $stockTotal Cantidad total en stock
+     * @param float $cantidadMinima Cantidad mínima configurada para alertas
+     * @return array<string, mixed> Datos serializados del artículo
      */
     private function serializar(Articulo $articulo, float $stockTotal = 0.0, float $cantidadMinima = 0.0): array
     {
@@ -28,7 +47,6 @@ class ArticuloController extends Controller
             'categoria'      => $articulo->categoria?->nombre,
             'unidad'         => $articulo->unidad,
             'notas'          => $articulo->notas,
-            'activo'         => $articulo->activo,
             'stock_total'    => $stockTotal,
             'stock_minimo'   => $cantidadMinima,
             'estado_stock'   => ($cantidadMinima > 0 && $stockTotal < $cantidadMinima) ? 'critico' : 'ok',
@@ -37,7 +55,7 @@ class ArticuloController extends Controller
             'capacidad_ml'      => $articulo->capacity_ml,
             'fecha_caducidad'   => $articulo->expiration_date,
             'fecha_adquisicion' => $articulo->fecha_adquisicion,
-            'precio_compra'     => $articulo->precio_compra,
+            'precio_compra'     => $articulo->precio_compra !== null ? (float) $articulo->precio_compra : null,
             'proveedor'         => $articulo->proveedor,
             'numero_factura'    => $articulo->numero_factura,
             'created_at'        => $articulo->created_at,
@@ -47,24 +65,34 @@ class ArticuloController extends Controller
 
     /**
      * Lista paginada de artículos con categoría resuelta y stock total.
-     * Filtros: search, activo, categoria_id, ubicacion_id, estado_stock, order_by, order_dir
+     *
+     * Filtros disponibles:
+     * - search: búsqueda por nombre o código
+     * - categoria_id: filtrar por categoría
+     * - ubicacion_id: filtrar por ubicación
+     * - sub_ubicacion_id: filtrar por sub-ubicación
+     * - estado_stock: 'ok' o 'critico'
+     * - order_by: campo de ordenamiento
+     * - order_dir: 'asc' o 'desc'
+     *
+     * @param ArticuloIndexRequest $request Request validado con filtros
+     * @return JsonResponse Respuesta paginada con artículos serializados
      */
     public function index(ArticuloIndexRequest $request): JsonResponse
     {
         $filtros = $request->validated();
 
         $busqueda = trim((string) ($filtros['search'] ?? ''));
-        $activo = $filtros['activo'] ?? null;
         $categoriaId = $filtros['categoria_id'] ?? null;
         $ubicacionId = $filtros['ubicacion_id'] ?? null;
+        $subUbicacionId = $filtros['sub_ubicacion_id'] ?? null;
         $estadoStock = $filtros['estado_stock'] ?? null;
         $orderBy = $filtros['order_by'] ?? 'nombre';
         $orderDir = $filtros['order_dir'] ?? 'asc';
         $perPage = (int) ($filtros['per_page'] ?? config('constantes.default_per_page'));
 
         // Validar campos de ordenamiento permitidos
-        $orderByPermitidos = ['nombre', 'codigo', 'stock_total', 'categoria', 'created_at'];
-        if (!in_array($orderBy, $orderByPermitidos, true)) {
+        if (!in_array($orderBy, self::CAMPOS_ORDENAMIENTO_PERMITIDOS, true)) {
             $orderBy = 'nombre';
         }
         $orderDir = strtolower($orderDir) === 'desc' ? 'desc' : 'asc';
@@ -82,13 +110,11 @@ class ArticuloController extends Controller
             ->selectRaw('COALESCE(stock_agg.stock_total, 0) as stock_total_calc')
             ->selectRaw('COALESCE(stock_agg.stock_minimo, 0) as stock_minimo_calc')
             ->when($busqueda !== '', function ($query) use ($busqueda): void {
-                $query->where(function ($q) use ($busqueda): void {
-                    $q->where('nombre', 'ILIKE', "%{$busqueda}%")
-                        ->orWhere('codigo', 'ILIKE', "%{$busqueda}%");
+                $op = \Illuminate\Support\Facades\DB::getDriverName() === 'pgsql' ? 'ILIKE' : 'LIKE';
+                $query->where(function ($q) use ($busqueda, $op): void {
+                    $q->where('nombre', $op, "%{$busqueda}%")
+                        ->orWhere('codigo', $op, "%{$busqueda}%");
                 });
-            })
-            ->when($activo !== null, function ($query) use ($activo): void {
-                $query->where('activo', filter_var($activo, FILTER_VALIDATE_BOOLEAN));
             })
             ->when($categoriaId !== null, function ($query) use ($categoriaId): void {
                 $query->where('categoria_id', (int) $categoriaId);
@@ -101,6 +127,16 @@ class ArticuloController extends Controller
                     ->from('niveles_stock')
                     ->whereColumn('niveles_stock.articulo_id', 'articulos.id')
                     ->where('niveles_stock.ubicacion_id', (int) $ubicacionId);
+            });
+        }
+
+        // Filtro por sub-ubicación
+        if ($subUbicacionId !== null) {
+            $articulosQuery->whereExists(function ($query) use ($subUbicacionId): void {
+                $query->selectRaw('1')
+                    ->from('niveles_stock')
+                    ->whereColumn('niveles_stock.articulo_id', 'articulos.id')
+                    ->where('niveles_stock.sub_ubicacion_id', (int) $subUbicacionId);
             });
         }
 
@@ -163,8 +199,6 @@ class ArticuloController extends Controller
 
         return ApiResponse::success([
             'total_articulos' => (clone $base)->count('articulos.id'),
-            'activos' => (clone $base)->where('articulos.activo', true)->count('articulos.id'),
-            'inactivos' => (clone $base)->where('articulos.activo', false)->count('articulos.id'),
             'stock_critico' => (clone $base)
                 ->whereRaw('COALESCE(stock_agg.stock_minimo, 0) > 0')
                 ->whereRaw('COALESCE(stock_agg.stock_total, 0) < COALESCE(stock_agg.stock_minimo, 0)')
@@ -177,7 +211,7 @@ class ArticuloController extends Controller
      */
     public function show(Articulo $articulo): JsonResponse
     {
-        $articulo->load(['categoria:id,nombre', 'nivelesStock.ubicacion']);
+        $articulo->load(['categoria:id,nombre', 'nivelesStock.ubicacion', 'nivelesStock.subUbicacion']);
 
         $stockTotal = $articulo->nivelesStock->sum('cantidad');
         $cantidadMinima = (float) ($articulo->nivelesStock->min('cantidad_minima') ?? 0);
@@ -191,7 +225,6 @@ class ArticuloController extends Controller
                 'categoria'       => $articulo->categoria?->nombre,
                 'unidad'          => $articulo->unidad,
                 'notas'           => $articulo->notas,
-                'activo'          => $articulo->activo,
                 'stock_total'     => (float) $stockTotal,
                 'stock_minimo'    => $cantidadMinima,
                 'estado_stock'    => ($cantidadMinima > 0 && (float) $stockTotal <= $cantidadMinima) ? 'critico' : 'ok',
@@ -200,15 +233,17 @@ class ArticuloController extends Controller
                 'capacidad_ml'      => $articulo->capacity_ml,
                 'fecha_caducidad'   => $articulo->expiration_date,
                 'fecha_adquisicion' => $articulo->fecha_adquisicion,
-                'precio_compra'     => $articulo->precio_compra,
+                'precio_compra'     => $articulo->precio_compra !== null ? (float) $articulo->precio_compra : null,
                 'proveedor'         => $articulo->proveedor,
                 'numero_factura'    => $articulo->numero_factura,
                 'niveles_stock'     => $articulo->nivelesStock->map(fn ($nivel) => [
-                    'id'              => $nivel->id,
-                    'ubicacion_id'    => $nivel->ubicacion_id,
-                    'ubicacion'       => $nivel->ubicacion?->nombre,
-                    'cantidad'        => (float) $nivel->cantidad,
-                    'cantidad_minima' => (float) $nivel->cantidad_minima,
+                    'id'                => $nivel->id,
+                    'ubicacion_id'      => $nivel->ubicacion_id,
+                    'ubicacion'         => $nivel->ubicacion?->nombre,
+                    'sub_ubicacion_id'  => $nivel->sub_ubicacion_id,
+                    'sub_ubicacion'     => $nivel->subUbicacion?->nombre,
+                    'cantidad'          => (float) $nivel->cantidad,
+                    'cantidad_minima'   => (float) $nivel->cantidad_minima,
                 ])->values()->toArray(),
                 'created_at'      => $articulo->created_at,
                 'updated_at'      => $articulo->updated_at,
@@ -216,27 +251,33 @@ class ArticuloController extends Controller
     }
 
     /**
-     * Crear un nuevo artículo (HTTP 201).
+     * Crear un nuevo artículo en el inventario.
+     *
      * Acepta opcionalmente stock_inicial, stock_minimo y ubicacion_id
-     * para crear el nivel de stock en el mismo paso.
+     * para crear el nivel de stock en el mismo paso (transacción atómica).
+     *
+     * @param ArticuloRequest $request Datos validados del artículo
+     * @return JsonResponse Respuesta con código 201 Created
      */
     public function store(ArticuloRequest $request): JsonResponse
     {
-        $validados    = $request->validated();
-        $stockInicial = (float) ($validados['stock_inicial'] ?? 0);
-        $stockMinimo  = (float) ($validados['stock_minimo']  ?? 0);
-        $ubicacionId  = $validados['ubicacion_id'] ?? null;
+        $validados       = $request->validated();
+        $stockInicial     = (float) ($validados['stock_inicial'] ?? 0);
+        $stockMinimo      = (float) ($validados['stock_minimo']  ?? 0);
+        $ubicacionId      = $validados['ubicacion_id'] ?? null;
+        $subUbicacionId   = $validados['sub_ubicacion_id'] ?? null;
 
-        $datosArticulo = array_diff_key($validados, array_flip(['stock_inicial', 'stock_minimo', 'ubicacion_id']));
+        $datosArticulo = array_diff_key($validados, array_flip(['stock_inicial', 'stock_minimo', 'ubicacion_id', 'sub_ubicacion_id']));
 
-        $articulo = Articulo::query()->create($datosArticulo + ['activo' => true]);
+        $articulo = Articulo::query()->create($datosArticulo);
 
         if ($ubicacionId && ($stockInicial > 0 || $stockMinimo > 0)) {
             NivelStock::query()->create([
-                'articulo_id'     => $articulo->id,
-                'ubicacion_id'    => $ubicacionId,
-                'cantidad'        => $stockInicial,
-                'cantidad_minima' => $stockMinimo,
+                'articulo_id'       => $articulo->id,
+                'ubicacion_id'      => $ubicacionId,
+                'sub_ubicacion_id'  => $subUbicacionId,
+                'cantidad'          => $stockInicial,
+                'cantidad_minima'   => $stockMinimo,
             ]);
         }
 
@@ -246,7 +287,14 @@ class ArticuloController extends Controller
     }
 
     /**
-     * Actualizar un artículo existente (HTTP 200).
+     * Actualizar un artículo existente.
+     *
+     * Permite actualizar los datos del artículo y opcionalmente
+     * la cantidad mínima de stock en todas sus ubicaciones.
+     *
+     * @param ArticuloRequest $request Datos validados para actualizar
+     * @param Articulo $articulo Artículo a actualizar (resuelto por route model binding)
+     * @return JsonResponse Respuesta con datos actualizados
      */
     public function update(ArticuloRequest $request, Articulo $articulo): JsonResponse
     {
@@ -269,13 +317,15 @@ class ArticuloController extends Controller
     }
 
     /**
-     * Desactivación lógica del artículo (activo = false). No borrado físico.
+     * Eliminar un artículo permanentemente.
+     *
+     * @param Articulo $articulo Artículo a eliminar
+     * @return JsonResponse Respuesta vacía con confirmación
      */
     public function destroy(Articulo $articulo): JsonResponse
     {
-        $articulo->update(['activo' => false]);
-        $articulo->load('categoria:id,nombre');
+        $articulo->delete();
 
-        return ApiResponse::success($this->serializar($articulo));
+        return ApiResponse::success([], 'Artículo eliminado correctamente');
     }
 }
