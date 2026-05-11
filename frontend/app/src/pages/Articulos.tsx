@@ -272,6 +272,7 @@ export default function Articulos() {
           nivelesStock={articuloPanelDetalle?.data?.niveles_stock ?? []}
           isLoadingUbicaciones={isLoadingUbicaciones}
           isLoadingStock={isLoadingPanelDetalle}
+          isPending={crearMovimiento.isPending}
           onCantidadChange={view.setCantidad}
           onSubmit={handleMovimiento}
           onCancel={() => view.setMostrarPanelAccion(false)}
