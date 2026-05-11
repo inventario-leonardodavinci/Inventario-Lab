@@ -21,6 +21,7 @@
     "clsx": "^2.1.1",
     "cmdk": "^1.1.1",
     "date-fns": "^4.1.0",
+    "doctor": "^0.3.0",
     "framer-motion": "^11.18.2",
     "input-otp": "^1.4.2",
     "jwt-decode": "^4.0.0",
