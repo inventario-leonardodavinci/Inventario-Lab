@@ -19,6 +19,10 @@ return new class extends Migration
 
     public function up(): void
     {
+        if (DB::getDriverName() !== 'pgsql') {
+            return;
+        }
+
         // Crear la función PL/pgSQL que inserta en registros_auditoria.
         // Lee el usuario actual desde la variable de sesión app.current_user_id
         // que el middleware ResolverUsuarioApp establece en cada petición.
@@ -82,6 +86,10 @@ return new class extends Migration
 
     public function down(): void
     {
+        if (DB::getDriverName() !== 'pgsql') {
+            return;
+        }
+
         // Eliminar los triggers en orden inverso
         foreach (array_reverse($this->tablas) as $tabla) {
             DB::statement("DROP TRIGGER IF EXISTS trg_auditoria_{$tabla} ON {$tabla};");

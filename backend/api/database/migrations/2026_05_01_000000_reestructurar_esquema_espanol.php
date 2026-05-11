@@ -11,11 +11,13 @@ return new class extends Migration
         // ----------------------------------------------------------------
         // 1. Eliminar triggers y constraints que referencian nombres viejos
         // ----------------------------------------------------------------
-        DB::statement('DROP TRIGGER IF EXISTS trg_stock_levels_audit_change ON stock_levels');
-        DB::statement('DROP TRIGGER IF EXISTS trg_movements_audit_change ON movements');
-        DB::statement('DROP TRIGGER IF EXISTS trg_movement_lines_audit_change ON movement_lines');
-        DB::statement('DROP TRIGGER IF EXISTS trg_alert_events_audit_change ON alert_events');
-        DB::statement('ALTER TABLE movements DROP CONSTRAINT IF EXISTS movements_movement_type_check');
+        if (DB::getDriverName() === 'pgsql') {
+            DB::statement('DROP TRIGGER IF EXISTS trg_stock_levels_audit_change ON stock_levels');
+            DB::statement('DROP TRIGGER IF EXISTS trg_movements_audit_change ON movements');
+            DB::statement('DROP TRIGGER IF EXISTS trg_movement_lines_audit_change ON movement_lines');
+            DB::statement('DROP TRIGGER IF EXISTS trg_alert_events_audit_change ON alert_events');
+            DB::statement('ALTER TABLE movements DROP CONSTRAINT IF EXISTS movements_movement_type_check');
+        }
 
         // ----------------------------------------------------------------
         // 2. Renombrar tablas (orden respeta FK)
@@ -194,8 +196,10 @@ return new class extends Migration
         // ----------------------------------------------------------------
         // 19. Añadir constraints CHECK con valores en español
         // ----------------------------------------------------------------
-        DB::statement("ALTER TABLE movimientos ADD CONSTRAINT movimientos_tipo_check CHECK (tipo IN ('entrada','salida','traslado','ajuste'))");
-        DB::statement("ALTER TABLE ubicaciones ADD CONSTRAINT ubicaciones_tipo_check CHECK (tipo IN ('armario','nevera','estanteria','cajon','vitrina','otro'))");
+        if (DB::getDriverName() === 'pgsql') {
+            DB::statement("ALTER TABLE movimientos ADD CONSTRAINT movimientos_tipo_check CHECK (tipo IN ('entrada','salida','traslado','ajuste'))");
+            DB::statement("ALTER TABLE ubicaciones ADD CONSTRAINT ubicaciones_tipo_check CHECK (tipo IN ('armario','nevera','estanteria','cajon','vitrina','otro'))");
+        }
     }
 
     public function down(): void
@@ -203,8 +207,10 @@ return new class extends Migration
         // ----------------------------------------------------------------
         // 1. Eliminar constraints CHECK en español
         // ----------------------------------------------------------------
-        DB::statement('ALTER TABLE movimientos DROP CONSTRAINT IF EXISTS movimientos_tipo_check');
-        DB::statement('ALTER TABLE ubicaciones DROP CONSTRAINT IF EXISTS ubicaciones_tipo_check');
+        if (DB::getDriverName() === 'pgsql') {
+            DB::statement('ALTER TABLE movimientos DROP CONSTRAINT IF EXISTS movimientos_tipo_check');
+            DB::statement('ALTER TABLE ubicaciones DROP CONSTRAINT IF EXISTS ubicaciones_tipo_check');
+        }
 
         // ----------------------------------------------------------------
         // 2. Revertir datos de enums — activos_mantenimiento.estado
@@ -380,6 +386,8 @@ return new class extends Migration
         // ----------------------------------------------------------------
         // 19. Restaurar constraint CHECK original en movements
         // ----------------------------------------------------------------
-        DB::statement("ALTER TABLE movements ADD CONSTRAINT movements_movement_type_check CHECK (movement_type IN ('entry','exit','transfer','adjustment'))");
+        if (DB::getDriverName() === 'pgsql') {
+            DB::statement("ALTER TABLE movements ADD CONSTRAINT movements_movement_type_check CHECK (movement_type IN ('entry','exit','transfer','adjustment'))");
+        }
     }
 };

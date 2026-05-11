@@ -149,37 +149,38 @@ return new class extends Migration
             });
         }
 
-        // Constraints — solo añadir si no existen (idempotente)
-        DB::statement("
-            DO \$\$ BEGIN
-                IF NOT EXISTS (
-                    SELECT 1 FROM pg_constraint WHERE conname = 'movements_movement_type_check'
-                ) THEN
-                    ALTER TABLE movements ADD CONSTRAINT movements_movement_type_check
-                        CHECK (movement_type IN ('entry','exit','transfer','adjustment'));
-                END IF;
-            END \$\$;
-        ");
-        DB::statement("
-            DO \$\$ BEGIN
-                IF NOT EXISTS (
-                    SELECT 1 FROM pg_constraint WHERE conname = 'stock_levels_quantity_non_negative_chk'
-                ) THEN
-                    ALTER TABLE stock_levels ADD CONSTRAINT stock_levels_quantity_non_negative_chk
-                        CHECK (quantity >= 0);
-                END IF;
-            END \$\$;
-        ");
-        DB::statement("
-            DO \$\$ BEGIN
-                IF NOT EXISTS (
-                    SELECT 1 FROM pg_constraint WHERE conname = 'movement_lines_quantity_positive_chk'
-                ) THEN
-                    ALTER TABLE movement_lines ADD CONSTRAINT movement_lines_quantity_positive_chk
-                        CHECK (quantity > 0);
-                END IF;
-            END \$\$;
-        ");
+        if (DB::getDriverName() === 'pgsql') {
+            DB::statement("
+                DO \$\$ BEGIN
+                    IF NOT EXISTS (
+                        SELECT 1 FROM pg_constraint WHERE conname = 'movements_movement_type_check'
+                    ) THEN
+                        ALTER TABLE movements ADD CONSTRAINT movements_movement_type_check
+                            CHECK (movement_type IN ('entry','exit','transfer','adjustment'));
+                    END IF;
+                END \$\$;
+            ");
+            DB::statement("
+                DO \$\$ BEGIN
+                    IF NOT EXISTS (
+                        SELECT 1 FROM pg_constraint WHERE conname = 'stock_levels_quantity_non_negative_chk'
+                    ) THEN
+                        ALTER TABLE stock_levels ADD CONSTRAINT stock_levels_quantity_non_negative_chk
+                            CHECK (quantity >= 0);
+                    END IF;
+                END \$\$;
+            ");
+            DB::statement("
+                DO \$\$ BEGIN
+                    IF NOT EXISTS (
+                        SELECT 1 FROM pg_constraint WHERE conname = 'movement_lines_quantity_positive_chk'
+                    ) THEN
+                        ALTER TABLE movement_lines ADD CONSTRAINT movement_lines_quantity_positive_chk
+                            CHECK (quantity > 0);
+                    END IF;
+                END \$\$;
+            ");
+        }
     }
 
     public function down(): void

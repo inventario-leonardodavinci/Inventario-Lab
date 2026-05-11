@@ -44,29 +44,28 @@ return new class extends Migration
             ON alertas (estado, generada_en DESC)
         SQL);
 
-        // ── 3. CHECK constraint en historial_sesiones.tipo_evento ─────────────
-        // Eliminar el constraint anterior si existe (por si se re-ejecuta)
-        DB::statement(<<<'SQL'
-            ALTER TABLE historial_sesiones
-            DROP CONSTRAINT IF EXISTS chk_historial_tipo_evento
-        SQL);
+        if (DB::getDriverName() === 'pgsql') {
+            // ── 3. CHECK constraint en historial_sesiones.tipo_evento ──────────
+            DB::statement(<<<'SQL'
+                ALTER TABLE historial_sesiones
+                DROP CONSTRAINT IF EXISTS chk_historial_tipo_evento
+            SQL);
 
-        DB::statement(<<<'SQL'
-            ALTER TABLE historial_sesiones
-            ADD CONSTRAINT chk_historial_tipo_evento
-            CHECK (tipo_evento IN ('login', 'logout', 'refresh', 'oauth'))
-        SQL);
+            DB::statement(<<<'SQL'
+                ALTER TABLE historial_sesiones
+                ADD CONSTRAINT chk_historial_tipo_evento
+                CHECK (tipo_evento IN ('login', 'logout', 'refresh', 'oauth'))
+            SQL);
 
-        // ── 4. Roles base garantizados ────────────────────────────────────────
-        // INSERT OR IGNORE equivalente en PostgreSQL: ON CONFLICT DO NOTHING
-        DB::statement(<<<'SQL'
-            INSERT INTO roles (name, created_at, updated_at)
-            VALUES
-                ('administrador', NOW(), NOW()),
-                ('profesor',      NOW(), NOW()),
-                ('consultor',     NOW(), NOW())
-            ON CONFLICT (name) DO NOTHING
-        SQL);
+            // ── 4. Roles base garantizados ──────────────────────────────────
+            DB::statement(<<<'SQL'
+                INSERT INTO roles (name, created_at, updated_at)
+                VALUES
+                    ('profesor',  NOW(), NOW()),
+                    ('consultor', NOW(), NOW())
+                ON CONFLICT (name) DO NOTHING
+            SQL);
+        }
     }
 
     public function down(): void
@@ -78,11 +77,12 @@ return new class extends Migration
         DB::statement('DROP INDEX IF EXISTS idx_alertas_estado');
         DB::statement('DROP INDEX IF EXISTS idx_alertas_estado_generada_en');
 
-        // Eliminar constraint CHECK
-        DB::statement(<<<'SQL'
-            ALTER TABLE historial_sesiones
-            DROP CONSTRAINT IF EXISTS chk_historial_tipo_evento
-        SQL);
+        if (DB::getDriverName() === 'pgsql') {
+            DB::statement(<<<'SQL'
+                ALTER TABLE historial_sesiones
+                DROP CONSTRAINT IF EXISTS chk_historial_tipo_evento
+            SQL);
+        }
 
         // No eliminamos los roles: el rollback de datos es peligroso
     }

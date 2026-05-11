@@ -41,7 +41,9 @@ return new class extends Migration
             $table->text('notes')->nullable();
             $table->timestamps();
         });
-        DB::statement("ALTER TABLE maintenance_assets ADD CONSTRAINT maintenance_assets_status_chk CHECK (status IN ('operational', 'maintenance_due', 'in_maintenance', 'out_of_service', 'retired'))");
+        if (DB::getDriverName() === 'pgsql') {
+            DB::statement("ALTER TABLE maintenance_assets ADD CONSTRAINT maintenance_assets_status_chk CHECK (status IN ('operational', 'maintenance_due', 'in_maintenance', 'out_of_service', 'retired'))");
+        }
         DB::statement('CREATE UNIQUE INDEX IF NOT EXISTS uq_maintenance_assets_serial_number ON maintenance_assets(serial_number) WHERE serial_number IS NOT NULL');
 
         Schema::create('maintenance_plans', function (Blueprint $table) {
@@ -54,7 +56,9 @@ return new class extends Migration
             $table->timestamps();
             $table->unique(['asset_id', 'name']);
         });
-        DB::statement('ALTER TABLE maintenance_plans ADD CONSTRAINT maintenance_plans_periodicity_days_chk CHECK (periodicity_days > 0)');
+        if (DB::getDriverName() === 'pgsql') {
+            DB::statement('ALTER TABLE maintenance_plans ADD CONSTRAINT maintenance_plans_periodicity_days_chk CHECK (periodicity_days > 0)');
+        }
 
         Schema::create('maintenance_events', function (Blueprint $table) {
             $table->id();
@@ -74,11 +78,13 @@ return new class extends Migration
             $table->jsonb('attachments_json')->nullable();
             $table->timestamps();
         });
-        DB::statement("ALTER TABLE maintenance_events ADD CONSTRAINT maintenance_events_type_chk CHECK (event_type IN ('preventive', 'corrective', 'inspection', 'calibration'))");
-        DB::statement("ALTER TABLE maintenance_events ADD CONSTRAINT maintenance_events_status_chk CHECK (status IN ('scheduled', 'in_progress', 'completed', 'cancelled'))");
-        DB::statement("ALTER TABLE maintenance_events ADD CONSTRAINT maintenance_events_priority_chk CHECK (priority IN ('low', 'medium', 'high', 'critical'))");
-        DB::statement('ALTER TABLE maintenance_events ADD CONSTRAINT maintenance_events_downtime_chk CHECK (downtime_minutes IS NULL OR downtime_minutes >= 0)');
-        DB::statement('ALTER TABLE maintenance_events ADD CONSTRAINT maintenance_events_cost_chk CHECK (cost_amount IS NULL OR cost_amount >= 0)');
+        if (DB::getDriverName() === 'pgsql') {
+            DB::statement("ALTER TABLE maintenance_events ADD CONSTRAINT maintenance_events_type_chk CHECK (event_type IN ('preventive', 'corrective', 'inspection', 'calibration'))");
+            DB::statement("ALTER TABLE maintenance_events ADD CONSTRAINT maintenance_events_status_chk CHECK (status IN ('scheduled', 'in_progress', 'completed', 'cancelled'))");
+            DB::statement("ALTER TABLE maintenance_events ADD CONSTRAINT maintenance_events_priority_chk CHECK (priority IN ('low', 'medium', 'high', 'critical'))");
+            DB::statement('ALTER TABLE maintenance_events ADD CONSTRAINT maintenance_events_downtime_chk CHECK (downtime_minutes IS NULL OR downtime_minutes >= 0)');
+            DB::statement('ALTER TABLE maintenance_events ADD CONSTRAINT maintenance_events_cost_chk CHECK (cost_amount IS NULL OR cost_amount >= 0)');
+        }
 
         Schema::create('alert_rules', function (Blueprint $table) {
             $table->id();
@@ -97,10 +103,12 @@ return new class extends Migration
             $table->foreignId('created_by_user_id')->nullable()->constrained('app_users');
             $table->timestamps();
         });
-        DB::statement("ALTER TABLE alert_rules ADD CONSTRAINT alert_rules_type_chk CHECK (alert_type IN ('low_stock', 'expiration', 'maintenance_due', 'stock_inactivity'))");
-        DB::statement("ALTER TABLE alert_rules ADD CONSTRAINT alert_rules_severity_chk CHECK (severity IN ('low', 'medium', 'high', 'critical'))");
-        DB::statement("ALTER TABLE alert_rules ADD CONSTRAINT alert_rules_scope_chk CHECK (scope_type IN ('item', 'location', 'asset', 'global'))");
-        DB::statement('ALTER TABLE alert_rules ADD CONSTRAINT alert_rules_threshold_days_chk CHECK (threshold_days IS NULL OR threshold_days >= 0)');
+        if (DB::getDriverName() === 'pgsql') {
+            DB::statement("ALTER TABLE alert_rules ADD CONSTRAINT alert_rules_type_chk CHECK (alert_type IN ('low_stock', 'expiration', 'maintenance_due', 'stock_inactivity'))");
+            DB::statement("ALTER TABLE alert_rules ADD CONSTRAINT alert_rules_severity_chk CHECK (severity IN ('low', 'medium', 'high', 'critical'))");
+            DB::statement("ALTER TABLE alert_rules ADD CONSTRAINT alert_rules_scope_chk CHECK (scope_type IN ('item', 'location', 'asset', 'global'))");
+            DB::statement('ALTER TABLE alert_rules ADD CONSTRAINT alert_rules_threshold_days_chk CHECK (threshold_days IS NULL OR threshold_days >= 0)');
+        }
 
         Schema::create('alert_events', function (Blueprint $table) {
             $table->id();
@@ -120,9 +128,11 @@ return new class extends Migration
             $table->text('resolution_notes')->nullable();
             $table->timestamps();
         });
-        DB::statement("ALTER TABLE alert_events ADD CONSTRAINT alert_events_type_chk CHECK (alert_type IN ('low_stock', 'expiration', 'maintenance_due', 'stock_inactivity'))");
-        DB::statement("ALTER TABLE alert_events ADD CONSTRAINT alert_events_severity_chk CHECK (severity IN ('low', 'medium', 'high', 'critical'))");
-        DB::statement("ALTER TABLE alert_events ADD CONSTRAINT alert_events_status_chk CHECK (status IN ('open', 'acknowledged', 'resolved', 'ignored'))");
+        if (DB::getDriverName() === 'pgsql') {
+            DB::statement("ALTER TABLE alert_events ADD CONSTRAINT alert_events_type_chk CHECK (alert_type IN ('low_stock', 'expiration', 'maintenance_due', 'stock_inactivity'))");
+            DB::statement("ALTER TABLE alert_events ADD CONSTRAINT alert_events_severity_chk CHECK (severity IN ('low', 'medium', 'high', 'critical'))");
+            DB::statement("ALTER TABLE alert_events ADD CONSTRAINT alert_events_status_chk CHECK (status IN ('open', 'acknowledged', 'resolved', 'ignored'))");
+        }
 
         Schema::create('alert_notifications', function (Blueprint $table) {
             $table->id();
@@ -134,8 +144,10 @@ return new class extends Migration
             $table->timestampTz('sent_at')->nullable();
             $table->timestampTz('created_at')->useCurrent();
         });
-        DB::statement("ALTER TABLE alert_notifications ADD CONSTRAINT alert_notifications_channel_chk CHECK (channel IN ('in_app', 'email', 'webhook'))");
-        DB::statement("ALTER TABLE alert_notifications ADD CONSTRAINT alert_notifications_status_chk CHECK (status IN ('pending', 'sent', 'failed'))");
+        if (DB::getDriverName() === 'pgsql') {
+            DB::statement("ALTER TABLE alert_notifications ADD CONSTRAINT alert_notifications_channel_chk CHECK (channel IN ('in_app', 'email', 'webhook'))");
+            DB::statement("ALTER TABLE alert_notifications ADD CONSTRAINT alert_notifications_status_chk CHECK (status IN ('pending', 'sent', 'failed'))");
+        }
     }
 
     public function down(): void

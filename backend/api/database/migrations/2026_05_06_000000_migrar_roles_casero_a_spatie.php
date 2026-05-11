@@ -16,14 +16,16 @@ return new class extends Migration
     {
         // ── 1. Asegurar que los roles existen en spatie_roles ─────────────────
         // guard_name = 'api' porque UsuarioApp no extiende Authenticatable con guard 'web'
-        DB::statement(<<<'SQL'
-            INSERT INTO spatie_roles (name, guard_name, created_at, updated_at)
-            VALUES
-                ('administrador', 'api', NOW(), NOW()),
-                ('profesor',      'api', NOW(), NOW()),
-                ('consultor',     'api', NOW(), NOW())
-            ON CONFLICT (name, guard_name) DO NOTHING
-        SQL);
+        if (DB::getDriverName() === 'pgsql') {
+            DB::statement(<<<'SQL'
+                INSERT INTO spatie_roles (name, guard_name, created_at, updated_at)
+                VALUES
+                    ('administrador', 'api', NOW(), NOW()),
+                    ('profesor',      'api', NOW(), NOW()),
+                    ('consultor',     'api', NOW(), NOW())
+                ON CONFLICT (name, guard_name) DO NOTHING
+            SQL);
+        }
 
         // ── 2. Migrar asignaciones de roles ───────────────────────────────────
         // usuario_roles.usuario_id → spatie_model_has_roles.model_id
@@ -61,14 +63,16 @@ return new class extends Migration
             $table->timestamps();
         });
 
-        DB::statement(<<<'SQL'
-            INSERT INTO roles (name, created_at, updated_at)
-            SELECT DISTINCT name, NOW(), NOW()
-            FROM spatie_roles
-            WHERE guard_name = 'api'
-              AND name IN ('administrador', 'profesor', 'consultor')
-            ON CONFLICT (name) DO NOTHING
-        SQL);
+        if (DB::getDriverName() === 'pgsql') {
+            DB::statement(<<<'SQL'
+                INSERT INTO roles (name, created_at, updated_at)
+                SELECT DISTINCT name, NOW(), NOW()
+                FROM spatie_roles
+                WHERE guard_name = 'api'
+                  AND name IN ('administrador', 'profesor', 'consultor')
+                ON CONFLICT (name) DO NOTHING
+            SQL);
+        }
 
         // Recrear tabla pivote casera
         Schema::create('usuario_roles', function ($table) {

@@ -13,6 +13,10 @@ return new class extends Migration
 {
     public function up(): void
     {
+        if (DB::getDriverName() !== 'pgsql') {
+            return;
+        }
+
         DB::statement(<<<'SQL'
             CREATE OR REPLACE FUNCTION fn_auditoria()
             RETURNS TRIGGER
@@ -66,6 +70,10 @@ return new class extends Migration
 
     public function down(): void
     {
+        if (DB::getDriverName() !== 'pgsql') {
+            return;
+        }
+
         // Restaurar la versión anterior sin el guard de 0
         DB::statement(<<<'SQL'
             CREATE OR REPLACE FUNCTION fn_auditoria()

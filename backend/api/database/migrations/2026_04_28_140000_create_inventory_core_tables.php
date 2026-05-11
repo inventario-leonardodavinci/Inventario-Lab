@@ -76,7 +76,9 @@ return new class extends Migration
             $table->timestamps();
             $table->unique(['item_id', 'location_id']);
         });
-        DB::statement('ALTER TABLE stock_levels ADD CONSTRAINT stock_levels_quantity_non_negative_chk CHECK (quantity >= 0)');
+        if (DB::getDriverName() === 'pgsql') {
+            DB::statement('ALTER TABLE stock_levels ADD CONSTRAINT stock_levels_quantity_non_negative_chk CHECK (quantity >= 0)');
+        }
 
         Schema::create('movements', function (Blueprint $table) {
             $table->id();
@@ -87,7 +89,9 @@ return new class extends Migration
             $table->foreignId('app_user_id')->constrained('app_users');
             $table->timestampTz('created_at')->useCurrent();
         });
-        DB::statement("ALTER TABLE movements ADD CONSTRAINT movements_type_chk CHECK (movement_type IN ('entry', 'exit', 'transfer', 'adjustment'))");
+        if (DB::getDriverName() === 'pgsql') {
+            DB::statement("ALTER TABLE movements ADD CONSTRAINT movements_type_chk CHECK (movement_type IN ('entry', 'exit', 'transfer', 'adjustment'))");
+        }
 
         Schema::create('movement_lines', function (Blueprint $table) {
             $table->id();
@@ -97,7 +101,9 @@ return new class extends Migration
             $table->decimal('quantity', 12, 2);
             $table->timestampTz('created_at')->useCurrent();
         });
-        DB::statement('ALTER TABLE movement_lines ADD CONSTRAINT movement_lines_quantity_positive_chk CHECK (quantity > 0)');
+        if (DB::getDriverName() === 'pgsql') {
+            DB::statement('ALTER TABLE movement_lines ADD CONSTRAINT movement_lines_quantity_positive_chk CHECK (quantity > 0)');
+        }
 
         Schema::create('audit_logs', function (Blueprint $table) {
             $table->id();

@@ -11,6 +11,10 @@ return new class extends Migration
 {
     public function up(): void
     {
+        if (DB::getDriverName() !== 'pgsql') {
+            return;
+        }
+
         // Eliminar constraint viejo de movimientos si existe
         DB::statement("
             DO $$

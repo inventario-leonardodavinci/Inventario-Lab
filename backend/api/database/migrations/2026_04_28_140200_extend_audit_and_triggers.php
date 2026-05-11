@@ -16,7 +16,8 @@ return new class extends Migration
             $table->text('user_agent')->nullable();
         });
 
-        DB::statement(<<<'SQL'
+        if (DB::getDriverName() === 'pgsql') {
+            DB::statement(<<<'SQL'
 CREATE OR REPLACE FUNCTION fn_audit_row_change()
 RETURNS TRIGGER AS $$
 DECLARE
@@ -48,27 +49,30 @@ END;
 $$ LANGUAGE plpgsql;
 SQL);
 
-        DB::statement('DROP TRIGGER IF EXISTS trg_stock_levels_audit_change ON stock_levels');
-        DB::statement('CREATE TRIGGER trg_stock_levels_audit_change AFTER INSERT OR UPDATE OR DELETE ON stock_levels FOR EACH ROW EXECUTE FUNCTION fn_audit_row_change()');
-        DB::statement('DROP TRIGGER IF EXISTS trg_movements_audit_change ON movements');
-        DB::statement('CREATE TRIGGER trg_movements_audit_change AFTER INSERT OR UPDATE OR DELETE ON movements FOR EACH ROW EXECUTE FUNCTION fn_audit_row_change()');
-        DB::statement('DROP TRIGGER IF EXISTS trg_movement_lines_audit_change ON movement_lines');
-        DB::statement('CREATE TRIGGER trg_movement_lines_audit_change AFTER INSERT OR UPDATE OR DELETE ON movement_lines FOR EACH ROW EXECUTE FUNCTION fn_audit_row_change()');
-        DB::statement('DROP TRIGGER IF EXISTS trg_maintenance_events_audit_change ON maintenance_events');
-        DB::statement('CREATE TRIGGER trg_maintenance_events_audit_change AFTER INSERT OR UPDATE OR DELETE ON maintenance_events FOR EACH ROW EXECUTE FUNCTION fn_audit_row_change()');
-        DB::statement('DROP TRIGGER IF EXISTS trg_alert_events_audit_change ON alert_events');
-        DB::statement('CREATE TRIGGER trg_alert_events_audit_change AFTER INSERT OR UPDATE OR DELETE ON alert_events FOR EACH ROW EXECUTE FUNCTION fn_audit_row_change()');
+            DB::statement('DROP TRIGGER IF EXISTS trg_stock_levels_audit_change ON stock_levels');
+            DB::statement('CREATE TRIGGER trg_stock_levels_audit_change AFTER INSERT OR UPDATE OR DELETE ON stock_levels FOR EACH ROW EXECUTE FUNCTION fn_audit_row_change()');
+            DB::statement('DROP TRIGGER IF EXISTS trg_movements_audit_change ON movements');
+            DB::statement('CREATE TRIGGER trg_movements_audit_change AFTER INSERT OR UPDATE OR DELETE ON movements FOR EACH ROW EXECUTE FUNCTION fn_audit_row_change()');
+            DB::statement('DROP TRIGGER IF EXISTS trg_movement_lines_audit_change ON movement_lines');
+            DB::statement('CREATE TRIGGER trg_movement_lines_audit_change AFTER INSERT OR UPDATE OR DELETE ON movement_lines FOR EACH ROW EXECUTE FUNCTION fn_audit_row_change()');
+            DB::statement('DROP TRIGGER IF EXISTS trg_maintenance_events_audit_change ON maintenance_events');
+            DB::statement('CREATE TRIGGER trg_maintenance_events_audit_change AFTER INSERT OR UPDATE OR DELETE ON maintenance_events FOR EACH ROW EXECUTE FUNCTION fn_audit_row_change()');
+            DB::statement('DROP TRIGGER IF EXISTS trg_alert_events_audit_change ON alert_events');
+            DB::statement('CREATE TRIGGER trg_alert_events_audit_change AFTER INSERT OR UPDATE OR DELETE ON alert_events FOR EACH ROW EXECUTE FUNCTION fn_audit_row_change()');
+        }
     }
 
     public function down(): void
     {
-        DB::statement('DROP TRIGGER IF EXISTS trg_alert_events_audit_change ON alert_events');
-        DB::statement('DROP TRIGGER IF EXISTS trg_maintenance_events_audit_change ON maintenance_events');
-        DB::statement('DROP TRIGGER IF EXISTS trg_movement_lines_audit_change ON movement_lines');
-        DB::statement('DROP TRIGGER IF EXISTS trg_movements_audit_change ON movements');
-        DB::statement('DROP TRIGGER IF EXISTS trg_stock_levels_audit_change ON stock_levels');
+        if (DB::getDriverName() === 'pgsql') {
+            DB::statement('DROP TRIGGER IF EXISTS trg_alert_events_audit_change ON alert_events');
+            DB::statement('DROP TRIGGER IF EXISTS trg_maintenance_events_audit_change ON maintenance_events');
+            DB::statement('DROP TRIGGER IF EXISTS trg_movement_lines_audit_change ON movement_lines');
+            DB::statement('DROP TRIGGER IF EXISTS trg_movements_audit_change ON movements');
+            DB::statement('DROP TRIGGER IF EXISTS trg_stock_levels_audit_change ON stock_levels');
 
-        DB::statement('DROP FUNCTION IF EXISTS fn_audit_row_change()');
+            DB::statement('DROP FUNCTION IF EXISTS fn_audit_row_change()');
+        }
 
         Schema::table('audit_logs', function (Blueprint $table) {
             $table->dropColumn(['before_json', 'after_json', 'ip_address', 'user_agent']);

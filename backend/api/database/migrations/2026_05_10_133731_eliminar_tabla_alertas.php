@@ -8,8 +8,9 @@ return new class extends Migration
 {
     public function up(): void
     {
-        // Eliminar trigger de auditoría sobre alertas (si existe)
-        DB::statement("DROP TRIGGER IF EXISTS trg_audit_alertas ON alertas");
+        if (DB::getDriverName() === 'pgsql') {
+            DB::statement("DROP TRIGGER IF EXISTS trg_audit_alertas ON alertas");
+        }
 
         // Eliminar índices
         DB::statement('DROP INDEX IF EXISTS idx_alertas_generada_en');
