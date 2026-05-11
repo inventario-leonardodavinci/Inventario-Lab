@@ -250,27 +250,28 @@ export function PanelAccionRapida({
               variant={tipo === 'entrada' ? 'default' : 'outline'}
               className="flex-1 h-12 gap-2"
               onClick={() => handleTipoSelect('entrada')}
+              disabled={isPending}
             >
-              <Plus className="size-4" />
-              Entrada
+              {isPending ? <Loader2 className="size-4 animate-spin" /> : <Plus className="size-4" />}
+              {isPending ? 'Cargando...' : 'Entrada'}
             </Button>
             <Button
               variant={tipo === 'salida' ? 'default' : 'outline'}
               className="flex-1 h-12 gap-2"
               onClick={() => handleTipoSelect('salida')}
-              disabled={articulo.stock_total === 0}
+              disabled={articulo.stock_total === 0 || isPending}
             >
-              <Minus className="size-4" />
-              Salida
+              {isPending ? <Loader2 className="size-4 animate-spin" /> : <Minus className="size-4" />}
+              {isPending ? 'Cargando...' : 'Salida'}
             </Button>
             <Button
               variant={tipo === 'traslado' ? 'default' : 'outline'}
               className="flex-1 h-12 gap-2"
               onClick={() => handleTipoSelect('traslado')}
-              disabled={articulo.stock_total === 0}
+              disabled={articulo.stock_total === 0 || isPending}
             >
-              <ArrowRightLeft className="size-4" />
-              Traslado
+              {isPending ? <Loader2 className="size-4 animate-spin" /> : <ArrowRightLeft className="size-4" />}
+              {isPending ? 'Cargando...' : 'Traslado'}
             </Button>
           </div>
         )}
@@ -285,6 +286,7 @@ export function PanelAccionRapida({
                   size="icon"
                   className="h-12 w-12 border-border hover:bg-muted transition-colors"
                   onClick={() => onCantidadChange(Math.max(1, cantidad - 1))}
+                  disabled={isPending}
                 >
                   <Minus className="size-5 stroke-[2.5]" />
                 </Button>
@@ -294,12 +296,14 @@ export function PanelAccionRapida({
                   value={cantidad}
                   onChange={(e) => onCantidadChange(Math.max(1, parseInt(e.target.value) || 1))}
                   className="h-12 w-28 text-center font-mono text-xl font-semibold bg-background border-border"
+                  disabled={isPending}
                 />
                 <Button
                   variant="outline"
                   size="icon"
                   className="h-12 w-12 border-border hover:bg-muted transition-colors"
                   onClick={() => onCantidadChange(cantidad + 1)}
+                  disabled={isPending}
                 >
                   <Plus className="size-5 stroke-[2.5]" />
                 </Button>
@@ -307,7 +311,7 @@ export function PanelAccionRapida({
             </div>
 
             <div className="flex gap-2 pt-2">
-              <Button variant="outline" className="flex-1" onClick={() => setStep('tipo')}>
+              <Button variant="outline" className="flex-1" onClick={() => setStep('tipo')} disabled={isPending}>
                 <RotateCcw className="size-4 mr-1" />
                 Cambiar
               </Button>
@@ -330,7 +334,7 @@ export function PanelAccionRapida({
                   <Label className="text-sm mb-2 font-medium block">
                     Ubicación destino <span className="text-destructive">*</span>
                   </Label>
-                  <Select value={ubicacionDestino} onValueChange={setUbicacionDestino} disabled={isLoadingUbicaciones}>
+                  <Select value={ubicacionDestino} onValueChange={setUbicacionDestino} disabled={isLoadingUbicaciones || isPending}>
                     <SelectTrigger className="w-full h-11">
                       {isLoadingUbicaciones ? (
                         <span className="h-4 w-32 rounded bg-muted animate-pulse" />
@@ -371,6 +375,7 @@ export function PanelAccionRapida({
                     <Select
                       value={subUbicacionDestino || 'none'}
                       onValueChange={(val) => setSubUbicacionDestino(val === 'none' ? '' : val)}
+                      disabled={isPending}
                     >
                       <SelectTrigger className="w-full h-10">
                         <SelectValue placeholder="Seleccionar sección..." />
@@ -408,6 +413,7 @@ export function PanelAccionRapida({
                       size="icon"
                       className="h-11 w-11 border-border hover:bg-muted transition-colors"
                       onClick={() => onCantidadChange(Math.max(1, cantidad - 1))}
+                      disabled={isPending}
                     >
                       <Minus className="size-4 stroke-[2.5]" />
                     </Button>
@@ -417,12 +423,14 @@ export function PanelAccionRapida({
                       value={cantidad}
                       onChange={(e) => onCantidadChange(Math.max(1, parseInt(e.target.value) || 1))}
                       className="h-11 w-24 text-center font-mono text-lg font-semibold bg-background border-border"
+                      disabled={isPending}
                     />
                     <Button
                       variant="outline"
                       size="icon"
                       className="h-11 w-11 border-border hover:bg-muted transition-colors"
                       onClick={() => onCantidadChange(cantidad + 1)}
+                      disabled={isPending}
                     >
                       <Plus className="size-4 stroke-[2.5]" />
                     </Button>
@@ -430,7 +438,7 @@ export function PanelAccionRapida({
                 </div>
 
                 <div className="flex gap-2 pt-2">
-                  <Button variant="outline" className="flex-1" onClick={handleCancel}>
+                  <Button variant="outline" className="flex-1" onClick={handleCancel} disabled={isPending}>
                     <RotateCcw className="size-4 mr-1" />
                     Cancelar
                   </Button>
@@ -461,7 +469,7 @@ export function PanelAccionRapida({
                       setUbicacionOrigen(ubId)
                       setSubUbicacionOrigen(seccionId === 'none' ? '' : seccionId)
                     }}
-                    disabled={isLoading}
+                    disabled={isLoading || isPending}
                   >
                     <SelectTrigger className="w-full h-11">
                       {isLoading ? (
@@ -519,6 +527,7 @@ export function PanelAccionRapida({
                       size="icon"
                       className="h-11 w-11 border-border hover:bg-muted transition-colors"
                       onClick={() => onCantidadChange(Math.max(1, cantidad - 1))}
+                      disabled={isPending}
                     >
                       <Minus className="size-4 stroke-[2.5]" />
                     </Button>
@@ -528,12 +537,14 @@ export function PanelAccionRapida({
                       value={cantidad}
                       onChange={(e) => onCantidadChange(Math.max(1, parseInt(e.target.value) || 1))}
                       className="h-11 w-24 text-center font-mono text-lg font-semibold bg-background border-border"
+                      disabled={isPending}
                     />
                     <Button
                       variant="outline"
                       size="icon"
                       className="h-11 w-11 border-border hover:bg-muted transition-colors"
                       onClick={() => onCantidadChange(cantidad + 1)}
+                      disabled={isPending}
                     >
                       <Plus className="size-4 stroke-[2.5]" />
                     </Button>
@@ -541,7 +552,7 @@ export function PanelAccionRapida({
                 </div>
 
                 <div className="flex gap-2 pt-2">
-                  <Button variant="outline" className="flex-1" onClick={handleCancel}>
+                  <Button variant="outline" className="flex-1" onClick={handleCancel} disabled={isPending}>
                     <RotateCcw className="size-4 mr-1" />
                     Cancelar
                   </Button>
@@ -577,7 +588,7 @@ export function PanelAccionRapida({
                           setSubUbicacionDestino('')
                         }
                       }}
-                      disabled={isLoading}
+                      disabled={isLoading || isPending}
                     >
                       <SelectTrigger className="w-full h-11">
                         {isLoading ? (
@@ -626,7 +637,7 @@ export function PanelAccionRapida({
                         setUbicacionDestino(ubId)
                         setSubUbicacionDestino(seccionId === 'none' ? '' : seccionId)
                       }}
-                      disabled={isLoading || !ubicacionOrigen}
+                      disabled={isLoading || isPending || !ubicacionOrigen}
                     >
                       <SelectTrigger className="w-full h-11">
                         {isLoading ? (
@@ -671,6 +682,7 @@ export function PanelAccionRapida({
                       size="icon"
                       className="h-11 w-11 border-border hover:bg-muted transition-colors"
                       onClick={() => onCantidadChange(Math.max(1, cantidad - 1))}
+                      disabled={isPending}
                     >
                       <Minus className="size-4 stroke-[2.5]" />
                     </Button>
@@ -680,12 +692,14 @@ export function PanelAccionRapida({
                       value={cantidad}
                       onChange={(e) => onCantidadChange(Math.max(1, parseInt(e.target.value) || 1))}
                       className="h-11 w-24 text-center font-mono text-lg font-semibold bg-background border-border"
+                      disabled={isPending}
                     />
                     <Button
                       variant="outline"
                       size="icon"
                       className="h-11 w-11 border-border hover:bg-muted transition-colors"
                       onClick={() => onCantidadChange(cantidad + 1)}
+                      disabled={isPending}
                     >
                       <Plus className="size-4 stroke-[2.5]" />
                     </Button>
@@ -693,7 +707,7 @@ export function PanelAccionRapida({
                 </div>
 
                 <div className="flex gap-2 pt-2">
-                  <Button variant="outline" className="flex-1" onClick={handleCancel}>
+                  <Button variant="outline" className="flex-1" onClick={handleCancel} disabled={isPending}>
                     <RotateCcw className="size-4 mr-1" />
                     Cancelar
                   </Button>
