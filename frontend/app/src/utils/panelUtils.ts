@@ -18,12 +18,13 @@ export function formatearKpi(valor: number | null): string {
  * Traduce los tipos de movimiento del inglés al español.
  * Clave legacy de la antigua API en inglés.
  */
+const MAPA_TIPOS_MOVIMIENTO = new Map([
+  ['entry', 'Entrada'],
+  ['exit', 'Salida'],
+  ['transfer', 'Traslado'],
+  ['adjustment', 'Ajuste'],
+])
+
 export function traducirTipoMovimiento(tipo: string): string {
-  const mapa: Record<string, string> = {
-    entry: 'Entrada',
-    exit: 'Salida',
-    transfer: 'Traslado',
-    adjustment: 'Ajuste',
-  }
-  return mapa[tipo] ?? tipo
+  return MAPA_TIPOS_MOVIMIENTO.get(tipo) ?? tipo
 }

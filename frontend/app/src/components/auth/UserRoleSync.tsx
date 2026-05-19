@@ -14,7 +14,7 @@ import { useAuth } from '@/context/ContextoAutenticacion'
 import type { SesionUsuario } from '@/services/authApi'
 
 export function UserRoleSync() {
-  const { data: rolBackend, isLoading, error } = useUserRole()
+  const { data: rolBackend } = useUserRole()
   const { actualizarUsuario } = useAuth()
   const setRol = useSesionStore((state) => state.setRol)
   const rolPersistido = useSesionStore((state) => state.rol)
@@ -25,7 +25,6 @@ export function UserRoleSync() {
   useEffect(() => {
     if (rolBackend && typeof rolBackend === 'string') {
       if (rolBackend !== ultimoRol.current) {
-        console.log('[UserRoleSync] Actualizando rol:', rolBackend)
         ultimoRol.current = rolBackend
         // Actualizar store persistido
         setRol(rolBackend)
@@ -35,18 +34,6 @@ export function UserRoleSync() {
       }
     }
   }, [rolBackend, setRol, actualizarUsuario])
-
-  // Log de debugging (solo en desarrollo)
-  useEffect(() => {
-    if (import.meta.env.DEV) {
-      console.log('[UserRoleSync] Estado:', {
-        rolPersistido,
-        rolBackend,
-        isLoading,
-        error: error?.message,
-      })
-    }
-  }, [rolPersistido, rolBackend, isLoading, error])
 
   return null
 }

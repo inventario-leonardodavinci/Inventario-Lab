@@ -78,28 +78,3 @@ export function actualizarArticulo(
     { authUserId },
   ).then((res) => ({ data: unwrapData(res) }))
 }
-
-// ─── Compatibilidad con código anterior ──────────────────────────────────────
-
-/** @deprecated Usar getArticulos en su lugar */
-export function getInventario(authUserId: string, search = '') {
-  return getArticulos(authUserId, { search })
-}
-
-/** @deprecated Usar crearArticulo en su lugar */
-export function crearArticuloInventario(
-  authUserId: string,
-  entrada: {
-    code?: string
-    name: string
-    category_id: number
-    unit?: string
-  },
-) {
-  return crearArticulo(authUserId, {
-    codigo: entrada.code,
-    nombre: entrada.name,
-    categoria_id: entrada.category_id,
-    unidad: entrada.unit,
-  })
-}

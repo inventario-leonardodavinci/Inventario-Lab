@@ -108,19 +108,16 @@ export function ProveedorAutenticacion({ children }: { children: React.ReactNode
   useEffect(() => {
     // Control global para StrictMode - evita múltiples verificaciones
     if (verificacionGlobalCompletada) {
-      console.log('[Auth] Verificación global ya completada, ignorando...');
       setCargando(false);
       return;
     }
 
     if (verificacionGlobalEnProgreso) {
-      console.log('[Auth] Verificación global en progreso, esperando...');
       return;
     }
 
     // Evitar múltiples ejecuciones simultáneas
     if (verificandoSesion.current) {
-      console.log('[Auth] Verificación ya en progreso (local), ignorando...');
       return;
     }
 
@@ -133,19 +130,16 @@ export function ProveedorAutenticacion({ children }: { children: React.ReactNode
     logoutPendiente.current = false;
     verificandoSesion.current = true;
     verificacionGlobalEnProgreso = true;
-    console.log('[Auth] Iniciando verificación de sesión...');
 
     const verificar = async () => {
       try {
         const resultado = await verificarSesionConReintento(!!usuarioPersistido);
         
         if (logoutPendiente.current || abortControllerRef.current?.signal.aborted) {
-          console.log('[Auth] Verificación cancelada');
           return;
         }
 
         if (resultado.tipo === 'sesion_activa') {
-          console.log('[Auth] Sesión activa detectada');
           // Usar rol persistido si existe para evitar flash de rol por defecto
           const sesionConRolPersistido = rolPersistido 
             ? { ...resultado.sesion, role: rolPersistido as SesionUsuario['role'] }
@@ -177,10 +171,8 @@ export function ProveedorAutenticacion({ children }: { children: React.ReactNode
           }
 
         } else if (resultado.tipo === 'error_red') {
-          console.log('[Auth] Error de red, manteniendo sesión cacheada');
           setProcesandoOAuth(false);
         } else {
-          console.log('[Auth] Sin sesión activa');
           setProcesandoOAuth(false);
           if (usuarioPersistido) {
             setUser(null);
@@ -227,7 +219,6 @@ export function ProveedorAutenticacion({ children }: { children: React.ReactNode
       await sincronizarPerfil(sesion.authUserId, sesion.displayName, sesion.email);
       const rol = await obtenerRolDesdeBackend(sesion.authUserId, sesion.email);
       if (rol) {
-        console.log('[Auth] Login - Rol obtenido:', rol);
         useSesionStore.getState().setRol(rol);
         queryClient.setQueryData(['userRole', sesion.authUserId], rol);
         // Actualizar usuario con rol
@@ -251,7 +242,6 @@ export function ProveedorAutenticacion({ children }: { children: React.ReactNode
         await sincronizarPerfil(resultado.sesion.authUserId, resultado.sesion.displayName, resultado.sesion.email);
         const rol = await obtenerRolDesdeBackend(resultado.sesion.authUserId, resultado.sesion.email);
         if (rol) {
-          console.log('[Auth] Registro - Rol obtenido:', rol);
           useSesionStore.getState().setRol(rol);
           queryClient.setQueryData(['userRole', resultado.sesion.authUserId], rol);
           setUser((prev) => prev ? { ...prev, role: rol } : prev);
@@ -275,7 +265,6 @@ export function ProveedorAutenticacion({ children }: { children: React.ReactNode
       await sincronizarPerfil(sesion.authUserId, sesion.displayName, sesion.email);
       const rol = await obtenerRolDesdeBackend(sesion.authUserId, sesion.email);
       if (rol) {
-        console.log('[Auth] VerificarEmail - Rol obtenido:', rol);
         useSesionStore.getState().setRol(rol);
         queryClient.setQueryData(['userRole', sesion.authUserId], rol);
         setUser((prev) => prev ? { ...prev, role: rol } : prev);

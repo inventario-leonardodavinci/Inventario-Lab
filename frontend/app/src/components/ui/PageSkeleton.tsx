@@ -6,7 +6,7 @@ import { Skeleton } from '@/components/ui/skeleton'
 
 // ─── Bloques reutilizables ────────────────────────────────────────────────────
 
-export function SkeletonCard({ children, className = '' }: { children?: React.ReactNode; className?: string }) {
+function SkeletonCard({ children, className = '' }: { children?: React.ReactNode; className?: string }) {
   return (
     <div className={`rounded-xl border bg-card p-4 shadow-sm ${className}`}>
       {children}
@@ -60,56 +60,6 @@ function SkeletonPageHeader({
 
 // ─── Variantes por página ─────────────────────────────────────────────────────
 
-/** Panel principal: 4 KPI cards + tabla alertas + feed actividad */
-export function SkeletonPanel() {
-  return (
-    <main className="flex flex-1 grow flex-col gap-6 bg-muted/20 p-4 lg:p-6">
-      <SkeletonPageHeader buttonW="w-52" />
-
-      {/* KPI cards */}
-      <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-4">
-        {Array.from({ length: 4 }).map((_, i) => (
-          <SkeletonCard key={i}>
-            <div className="flex items-start justify-between pb-2">
-              <div className="flex flex-col gap-2">
-                <Skeleton className="h-3.5 w-28" />
-                <Skeleton className="h-8 w-16" />
-              </div>
-              <Skeleton className="size-9 rounded-md" />
-            </div>
-            <div className="flex items-center justify-between gap-2 pt-2">
-              <Skeleton className="h-3 w-32" />
-              <Skeleton className="h-5 w-16 rounded-full" />
-            </div>
-          </SkeletonCard>
-        ))}
-      </div>
-
-      {/* Tabla alertas + feed */}
-      <div className="grid gap-4 xl:grid-cols-3">
-        <SkeletonCard className="xl:col-span-2">
-          <SkeletonCardHeader titleW="w-52" descW="w-64" />
-          <SkeletonTableRows cols={['w-1/3', 'w-20', 'w-20', 'w-16']} rows={5} />
-        </SkeletonCard>
-        <SkeletonCard>
-          <SkeletonCardHeader titleW="w-36" descW="w-44" />
-          <div className="flex flex-col gap-4">
-            {Array.from({ length: 5 }).map((_, i) => (
-              <div key={i} className="flex items-start gap-3">
-                <Skeleton className="size-8 shrink-0 rounded-full" />
-                <div className="flex flex-1 flex-col gap-1.5">
-                  <Skeleton className="h-3.5 w-3/4" />
-                  <Skeleton className="h-3 w-1/2" />
-                </div>
-              </div>
-            ))}
-          </div>
-        </SkeletonCard>
-      </div>
-    </main>
-  )
-}
-
 /** Tabla genérica: cabecera + card filtros + card tabla */
 export function SkeletonTabla({
   cols,
@@ -145,16 +95,6 @@ export function SkeletonTabla({
   )
 }
 
-/** Artículos: filtros + tabla con 7 columnas */
-export function SkeletonArticulos() {
-  return (
-    <SkeletonTabla
-      cols={['w-20', 'flex-1', 'w-24', 'w-16', 'w-16', 'w-16', 'w-16', 'w-20']}
-      rows={7}
-    />
-  )
-}
-
 /** Categorías: tabla simple sin filtros */
 export function SkeletonCategorias() {
   return (
@@ -177,70 +117,6 @@ export function SkeletonUbicaciones() {
   )
 }
 
-/** Movimientos: formulario + tabla */
-export function SkeletonMovimientos() {
-  return (
-    <main className="flex flex-1 grow flex-col gap-6 bg-muted/20 p-4 lg:p-6">
-      <SkeletonPageHeader hasButton={false} />
-
-      {/* Formulario */}
-      <SkeletonCard>
-        <SkeletonCardHeader titleW="w-52" descW="w-64" />
-        <div className="grid gap-4 md:grid-cols-2">
-          {Array.from({ length: 6 }).map((_, i) => (
-            <div key={i} className="flex flex-col gap-2">
-              <Skeleton className="h-3.5 w-24" />
-              <Skeleton className="h-9 w-full" />
-            </div>
-          ))}
-          <div className="flex items-end md:col-span-2">
-            <Skeleton className="h-9 w-40" />
-          </div>
-        </div>
-      </SkeletonCard>
-
-      {/* Historial */}
-      <SkeletonCard>
-        <SkeletonCardHeader titleW="w-36" descW="w-28" />
-        <div className="mb-3 flex justify-end">
-          <Skeleton className="h-9 w-36" />
-        </div>
-        <SkeletonTableRows cols={['w-16', 'w-20', 'flex-1', 'w-20', 'w-20', 'w-32']} rows={6} />
-      </SkeletonCard>
-    </main>
-  )
-}
-
-/** Alertas: filtros (3 dropdowns) + tabla */
-export function SkeletonAlertas() {
-  return (
-    <main className="flex flex-1 grow flex-col gap-6 bg-muted/20 p-4 lg:p-6">
-      <SkeletonPageHeader hasButton={false} />
-
-      <SkeletonCard>
-        <SkeletonCardHeader titleW="w-20" descW="w-56" />
-        <div className="flex flex-wrap gap-4">
-          {Array.from({ length: 3 }).map((_, i) => (
-            <div key={i} className="flex flex-col gap-2">
-              <Skeleton className="h-3.5 w-20" />
-              <Skeleton className="h-9 w-40" />
-            </div>
-          ))}
-          <div className="flex items-end gap-2">
-            <Skeleton className="h-9 w-28" />
-            <Skeleton className="h-9 w-20" />
-          </div>
-        </div>
-      </SkeletonCard>
-
-      <SkeletonCard>
-        <SkeletonCardHeader titleW="w-36" descW="w-28" />
-        <SkeletonTableRows cols={['w-24', 'w-16', 'w-16', 'flex-1', 'w-32', 'w-28']} rows={7} />
-      </SkeletonCard>
-    </main>
-  )
-}
-
 /** Mantenimiento: input rápido + tabla */
 export function SkeletonMantenimiento() {
   return (
@@ -258,45 +134,6 @@ export function SkeletonMantenimiento() {
       <SkeletonCard>
         <SkeletonCardHeader titleW="w-36" descW="w-28" />
         <SkeletonTableRows cols={['w-12', 'w-28', 'w-20', 'flex-1', 'w-24']} rows={5} />
-      </SkeletonCard>
-    </main>
-  )
-}
-
-/** Informes: filtros fecha + 3 stat cards + tabla */
-export function SkeletonInformes() {
-  return (
-    <main className="flex flex-1 grow flex-col gap-6 bg-muted/20 p-4 lg:p-6">
-      <SkeletonPageHeader hasButton={false} />
-
-      <SkeletonCard>
-        <SkeletonCardHeader titleW="w-36" descW="w-56" />
-        <div className="grid gap-4 md:grid-cols-4">
-          {Array.from({ length: 4 }).map((_, i) => (
-            <div key={i} className="flex flex-col gap-2">
-              <Skeleton className="h-3.5 w-24" />
-              <Skeleton className="h-9 w-full" />
-            </div>
-          ))}
-          <div className="flex justify-end gap-2 md:col-span-4">
-            <Skeleton className="h-9 w-32" />
-            <Skeleton className="h-9 w-36" />
-          </div>
-        </div>
-      </SkeletonCard>
-
-      <div className="grid gap-4 md:grid-cols-3">
-        {Array.from({ length: 3 }).map((_, i) => (
-          <SkeletonCard key={i}>
-            <Skeleton className="mb-2 h-3.5 w-28" />
-            <Skeleton className="h-9 w-16" />
-          </SkeletonCard>
-        ))}
-      </div>
-
-      <SkeletonCard>
-        <SkeletonCardHeader titleW="w-36" descW="w-28" />
-        <SkeletonTableRows cols={['w-20', 'flex-1', 'w-28', 'w-20', 'w-32']} rows={6} />
       </SkeletonCard>
     </main>
   )

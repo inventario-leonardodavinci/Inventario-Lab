@@ -1,7 +1,7 @@
 /**
  * Funciones de formateo centralizadas para el sistema de inventario.
  * Todas las salidas están en español.
- * Feature: reestructuracion-inventario-salud-ambiental
+ * Feature: reestructuracion-lab-leonardo
  */
 
 import { format, formatDistanceToNow, isValid, parseISO } from 'date-fns'
@@ -108,38 +108,6 @@ export function formatearTipoUbicacion(tipo: TipoUbicacion): string {
     otro: 'Otro',
   }
   return mapa[tipo]
-}
-
-// ─── Alertas (legacy — módulo no activo en API actual) ────────────────────────
-
-export function formatearTipoAlerta(tipo: string): string {
-  const mapa: Record<string, string> = {
-    stock_bajo: 'Stock bajo',
-    caducidad: 'Caducidad',
-    mantenimiento: 'Mantenimiento',
-    inactividad: 'Inactividad',
-  }
-  return mapa[tipo] ?? tipo
-}
-
-export function formatearSeveridad(severidad: string): string {
-  const mapa: Record<string, string> = {
-    baja: 'Baja',
-    media: 'Media',
-    alta: 'Alta',
-    critica: 'Crítica',
-  }
-  return mapa[severidad] ?? severidad
-}
-
-export function formatearEstadoAlerta(estado: string): string {
-  const mapa: Record<string, string> = {
-    abierta: 'Abierta',
-    confirmada: 'Confirmada',
-    resuelta: 'Resuelta',
-    ignorada: 'Ignorada',
-  }
-  return mapa[estado] ?? estado
 }
 
 // ─── Números ──────────────────────────────────────────────────────────────────

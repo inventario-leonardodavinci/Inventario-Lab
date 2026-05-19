@@ -100,6 +100,8 @@ describe('unwrapData', () => {
 // ─── unwrapPaginated ──────────────────────────────────────────────────────────
 
 describe('unwrapPaginated', () => {
+  const valorNoTipado = (value: unknown) => value as Parameters<typeof unwrapPaginated>[0]
+
   it('retorna el paginado si ya tiene estructura data + meta', () => {
     const paginado = {
       data: [{ id: 1 }],
@@ -127,18 +129,18 @@ describe('unwrapPaginated', () => {
   })
 
   it('retorna paginado vacío para valor no objeto', () => {
-    const resultado = unwrapPaginated(null as any)
+    const resultado = unwrapPaginated(valorNoTipado(null))
     expect(resultado.data).toEqual([])
     expect(resultado.meta.total).toBe(0)
   })
 
   it('retorna paginado vacío para undefined', () => {
-    const resultado = unwrapPaginated(undefined as any)
+    const resultado = unwrapPaginated(valorNoTipado(undefined))
     expect(resultado.data).toEqual([])
   })
 
   it('retorna paginado vacío para string', () => {
-    const resultado = unwrapPaginated('not-valid' as any)
+    const resultado = unwrapPaginated(valorNoTipado('not-valid'))
     expect(resultado.data).toEqual([])
   })
 
