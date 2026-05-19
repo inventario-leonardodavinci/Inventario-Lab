@@ -6,9 +6,9 @@ use App\Models\UsuarioApp;
 use Illuminate\Console\Command;
 use Spatie\Permission\PermissionRegistrar;
 
-class PromoverAdmin extends Command
+class AsignarRolUsuario extends Command
 {
-    protected $signature = 'admin:promover
+    protected $signature = 'usuarios:asignar-rol
                             {busqueda : Nombre visible o fragmento de auth_user_id del usuario}
                             {--rol=profesor : Rol a asignar (profesor|consultor)}';
 
@@ -25,7 +25,6 @@ class PromoverAdmin extends Command
             return self::FAILURE;
         }
 
-        // Buscar por nombre_visible (exacto o parcial) o por auth_user_id
         $usuarios = UsuarioApp::query()
             ->with('roles')
             ->where('nombre_visible', 'like', "%{$busqueda}%")

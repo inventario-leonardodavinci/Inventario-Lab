@@ -16,8 +16,7 @@ use Symfony\Component\HttpFoundation\Response;
  * 1. Extrae el user_id de la cabecera X-Auth-User-Id
  * 2. Crea automáticamente el usuario en BD si es primer acceso
  * 3. Asigna rol 'consultor' por defecto si no tiene ninguno
- * 4. Sincroniza roles elevados desde InsForge
- * 5. Promueve a profesor si el email está en la lista de admins
+ * 4. Promueve a profesor si el email está en la lista configurada
  *
  * El usuario resuelto se almacena en $request->attributes->get('app_user')
  */
@@ -91,28 +90,12 @@ class ResolverUsuarioApp
             $usuarioApp->load('roles');
         }
 
-        // ── Sincronizar rol elevado desde insforge ───────────────────────────────
-        // Si el cliente envía X-Auth-User-Role: profesor, se actualiza
-        // el rol en BD. Nunca se degrada: un 'profesor' promovido por un admin no
-        // vuelve a 'consultor' aunque su metadata de insforge diga 'consultor'.
-        $roleDesdeHeader = $request->header('X-Auth-User-Role');
-        $rolesElevados   = ['profesor'];
-
-        if (in_array($roleDesdeHeader, $rolesElevados, true)) {
-            $rolActual = $usuarioApp->roles->first()?->name;
-            if ($rolActual !== $roleDesdeHeader) {
-                $usuarioApp->syncRoles([$roleDesdeHeader]);
-                app(\Spatie\Permission\PermissionRegistrar::class)->forgetCachedPermissions();
-                $usuarioApp->load('roles');
-            }
-        }
-
         // ── Promoverse por email si está en la lista PROFESOR_EMAILS ────────────
         // Si el email del usuario coincide con uno de los emails de profesor
         // configurados en .env, se promueve automáticamente a profesor.
         // Útil para cuentas OAuth (Google) que se crean como 'consultor' por defecto.
         $emailHeader  = $request->header('X-Auth-User-Email');
-        $profesorEmails = array_filter(array_map('trim', explode(',', (string) config('constantes.profesor_emails', env('PROFESOR_EMAILS', env('ADMIN_EMAILS', ''))))));
+        $profesorEmails = array_filter(array_map('trim', explode(',', (string) config('constantes.profesor_emails', env('PROFESOR_EMAILS', '')))));
 
         if ($emailHeader && in_array($emailHeader, $profesorEmails, true)) {
             $rolActual = $usuarioApp->roles->first()?->name;

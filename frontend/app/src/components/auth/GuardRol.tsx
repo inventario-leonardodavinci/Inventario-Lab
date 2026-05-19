@@ -5,7 +5,7 @@
  *
  * Uso:
  *   <GuardRol roles={['profesor']}>
- *     <EnlaceAdministracion />
+ *     <EnlaceUsuarios />
  *   </GuardRol>
  */
 import { useAuth } from '@/context/ContextoAutenticacion'

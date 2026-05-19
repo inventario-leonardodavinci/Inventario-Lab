@@ -203,4 +203,18 @@ describe('ResolverUsuarioApp — comportamiento automático', function () {
         $this->getJson('/api/v1/articulos')
             ->assertStatus(401);
     });
+
+    it('no permite elevar a profesor mediante cabecera enviada por el cliente', function () {
+        $usuario = UsuarioApp::factory()->create(['activo' => true]);
+        $usuario->assignRole('consultor');
+
+        $this->postJson('/api/v1/categorias', ['nombre' => 'Cabecera maliciosa'], [
+            'X-Auth-User-Id' => $usuario->auth_user_id,
+            'X-Auth-User-Role' => 'profesor',
+        ])->assertStatus(403);
+
+        $usuario->refresh();
+        expect($usuario->hasRole('consultor'))->toBeTrue();
+        expect($usuario->hasRole('profesor'))->toBeFalse();
+    });
 });

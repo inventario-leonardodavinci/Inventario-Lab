@@ -45,7 +45,7 @@ class RolesYPermisosSeeder extends Seeder
         // Auditoría
         'auditoria.ver',
 
-        // Usuarios (solo admin)
+        // Usuarios (solo profesor)
         'usuarios.ver',
         'usuarios.editar_roles',
 

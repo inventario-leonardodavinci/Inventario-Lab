@@ -224,8 +224,8 @@ export function ProveedorAutenticacion({ children }: { children: React.ReactNode
 
     // Sincronizar perfil y obtener rol UNA sola vez
     try {
-      await sincronizarPerfil(sesion.authUserId, sesion.displayName, sesion.email, sesion.role);
-      const rol = await obtenerRolDesdeBackend(sesion.authUserId, sesion.role, sesion.email);
+      await sincronizarPerfil(sesion.authUserId, sesion.displayName, sesion.email);
+      const rol = await obtenerRolDesdeBackend(sesion.authUserId, sesion.email);
       if (rol) {
         console.log('[Auth] Login - Rol obtenido:', rol);
         useSesionStore.getState().setRol(rol);
@@ -248,8 +248,8 @@ export function ProveedorAutenticacion({ children }: { children: React.ReactNode
 
       // Sincronizar perfil y obtener rol UNA sola vez
       try {
-        await sincronizarPerfil(resultado.sesion.authUserId, resultado.sesion.displayName, resultado.sesion.email, resultado.sesion.role);
-        const rol = await obtenerRolDesdeBackend(resultado.sesion.authUserId, resultado.sesion.role, resultado.sesion.email);
+        await sincronizarPerfil(resultado.sesion.authUserId, resultado.sesion.displayName, resultado.sesion.email);
+        const rol = await obtenerRolDesdeBackend(resultado.sesion.authUserId, resultado.sesion.email);
         if (rol) {
           console.log('[Auth] Registro - Rol obtenido:', rol);
           useSesionStore.getState().setRol(rol);
@@ -272,8 +272,8 @@ export function ProveedorAutenticacion({ children }: { children: React.ReactNode
 
     // Sincronizar perfil y obtener rol UNA sola vez
     try {
-      await sincronizarPerfil(sesion.authUserId, sesion.displayName, sesion.email, sesion.role);
-      const rol = await obtenerRolDesdeBackend(sesion.authUserId, sesion.role, sesion.email);
+      await sincronizarPerfil(sesion.authUserId, sesion.displayName, sesion.email);
+      const rol = await obtenerRolDesdeBackend(sesion.authUserId, sesion.email);
       if (rol) {
         console.log('[Auth] VerificarEmail - Rol obtenido:', rol);
         useSesionStore.getState().setRol(rol);

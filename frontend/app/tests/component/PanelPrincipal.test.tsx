@@ -22,7 +22,7 @@ vi.mock("../../src/services/movimientosApi", () => ({ getResumenHoy: vi.fn(), ge
 vi.mock("../../src/services/notificacionesApi", () => ({}));
 vi.mock("../../src/context/ContextoAutenticacion", () => ({
   useAuth: () => ({
-    user: { authUserId: "test-user-id", displayName: "Tester", role: "admin" },
+    user: { authUserId: "test-user-id", displayName: "Tester", role: "profesor" },
     login: vi.fn(),
     logout: vi.fn(),
   }),

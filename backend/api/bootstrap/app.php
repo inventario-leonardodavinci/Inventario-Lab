@@ -13,7 +13,7 @@ return Application::configure(basePath: dirname(__DIR__))
         health: '/up',
     )
     ->withCommands([
-        \App\Console\Commands\PromoverAdmin::class,
+        \App\Console\Commands\AsignarRolUsuario::class,
     ])
     ->withMiddleware(function (Middleware $middleware): void {
         $middleware->alias([
@@ -26,4 +26,3 @@ return Application::configure(basePath: dirname(__DIR__))
     ->withExceptions(function (Exceptions $exceptions): void {
         Integration::handles($exceptions);
     })->create();
-

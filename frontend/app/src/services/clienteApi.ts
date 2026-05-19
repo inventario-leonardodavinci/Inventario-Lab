@@ -6,7 +6,6 @@ export type ApiClientOptions = {
   authUserId?: string;
   authUserName?: string;
   authUserEmail?: string;
-  authUserRole?: string;
 };
 
 const API_BASE_URL = import.meta.env.VITE_API_BASE_URL;
@@ -165,7 +164,6 @@ export async function apiClient<T>(
   if (opciones.authUserId) headers['X-Auth-User-Id'] = opciones.authUserId
   if (opciones.authUserName) headers['X-Auth-User-Name'] = opciones.authUserName
   if (opciones.authUserEmail) headers['X-Auth-User-Email'] = opciones.authUserEmail
-  if (opciones.authUserRole) headers['X-Auth-User-Role'] = opciones.authUserRole
 
   const axiosConfig: AxiosRequestConfig = {
     method: (configuracion.method as string | undefined) ?? 'GET',

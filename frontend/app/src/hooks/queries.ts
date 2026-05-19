@@ -501,7 +501,7 @@ export function useUserRole() {
   return useQuery({
     queryKey: queryKeys.userRole(user?.authUserId),
     queryFn: async () => {
-      const rol = await obtenerRolDesdeBackend(user!.authUserId, user!.role, user!.email)
+      const rol = await obtenerRolDesdeBackend(user!.authUserId, user!.email)
       // Si el backend no devuelve rol (error/null), usar el rol persistido para no sobreescribir
       return rol ?? rolStore ?? null
     },
