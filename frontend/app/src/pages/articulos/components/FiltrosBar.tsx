@@ -139,16 +139,20 @@ export function FiltrosBar({
         )}
 
         {/* Separador visual */}
-        <div className="h-5 w-px bg-border shrink-0" />
+        <div className="hidden h-5 w-px shrink-0 bg-border sm:block" />
 
         {/* Toggle modo vista */}
-        <div className="flex rounded-md border overflow-hidden shrink-0" role="group" aria-label="Modo de vista">
+        <div
+          className="inline-flex h-9 w-fit shrink-0 items-center rounded-lg border bg-muted/60 p-0.5 shadow-sm sm:ml-auto"
+          role="group"
+          aria-label="Modo de vista"
+        >
           <Button
             variant="ghost"
             size="icon"
             className={cn(
-              "rounded-none h-9 w-9 border-0",
-              modo === 'grid' && "bg-primary text-primary-foreground hover:bg-primary/90 hover:text-primary-foreground"
+              "h-8 w-8 rounded-md border-0 text-muted-foreground transition-all hover:bg-background/70 hover:text-foreground",
+              modo === 'grid' && "bg-background text-foreground shadow-sm hover:bg-background"
             )}
             aria-label="Vista cuadrícula"
             aria-pressed={modo === 'grid'}
@@ -160,8 +164,8 @@ export function FiltrosBar({
             variant="ghost"
             size="icon"
             className={cn(
-              "rounded-none h-9 w-9 border-0 border-l",
-              modo === 'lista' && "bg-primary text-primary-foreground hover:bg-primary/90 hover:text-primary-foreground"
+              "h-8 w-8 rounded-md border-0 text-muted-foreground transition-all hover:bg-background/70 hover:text-foreground",
+              modo === 'lista' && "bg-background text-foreground shadow-sm hover:bg-background"
             )}
             aria-label="Vista lista"
             aria-pressed={modo === 'lista'}

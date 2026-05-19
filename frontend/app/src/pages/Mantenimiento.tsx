@@ -143,6 +143,30 @@ export default function Mantenimiento() {
 
   // ─── Handlers ────────────────────────────────────────────────────────────────
 
+  const resetEditForm = () => {
+    setEditForm({
+      estado: 'operativo',
+      next_service_due_date: '',
+      frecuencia: 'mensual',
+      observaciones: '',
+      completarAhora: false,
+      numero_serie: '',
+      manufacturer: '',
+      model: '',
+    })
+  }
+
+  const cerrarEditar = () => {
+    setIsEditDialogOpen(false)
+    setActivoEditando(null)
+    resetEditForm()
+  }
+
+  const cerrarEliminar = () => {
+    setIsDeleteDialogOpen(false)
+    setActivoEliminando(null)
+  }
+
   const handleEditar = (asset: ActivoMantenimiento) => {
     const frecuencia = extraerFrecuenciaDeNotas(asset.notes)
     const observaciones = extraerObservaciones(asset.notes)
@@ -192,8 +216,7 @@ export default function Mantenimiento() {
           ? `Mantenimiento completado. Próximo: ${formatearFecha(nuevaProximaFecha)}`
           : 'Mantenimiento actualizado correctamente'
       )
-      setIsEditDialogOpen(false)
-      setActivoEditando(null)
+      cerrarEditar()
     } catch {
       toast.error('Error al actualizar el mantenimiento')
     }
@@ -209,8 +232,7 @@ export default function Mantenimiento() {
     try {
       await eliminarActivo.mutateAsync(activoEliminando.id)
       toast.success('Activo de mantenimiento eliminado correctamente')
-      setIsDeleteDialogOpen(false)
-      setActivoEliminando(null)
+      cerrarEliminar()
     } catch {
       toast.error('Error al eliminar el activo')
     }
@@ -567,7 +589,10 @@ export default function Mantenimiento() {
       </Card>
 
       {/* ─── Modal: Editar Mantenimiento ────────────────────────────────────────── */}
-      <Dialog open={isEditDialogOpen} onOpenChange={setIsEditDialogOpen}>
+      <Dialog open={isEditDialogOpen} onOpenChange={(open) => {
+        if (open) setIsEditDialogOpen(true)
+        else cerrarEditar()
+      }}>
         <DialogContent className="sm:max-w-[500px]">
           <DialogHeader>
             <DialogTitle>Editar Mantenimiento</DialogTitle>
@@ -736,7 +761,7 @@ export default function Mantenimiento() {
           </div>
           
           <DialogFooter>
-            <Button variant="outline" onClick={() => setIsEditDialogOpen(false)}>
+            <Button variant="outline" onClick={cerrarEditar}>
               Cancelar
             </Button>
             <Button 
@@ -762,7 +787,10 @@ export default function Mantenimiento() {
       </Dialog>
 
       {/* ─── Modal: Confirmar Eliminación ───────────────────────────────────────── */}
-      <Dialog open={isDeleteDialogOpen} onOpenChange={setIsDeleteDialogOpen}>
+      <Dialog open={isDeleteDialogOpen} onOpenChange={(open) => {
+        if (open) setIsDeleteDialogOpen(true)
+        else cerrarEliminar()
+      }}>
         <DialogContent className="sm:max-w-[400px]">
           <DialogHeader>
             <DialogTitle className="flex items-center gap-2 text-destructive">
@@ -780,7 +808,7 @@ export default function Mantenimiento() {
             </DialogDescription>
           </DialogHeader>
           <DialogFooter>
-            <Button variant="outline" onClick={() => setIsDeleteDialogOpen(false)}>
+            <Button variant="outline" onClick={cerrarEliminar}>
               Cancelar
             </Button>
             <Button 

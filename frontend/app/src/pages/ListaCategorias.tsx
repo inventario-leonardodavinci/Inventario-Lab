@@ -29,6 +29,15 @@ export default function ListaCategorias() {
 
   if (isLoading) return <SkeletonCategorias />
 
+  const cerrarCrear = () => {
+    setDialogAbierto(false)
+    setNombre('')
+  }
+
+  const cerrarEliminar = () => {
+    setConfirmarEliminar(null)
+  }
+
   const onGuardar = async () => {
     if (!nombre.trim()) {
       toast.error('El nombre de la categoría es obligatorio')
@@ -37,8 +46,7 @@ export default function ListaCategorias() {
     try {
       await crearMutation.mutateAsync({ nombre: nombre.trim() })
       toast.success('Categoría creada correctamente')
-      setDialogAbierto(false)
-      setNombre('')
+      cerrarCrear()
     } catch (error) {
       toast.error(error instanceof Error ? error.message : 'No se pudo crear la categoría')
     }
@@ -49,7 +57,7 @@ export default function ListaCategorias() {
     try {
       await eliminarMutation.mutateAsync(confirmarEliminar.id)
       toast.success(`Categoría "${confirmarEliminar.nombre}" eliminada`)
-      setConfirmarEliminar(null)
+      cerrarEliminar()
     } catch (error) {
       toast.error(error instanceof Error ? error.message : 'No se pudo eliminar la categoría')
     }
@@ -135,7 +143,10 @@ export default function ListaCategorias() {
       </Card>
 
       {/* Dialog: Nueva categoría */}
-      <Dialog open={dialogAbierto} onOpenChange={setDialogAbierto}>
+      <Dialog open={dialogAbierto} onOpenChange={(open) => {
+        if (open) setDialogAbierto(true)
+        else cerrarCrear()
+      }}>
         <DialogContent className="sm:max-w-[400px]">
           <DialogHeader>
             <DialogTitle>Nueva categoría</DialogTitle>
@@ -158,7 +169,7 @@ export default function ListaCategorias() {
             </div>
           </div>
           <DialogFooter>
-            <Button variant="outline" onClick={() => { setDialogAbierto(false); setNombre('') }}>
+            <Button variant="outline" onClick={cerrarCrear}>
               Cancelar
             </Button>
             <Button onClick={onGuardar} disabled={crearMutation.isPending}>
@@ -169,7 +180,7 @@ export default function ListaCategorias() {
       </Dialog>
 
       {/* Dialog: Confirmar eliminación */}
-      <Dialog open={!!confirmarEliminar} onOpenChange={(open) => { if (!open) setConfirmarEliminar(null) }}>
+      <Dialog open={!!confirmarEliminar} onOpenChange={(open) => { if (!open) cerrarEliminar() }}>
         <DialogContent className="sm:max-w-[400px]">
           <DialogHeader>
             <DialogTitle>Eliminar categoría</DialogTitle>
@@ -178,7 +189,7 @@ export default function ListaCategorias() {
             </DialogDescription>
           </DialogHeader>
           <DialogFooter>
-            <Button variant="outline" onClick={() => setConfirmarEliminar(null)}>
+            <Button variant="outline" onClick={cerrarEliminar}>
               Cancelar
             </Button>
             <Button variant="destructive" onClick={onEliminar} disabled={eliminarMutation.isPending}>

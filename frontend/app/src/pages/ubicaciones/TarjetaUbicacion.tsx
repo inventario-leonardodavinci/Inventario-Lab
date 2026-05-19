@@ -55,6 +55,27 @@ export function TarjetaUbicacion({ ub, onEdit }: TarjetaUbicacionProps) {
   const Icono = ICONO_TIPO[ub.tipo] ?? HelpCircle
   const colorClase = COLOR_TIPO[ub.tipo] ?? 'bg-muted text-muted-foreground'
 
+  const resetSubForm = () => {
+    setSubNombre('')
+    setSubDescripcion('')
+  }
+
+  const cerrarCrearSub = () => {
+    setCrearSubDialog(false)
+    resetSubForm()
+  }
+
+  const cerrarEditarSub = () => {
+    setEditarSub(null)
+    resetSubForm()
+  }
+
+  const abrirEditarSub = (sub: SubUbicacion) => {
+    setEditarSub(sub)
+    setSubNombre(sub.nombre)
+    setSubDescripcion(sub.descripcion ?? '')
+  }
+
   const handleCrearSub = async () => {
     if (!subNombre.trim()) { toast.error('El nombre es obligatorio'); return }
     try {
@@ -64,9 +85,7 @@ export function TarjetaUbicacion({ ub, onEdit }: TarjetaUbicacionProps) {
         descripcion: subDescripcion.trim() || undefined,
       })
       toast.success('Sub-ubicación creada')
-      setCrearSubDialog(false)
-      setSubNombre('')
-      setSubDescripcion('')
+      cerrarCrearSub()
     } catch (error) {
       toast.error(error instanceof Error ? error.message : 'Error al crear sub-ubicación')
     }
@@ -81,9 +100,7 @@ export function TarjetaUbicacion({ ub, onEdit }: TarjetaUbicacionProps) {
         datos: { nombre: subNombre.trim(), descripcion: subDescripcion.trim() || undefined },
       })
       toast.success('Sub-ubicación actualizada')
-      setEditarSub(null)
-      setSubNombre('')
-      setSubDescripcion('')
+      cerrarEditarSub()
     } catch (error) {
       toast.error(error instanceof Error ? error.message : 'Error al actualizar sub-ubicación')
     }
@@ -135,7 +152,7 @@ export function TarjetaUbicacion({ ub, onEdit }: TarjetaUbicacionProps) {
                 <BadgePremium key={sub.id} variant="soft" size="sm">
                   <span className="text-xs">{sub.nombre}</span>
                   <GuardRol roles={['profesor']}>
-                    <button onClick={() => { setEditarSub(sub); setSubNombre(sub.nombre); setSubDescripcion(sub.descripcion ?? '') }}
+                    <button onClick={() => abrirEditarSub(sub)}
                       className="ml-0.5 rounded p-0.5 hover:bg-foreground/10 transition-colors" aria-label="Editar sub-ubicación">
                       <Pencil className="size-2.5" />
                     </button>
@@ -151,7 +168,7 @@ export function TarjetaUbicacion({ ub, onEdit }: TarjetaUbicacionProps) {
 
           {/* Add sub-ubicacion button */}
           <GuardRol roles={['profesor']}>
-            <button onClick={() => { setCrearSubDialog(true); setSubNombre(''); setSubDescripcion('') }}
+            <button onClick={() => { resetSubForm(); setCrearSubDialog(true) }}
               className="flex items-center gap-1.5 text-[11px] text-muted-foreground hover:text-foreground transition-colors self-start">
               <Plus className="size-3" /> Añadir sub-ubicación
             </button>
@@ -160,7 +177,10 @@ export function TarjetaUbicacion({ ub, onEdit }: TarjetaUbicacionProps) {
       </CardPremium>
 
       {/* Dialog: Crear sub-ubicación */}
-      <Dialog open={crearSubDialog} onOpenChange={setCrearSubDialog}>
+      <Dialog open={crearSubDialog} onOpenChange={(open) => {
+        if (open) setCrearSubDialog(true)
+        else cerrarCrearSub()
+      }}>
         <DialogContent className="sm:max-w-[400px]">
           <DialogHeader>
             <DialogTitle>Nueva sub-ubicación</DialogTitle>
@@ -179,7 +199,7 @@ export function TarjetaUbicacion({ ub, onEdit }: TarjetaUbicacionProps) {
             </div>
           </div>
           <DialogFooter>
-            <Button variant="outline" onClick={() => setCrearSubDialog(false)}>Cancelar</Button>
+            <Button variant="outline" onClick={cerrarCrearSub}>Cancelar</Button>
             <Button onClick={handleCrearSub} disabled={crearSubMutation.isPending}>
               {crearSubMutation.isPending ? 'Guardando...' : 'Guardar'}
             </Button>
@@ -188,7 +208,9 @@ export function TarjetaUbicacion({ ub, onEdit }: TarjetaUbicacionProps) {
       </Dialog>
 
       {/* Dialog: Editar sub-ubicación */}
-      <Dialog open={!!editarSub} onOpenChange={(open) => { if (!open) setEditarSub(null) }}>
+      <Dialog open={!!editarSub} onOpenChange={(open) => {
+        if (!open) cerrarEditarSub()
+      }}>
         <DialogContent className="sm:max-w-[400px]">
           <DialogHeader>
             <DialogTitle>Editar sub-ubicación</DialogTitle>
@@ -207,7 +229,7 @@ export function TarjetaUbicacion({ ub, onEdit }: TarjetaUbicacionProps) {
             </div>
           </div>
           <DialogFooter>
-            <Button variant="outline" onClick={() => setEditarSub(null)}>Cancelar</Button>
+            <Button variant="outline" onClick={cerrarEditarSub}>Cancelar</Button>
             <Button onClick={handleActualizarSub} disabled={actualizarSubMutation.isPending}>
               {actualizarSubMutation.isPending ? 'Guardando...' : 'Guardar cambios'}
             </Button>

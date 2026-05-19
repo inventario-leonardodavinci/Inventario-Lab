@@ -50,7 +50,7 @@ export function useArticulosView() {
   const setModo = useCallback((nuevoModo: VistaModo) => {
     setModoVista('articulos', nuevoModo)
   }, [setModoVista])
-  
+
   const [articuloSeleccionado, setArticuloSeleccionado] = useState<Articulo | null>(null)
   const [tipoMovimiento, setTipoMovimiento] = useState<TipoMovimiento | null>(null)
   const [cantidad, setCantidad] = useState(1)
@@ -68,7 +68,7 @@ export function useArticulosView() {
     setTipoMovimiento(tipo)
     setMostrarPanelAccion(true)
   }, [])
-  
+
   const abrirDetalle = useCallback((articulo: Articulo) => {
     setArticuloDetalle(articulo)
     setDrawerAbierto(true)
@@ -135,7 +135,7 @@ export function useArticulosView() {
     setUbicacionId,
     setModo,
     setTipoMovimiento,
-    
+
     // Actions
     seleccionarArticulo,
     abrirDetalle,

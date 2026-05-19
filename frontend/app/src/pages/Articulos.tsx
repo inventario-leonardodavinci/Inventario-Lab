@@ -49,7 +49,7 @@ export default function Articulos() {
   const { data: ubicacionesData, isLoading: isLoadingUbicaciones } = useUbicaciones()
   const { data: movimientosData } = useMovimientos({ per_page: 50 })
   const { data: articuloDetalle } = useArticulo(view.articuloDetalle?.id ?? 0)
-  // Query para obtener stock del artículo seleccionado en panel de acción
+  const { data: articuloEditandoDetalle } = useArticulo(view.articuloEditando?.id ?? 0)
   const { data: articuloPanelDetalle, isLoading: isLoadingPanelDetalle } = useArticulo(view.articuloSeleccionado?.id ?? 0)
   
   // Mutations
@@ -62,6 +62,7 @@ export default function Articulos() {
   const categorias = useMemo(() => categoriasData?.data ?? [], [categoriasData])
   const ubicaciones = useMemo(() => ubicacionesData?.data ?? [], [ubicacionesData])
   const movimientos = useMemo(() => movimientosData?.data ?? [], [movimientosData])
+  const articuloFormulario = articuloEditandoDetalle?.data ?? view.articuloEditando
   
   // Contadores para filtros
   const contadores = useMemo(() => ({
@@ -101,7 +102,7 @@ export default function Articulos() {
       toast.error(error instanceof Error ? error.message : 'Error al actualizar')
     }
   }
-  
+
   const handleMovimiento = async (
     tipo: TipoMovimiento,
     cantidad: number,
@@ -112,16 +113,14 @@ export default function Articulos() {
   ) => {
     if (!view.articuloSeleccionado) return
 
-    // Construir objeto de movimiento
     const datosMovimiento: EntradaCrearMovimiento = {
       tipo,
       lineas: [{
         articulo_id: view.articuloSeleccionado.id,
-        cantidad
+        cantidad,
       }],
     }
 
-    // ENTRADA requiere ubicacion_destino_id
     if (tipo === 'entrada' && ubicacionDestinoId) {
       datosMovimiento.ubicacion_destino_id = Number(ubicacionDestinoId)
       if (subUbicacionDestinoId) {
@@ -129,7 +128,6 @@ export default function Articulos() {
       }
     }
 
-    // SALIDA requiere ubicacion_origen_id
     if (tipo === 'salida' && ubicacionOrigenId) {
       datosMovimiento.ubicacion_origen_id = Number(ubicacionOrigenId)
       if (subUbicacionOrigenId) {
@@ -137,7 +135,6 @@ export default function Articulos() {
       }
     }
 
-    // TRASLADO requiere ambas
     if (tipo === 'traslado' && ubicacionOrigenId && ubicacionDestinoId) {
       datosMovimiento.ubicacion_origen_id = Number(ubicacionOrigenId)
       datosMovimiento.ubicacion_destino_id = Number(ubicacionDestinoId)
@@ -148,17 +145,15 @@ export default function Articulos() {
         datosMovimiento.sub_ubicacion_destino_id = Number(subUbicacionDestinoId)
       }
     }
-    
-    // Validar antes de enviar
+
     const errorValidacion = validarMovimiento(datosMovimiento)
     if (errorValidacion) {
       toast.error(errorValidacion)
       return
     }
-    
+
     try {
       await crearMovimiento.mutateAsync(datosMovimiento)
-      
       toast.success(`${view.articuloSeleccionado.nombre}: ${tipo} de ${cantidad} unidades`)
       view.setMostrarPanelAccion(false)
       view.setCantidad(1)
@@ -261,7 +256,7 @@ export default function Articulos() {
         onEditar={esProfesor ? view.abrirEditar : undefined}
         onCrear={view.abrirCrear}
       />
-      
+
       {esProfesor && view.mostrarPanelAccion && view.articuloSeleccionado && (
         <PanelAccionRapida
           open={view.mostrarPanelAccion}
@@ -302,7 +297,7 @@ export default function Articulos() {
       
       {esProfesor && (
         <ArticuloFormSheet
-          articulo={view.articuloEditando}
+          articulo={articuloFormulario}
           categorias={categorias}
           ubicaciones={ubicaciones}
           open={view.formAbierto}

@@ -56,6 +56,7 @@ export function PanelAccionRapida({
   const [ubicacionDestino, setUbicacionDestino] = useState('')
   const [subUbicacionOrigen, setSubUbicacionOrigen] = useState('')
   const [subUbicacionDestino, setSubUbicacionDestino] = useState('')
+  const [tipoSeleccionado, setTipoSeleccionado] = useState<TipoMovimiento | null>(tipo)
   const [step, setStep] = useState<'tipo' | 'cantidad' | 'ubicacion'>('tipo')
 
   // Stock agrupado por ubicación y sección para mostrar en selectores
@@ -131,6 +132,7 @@ export function PanelAccionRapida({
     setUbicacionDestino('')
     setSubUbicacionOrigen('')
     setSubUbicacionDestino('')
+    setTipoSeleccionado(tipo)
 
     // Si el tipo ya viene preseleccionado, saltar al paso correspondiente
     if (tipo && open) {
@@ -161,12 +163,18 @@ export function PanelAccionRapida({
     } else {
       setStep('tipo')
     }
-  }, [articulo?.id, tipo, open, ubicaciones, ubicacionesConStock])
+  }, [articulo?.id, tipo, open, ubicaciones, ubicacionesConStock, stockPorUbicacion])
 
   if (!articulo) return null
 
   // Handler de selección de tipo
   const handleTipoSelect = (t: TipoMovimiento) => {
+    setTipoSeleccionado(t)
+    setUbicacionOrigen('')
+    setUbicacionDestino('')
+    setSubUbicacionOrigen('')
+    setSubUbicacionDestino('')
+
     // Para entrada: si hay 1 ubicación, auto-seleccionar destino
     if (t === 'entrada') {
       if (ubicaciones.length === 1) {
@@ -204,7 +212,7 @@ export function PanelAccionRapida({
   
   // Submit según tipo
   const handleSubmit = () => {
-    const tipoFinal = tipo || 'entrada'
+    const tipoFinal = tipoSeleccionado || tipo || 'entrada'
     
     if (tipoFinal === 'entrada') {
       onSubmit(tipoFinal, cantidad, undefined, ubicacionDestino, undefined, subUbicacionDestino || undefined)
@@ -247,7 +255,7 @@ export function PanelAccionRapida({
         {step === 'tipo' && (
           <div className="animate-fade-in-up flex gap-2">
             <Button
-              variant={tipo === 'entrada' ? 'default' : 'outline'}
+              variant={tipoSeleccionado === 'entrada' ? 'default' : 'outline'}
               className="flex-1 h-12 gap-2"
               onClick={() => handleTipoSelect('entrada')}
               disabled={isPending}
@@ -256,7 +264,7 @@ export function PanelAccionRapida({
               {isPending ? 'Cargando...' : 'Entrada'}
             </Button>
             <Button
-              variant={tipo === 'salida' ? 'default' : 'outline'}
+              variant={tipoSeleccionado === 'salida' ? 'default' : 'outline'}
               className="flex-1 h-12 gap-2"
               onClick={() => handleTipoSelect('salida')}
               disabled={articulo.stock_total === 0 || isPending}
@@ -265,7 +273,7 @@ export function PanelAccionRapida({
               {isPending ? 'Cargando...' : 'Salida'}
             </Button>
             <Button
-              variant={tipo === 'traslado' ? 'default' : 'outline'}
+              variant={tipoSeleccionado === 'traslado' ? 'default' : 'outline'}
               className="flex-1 h-12 gap-2"
               onClick={() => handleTipoSelect('traslado')}
               disabled={articulo.stock_total === 0 || isPending}
@@ -311,15 +319,15 @@ export function PanelAccionRapida({
             </div>
 
             <div className="flex gap-2 pt-2">
-              <Button variant="outline" className="flex-1" onClick={() => setStep('tipo')} disabled={isPending}>
+              <Button variant="outline" className="flex-1" onClick={handleCancel} disabled={isPending}>
                 <RotateCcw className="size-4 mr-1" />
-                Cambiar
+                Cancelar
               </Button>
               <Button onClick={handleSubmit} className="flex-1 gap-2" disabled={isPending}>
                 {isPending ? <Loader2 className="size-4 animate-spin" /> : (
-                  <>{tipo === 'entrada' && <Plus className="size-4" />}{tipo === 'salida' && <Minus className="size-4" />}</>
+                  <>{tipoSeleccionado === 'entrada' && <Plus className="size-4" />}{tipoSeleccionado === 'salida' && <Minus className="size-4" />}</>
                 )}
-                {isPending ? 'Procesando...' : `Confirmar ${tipo}`}
+                {isPending ? 'Procesando...' : `Confirmar ${tipoSeleccionado ?? tipo}`}
               </Button>
             </div>
           </div>
@@ -328,7 +336,7 @@ export function PanelAccionRapida({
         {step === 'ubicacion' && (
           <div className="animate-fade-in-up space-y-3">
             {/* Selector según tipo */}
-            {tipo === 'entrada' && (
+            {tipoSeleccionado === 'entrada' && (
               <div className="space-y-4">
                 <div>
                   <Label className="text-sm mb-2 font-medium block">
@@ -454,7 +462,7 @@ export function PanelAccionRapida({
               </div>
             )}
 
-            {tipo === 'salida' && (
+            {tipoSeleccionado === 'salida' && (
               <div className="space-y-4">
                 <div>
                   <Label className="text-sm mb-2 font-medium block">
@@ -568,7 +576,7 @@ export function PanelAccionRapida({
               </div>
             )}
 
-            {tipo === 'traslado' && (
+            {tipoSeleccionado === 'traslado' && (
               <div className="space-y-4">
                 <div className="grid grid-cols-1 gap-3">
                   <div>
