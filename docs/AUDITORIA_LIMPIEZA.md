@@ -1,4 +1,4 @@
-# Auditoría y Limpieza - Inventario Salud Ambiental
+# Auditoría y Limpieza - Lab Leonardo
 
 Última actualización: mayo 2026
 

@@ -52,7 +52,7 @@ export function BarraLateralAplicacion() {
             alt="Logo"
             className="size-7 dark:invert"
           />
-          Inventario Lab
+          Lab Leonardo
         </div>
       </SidebarHeader>
 

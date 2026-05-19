@@ -89,18 +89,18 @@ export function AuthLayout({ children }: AuthLayoutProps) {
               </svg>
             </div>
             <div>
-              <span className="text-sm font-semibold text-white">Inventario Lab</span>
-              <p className="text-xs text-white/50 tracking-wide uppercase">Salud Ambiental</p>
+              <span className="text-sm font-semibold text-white">Lab Leonardo</span>
+              <p className="text-xs text-white/50 tracking-wide uppercase">Laboratorio</p>
             </div>
           </div>
           <h1 className="text-5xl font-semibold leading-tight text-white tracking-tight">
-            Inventario de<br />
-            <span className="text-white/70 font-normal italic">Salud Ambiental</span>
+            Lab<br />
+            <span className="text-white/70 font-normal italic">Leonardo</span>
           </h1>
         </div>
         <div className="relative z-10 space-y-4 max-w-sm">
           <p className="text-lg leading-relaxed text-white/70">
-            Sistema integral para la gestión y seguimiento del inventario de recursos en salud ambiental.
+            Sistema integral para la gestión y seguimiento del inventario del laboratorio Leonardo.
           </p>
           <div className="flex items-center gap-2 text-sm text-white/50">
             <div className="w-8 h-px bg-white/30" />
@@ -119,8 +119,8 @@ export function AuthLayout({ children }: AuthLayoutProps) {
               </svg>
             </div>
             <div>
-              <p className="text-sm font-semibold leading-none">Inventario Lab</p>
-              <p className="text-xs text-muted-foreground">Salud Ambiental</p>
+              <p className="text-sm font-semibold leading-none">Lab Leonardo</p>
+              <p className="text-xs text-muted-foreground">Laboratorio</p>
             </div>
           </div>
           {children}

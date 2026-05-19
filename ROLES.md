@@ -1,4 +1,4 @@
-# Control de Acceso por Roles — Inventario Salud Ambiental
+# Control de Acceso por Roles — Lab Leonardo
 
 > Documento generado mediante análisis del código fuente.
 > Fuentes: `routes/api.php` (backend Laravel) + componentes frontend React.

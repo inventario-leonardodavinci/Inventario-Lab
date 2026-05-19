@@ -24,7 +24,7 @@ const RUTAS: Record<string, string> = {
 function useTituloRuta(): string {
   const { pathname } = useLocation()
   const base = "/" + pathname.split("/")[1]
-  return RUTAS[base] ?? RUTAS[pathname] ?? "Inventario Lab"
+  return RUTAS[base] ?? RUTAS[pathname] ?? "Lab Leonardo"
 }
 
 export function ContenedorAplicacion({ children }: { children: React.ReactNode }) {

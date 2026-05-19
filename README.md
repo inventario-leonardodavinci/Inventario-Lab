@@ -1,4 +1,4 @@
-# Inventario Laboratorio - Leonardo Da Vinci
+# Lab Leonardo
 
 Aplicación web para la gestión del inventario del laboratorio de química del IES Leonardo Da Vinci.
 

@@ -1,5 +1,5 @@
 /**
- * Tipos TypeScript centralizados para el sistema de inventario de Salud Ambiental.
+ * Tipos TypeScript centralizados para Lab Leonardo.
  * Todos los tipos reflejan el esquema de la API en español (snake_case).
  */
 

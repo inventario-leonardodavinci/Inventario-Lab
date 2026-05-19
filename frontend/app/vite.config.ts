@@ -6,18 +6,22 @@ import { compression } from 'vite-plugin-compression2'
 import { VitePWA } from 'vite-plugin-pwa'
 import { sentryVitePlugin } from '@sentry/vite-plugin'
 
+const isProduction = process.env.NODE_ENV === 'production'
+const sentryAuthToken = process.env.SENTRY_AUTH_TOKEN
+
 export default defineConfig({
   plugins: [
     react(),
     tailwindcss(),
 
     // ── Sentry ────────────────────────────────────────────────────────────────
-    sentryVitePlugin({
+    ...(isProduction && sentryAuthToken ? sentryVitePlugin({
       org: 'said-oudrhich',
       project: 'javascript-react',
+      authToken: sentryAuthToken,
       telemetry: false,
       bundleSizeOptimizations: { excludeDebugStatements: true },
-    }),
+    }) : []),
 
     // ── Compresión Brotli + gzip ──────────────────────────────────────────────
     compression({ algorithms: ['brotliCompress'], exclude: [/\.(br)$/, /\.(gz)$/] }),
@@ -41,9 +45,9 @@ export default defineConfig({
         ],
       },
       manifest: {
-        name: 'Inventario Salud Ambiental',
-        short_name: 'Inventario Lab',
-        description: 'Sistema de gestión de inventario para laboratorio de salud ambiental',
+        name: 'Lab Leonardo',
+        short_name: 'Lab Leonardo',
+        description: 'Sistema de gestión de inventario del laboratorio Leonardo',
         theme_color: '#3B82F6',
         background_color: '#ffffff',
         display: 'standalone',
@@ -66,17 +70,27 @@ export default defineConfig({
     }),
   ],
   server: {
-    proxy: {
-      '/sentry-tunnel': {
-        target: 'https://o4511061111144448.ingest.de.sentry.io',
-        changeOrigin: true,
-        rewrite: () => '/api/4511339315200080/envelope/',
-        secure: true,
-        configure: (proxy) => {
-          proxy.on('error', (err) => console.error('[sentry-tunnel]', err))
-        },
-      },
+    host: 'localhost',
+    port: 5173,
+    strictPort: true,
+    hmr: {
+      protocol: 'ws',
+      host: 'localhost',
+      clientPort: 5173,
     },
+    proxy: isProduction
+      ? {
+          '/sentry-tunnel': {
+            target: 'https://o4511061111144448.ingest.de.sentry.io',
+            changeOrigin: true,
+            rewrite: () => '/api/4511339315200080/envelope/',
+            secure: true,
+            configure: (proxy) => {
+              proxy.on('error', (err) => console.error('[sentry-tunnel]', err))
+            },
+          },
+        }
+      : undefined,
   },
   resolve: {
     alias: {

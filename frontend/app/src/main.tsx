@@ -12,16 +12,21 @@ import { ProveedorTema } from './context/ContextoTema.tsx'
 import { ApiError } from './services/clienteApi.ts'
 import { STALE_TIME_MS, GC_TIME_MS } from './constants'
 
-document.title = 'Inventario Salud Ambiental'
+document.title = 'Lab Leonardo'
 
 // ── Sentry ────────────────────────────────────────────────────────────────────
-// Solo se inicializa si hay DSN configurado (producción/staging).
-// En desarrollo local sin VITE_SENTRY_DSN, Sentry queda desactivado.
-if (import.meta.env.VITE_SENTRY_DSN) {
+// Solo se inicializa en producción/staging. En desarrollo local se puede activar
+// explícitamente con VITE_ENABLE_SENTRY_DEV=true si hace falta depurar Sentry.
+const sentryActivo = Boolean(
+  import.meta.env.VITE_SENTRY_DSN &&
+  (import.meta.env.PROD || import.meta.env.VITE_ENABLE_SENTRY_DEV === 'true')
+)
+
+if (sentryActivo) {
   Sentry.init({
     dsn: import.meta.env.VITE_SENTRY_DSN as string,
     sendDefaultPii: true,
-    tunnel: '/sentry-tunnel',
+    tunnel: import.meta.env.PROD ? '/sentry-tunnel' : undefined,
     environment: import.meta.env.MODE,
     // Capturar el 100% de errores, 10% de trazas de performance
     tracesSampleRate: import.meta.env.PROD ? 0.1 : 0,

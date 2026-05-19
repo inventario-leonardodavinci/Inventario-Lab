@@ -5,7 +5,7 @@ param(
 
 $ErrorActionPreference = "Stop"
 
-Write-Host "== Inventario Salud Ambiental: preparacion local ==" -ForegroundColor Cyan
+Write-Host "== Lab Leonardo: preparacion local ==" -ForegroundColor Cyan
 
 $scriptDir = if ($PSScriptRoot) { $PSScriptRoot } else { "C:\Users\soudr\Desktop\Inventario-SaludAmbiental" }
 
