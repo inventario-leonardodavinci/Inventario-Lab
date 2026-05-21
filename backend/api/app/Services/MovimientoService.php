@@ -178,6 +178,8 @@ class MovimientoService
 
         if ($subUbicacionId !== null) {
             $query->where('sub_ubicacion_id', $subUbicacionId);
+        } else {
+            $query->whereNull('sub_ubicacion_id');
         }
 
         $stock = $query->first();
