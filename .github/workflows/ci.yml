@@ -30,6 +30,12 @@ jobs:
       - uses: shivammathur/setup-php@v2
         with:
           php-version: "8.3"
+      - name: Caché de dependencias Composer
+        uses: actions/cache@v4
+        with:
+          path: backend/api/vendor
+          key: composer-${{ hashFiles('backend/api/composer.lock') }}
+          restore-keys: composer-
       - run: composer install --no-interaction --prefer-dist
       - run: cp .env.example .env
       - run: php artisan key:generate
