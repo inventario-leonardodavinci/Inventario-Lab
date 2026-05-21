@@ -357,6 +357,7 @@ export function useMovimientos(filtros?: FiltrosMovimiento) {
     queryFn: () => getMovimientos(user!.authUserId, filtros),
     enabled: !!user,
     placeholderData: (prev) => prev,
+    staleTime: STALE_TIME_MS,
   })
 }
 
@@ -396,6 +397,7 @@ export function useAuditoria(filtros?: FiltrosAuditoria) {
     queryFn: () => getAuditoria(user!.authUserId, filtros),
     enabled: !!user,
     placeholderData: (prev) => prev,
+    staleTime: STALE_TIME_LONG_MS,
   })
 }
 
