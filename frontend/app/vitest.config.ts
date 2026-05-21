@@ -16,5 +16,8 @@ export default defineConfig({
       ['tests/unit/**', 'node'],
     ],
     globals: true,
+    env: {
+      VITE_API_BASE_URL: 'http://localhost',
+    },
   },
 })

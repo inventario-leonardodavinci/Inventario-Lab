@@ -56,6 +56,9 @@ jobs:
           cache-dependency-path: frontend/app/package-lock.json
       - run: npm ci
       - run: npm run lint
+      - run: npm run test
+        env:
+          VITE_API_BASE_URL: http://localhost
       - run: npm run build
 
   lighthouse:
