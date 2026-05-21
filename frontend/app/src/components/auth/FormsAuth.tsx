@@ -7,7 +7,7 @@ import { useAuth } from "@/context/ContextoAutenticacion";
 import { toast } from "sonner";
 import { useState, useRef, useEffect } from "react";
 import { InputOTP, InputOTPGroup, InputOTPSlot } from "@/components/ui/input-otp";
-import { AlertCircle } from "lucide-react";
+import { AlertCircle, Loader2 } from "lucide-react";
 
 // ─── Componente de alerta inline ─────────────────────────────────────────────
 
@@ -152,23 +152,58 @@ export function AuthCard({ titulo, descripcion, icono, children }: AuthCardProps
   );
 }
 
-export function BotonesOAuth({ onOAuth, oAuthProviders }: { onOAuth: (p: string) => void; oAuthProviders: string[] }) {
+export function BotonesOAuth({
+  onOAuth,
+  oAuthProviders,
+  providerEnCurso,
+}: {
+  onOAuth: (p: string) => void;
+  oAuthProviders: string[];
+  providerEnCurso: string | null;
+}) {
   if (oAuthProviders.length === 0) return null;
+  const bloqueado = providerEnCurso !== null;
+
+  function contenidoBoton(provider: string, icono: React.ReactNode, texto: string) {
+    const cargando = providerEnCurso === provider;
+    return (
+      <>
+        {cargando ? <Loader2 className="size-4 animate-spin" aria-hidden="true" /> : icono}
+        <span>{cargando ? "Conectando..." : texto}</span>
+      </>
+    );
+  }
+
   return (
     <div className="space-y-3 mb-5">
       <div className="flex flex-col gap-3">
         {oAuthProviders.map((provider) => {
           if (provider === "google") {
             return (
-              <Button key={provider} type="button" variant="outline" className="w-full h-11 gap-2 font-normal rounded-xl" onClick={() => onOAuth(provider)}>
-                {ICONO_GOOGLE} Continuar con Google
+              <Button
+                key={provider}
+                type="button"
+                variant="outline"
+                className="w-full h-11 gap-2 font-normal rounded-xl"
+                onClick={() => onOAuth(provider)}
+                disabled={bloqueado}
+                aria-busy={providerEnCurso === provider}
+              >
+                {contenidoBoton(provider, ICONO_GOOGLE, "Continuar con Google")}
               </Button>
             );
           }
           if (provider === "apple") {
             return (
-              <Button key={provider} type="button" className="w-full h-11 gap-2 font-normal rounded-xl bg-zinc-900 text-white hover:bg-zinc-800 dark:bg-white dark:text-zinc-900 dark:hover:bg-zinc-100 border-0" onClick={() => onOAuth(provider)}>
-                {ICONO_APPLE} Continuar con Apple
+              <Button
+                key={provider}
+                type="button"
+                className="w-full h-11 gap-2 font-normal rounded-xl bg-zinc-900 text-white hover:bg-zinc-800 dark:bg-white dark:text-zinc-900 dark:hover:bg-zinc-100 border-0"
+                onClick={() => onOAuth(provider)}
+                disabled={bloqueado}
+                aria-busy={providerEnCurso === provider}
+              >
+                {contenidoBoton(provider, ICONO_APPLE, "Continuar con Apple")}
               </Button>
             );
           }
@@ -216,6 +251,7 @@ export function VistaLogin({ onNavegar, oAuthProviders }: { onNavegar: (ruta: st
   const [errores, setErrores] = useState<{ email?: string; password?: string; general?: string }>({});
   const [showPassword, setShowPassword] = useState(false);
   const [submitting, setSubmitting] = useState(false);
+  const [oauthProviderEnCurso, setOauthProviderEnCurso] = useState<string | null>(null);
 
   function iniciales(nombre: string): string {
     return nombre.split(" ").slice(0, 2).map((p) => p[0]?.toUpperCase() ?? "").join("");
@@ -251,8 +287,14 @@ export function VistaLogin({ onNavegar, oAuthProviders }: { onNavegar: (ruta: st
   };
 
   const onOAuth = async (provider: string) => {
-    try { await loginConOAuth(provider); }
-    catch (err) { toast.error(err instanceof Error ? err.message : "Error con el proveedor"); }
+    if (oauthProviderEnCurso) return;
+    setOauthProviderEnCurso(provider);
+    try {
+      await loginConOAuth(provider);
+    } catch (err) {
+      setOauthProviderEnCurso(null);
+      toast.error(err instanceof Error ? err.message : "Error con el proveedor");
+    }
   };
 
   const onUsarOtraCuenta = () => { setUltimoUsuario(null); setEmail(""); setPassword(""); setErrores({}); };
@@ -317,7 +359,7 @@ export function VistaLogin({ onNavegar, oAuthProviders }: { onNavegar: (ruta: st
         </svg>
       }
     >
-      <BotonesOAuth onOAuth={onOAuth} oAuthProviders={oAuthProviders} />
+      <BotonesOAuth onOAuth={onOAuth} oAuthProviders={oAuthProviders} providerEnCurso={oauthProviderEnCurso} />
       <form className="space-y-4" onSubmit={onSubmit}>
         <div className="space-y-1.5">
           <Label htmlFor="email" className="text-sm font-medium">Correo electrónico</Label>
@@ -363,6 +405,7 @@ export function VistaRegistro({ onNavegar, oAuthProviders }: { onNavegar: (ruta:
   const [password, setPassword] = useState("");
   const [errores, setErrores] = useState<{ nombre?: string; email?: string; password?: string; general?: string }>({});
   const [submitting, setSubmitting] = useState(false);
+  const [oauthProviderEnCurso, setOauthProviderEnCurso] = useState<string | null>(null);
 
   const validar = () => {
     const e: typeof errores = {};
@@ -395,15 +438,21 @@ export function VistaRegistro({ onNavegar, oAuthProviders }: { onNavegar: (ruta:
   };
 
   const onOAuth = async (provider: string) => {
-    try { await loginConOAuth(provider); }
-    catch (err) { toast.error(err instanceof Error ? err.message : "Error con el proveedor"); }
+    if (oauthProviderEnCurso) return;
+    setOauthProviderEnCurso(provider);
+    try {
+      await loginConOAuth(provider);
+    } catch (err) {
+      setOauthProviderEnCurso(null);
+      toast.error(err instanceof Error ? err.message : "Error con el proveedor");
+    }
   };
 
   return (
     <AuthCard titulo="Crear cuenta" descripcion="Regístrate para acceder al sistema de inventario."
       icono={<svg viewBox="0 0 24 24" fill="none" className="w-7 h-7" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"><path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2" /><circle cx="9" cy="7" r="4" /><line x1="19" y1="8" x2="19" y2="14" /><line x1="22" y1="11" x2="16" y2="11" /></svg>}
     >
-      <BotonesOAuth onOAuth={onOAuth} oAuthProviders={oAuthProviders} />
+      <BotonesOAuth onOAuth={onOAuth} oAuthProviders={oAuthProviders} providerEnCurso={oauthProviderEnCurso} />
       <form className="space-y-4" onSubmit={onSubmit}>
         <div className="space-y-1.5">
           <Label htmlFor="nombre" className="text-sm font-medium">Nombre completo</Label>
