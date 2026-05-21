@@ -64,19 +64,9 @@ export function ProveedorAutenticacion({ children }: { children: React.ReactNode
   const queryClient = useQueryClient();
   const { usuario: usuarioPersistido, rol: rolPersistido, setUsuario, limpiar } = useSesionStore();
 
-  // Arrancar con el usuario del store (persiste en localStorage).
-  // Esto evita el flash de login en iOS al recargar: el usuario ya está disponible
-  // mientras el SDK verifica la sesión en background con el servidor de Insforge.
   const [user, setUser] = useState<SesionUsuario | null>(usuarioPersistido);
-
-  // cargando = true solo si NO hay usuario persistido (primera visita o tras logout).
-  // Con usuario en el store, mostramos la app inmediatamente y verificamos en background.
   const [cargando, setCargando] = useState(!usuarioPersistido);
-
-  // Indica que el SDK está procesando un callback OAuth (Apple/Google redirect).
-  // Mientras sea true, RutaProtegida no redirige al login aunque user sea null.
   const [procesandoOAuth, setProcesandoOAuth] = useState(() => {
-    // Detectar si la URL contiene parámetros de callback OAuth
     const hash = window.location.hash;
     const search = window.location.search;
     return (
@@ -87,10 +77,28 @@ export function ProveedorAutenticacion({ children }: { children: React.ReactNode
     );
   });
 
-  // Evitar que la verificación en background sobreescriba un logout explícito del usuario
   const logoutPendiente = useRef(false);
   const verificandoSesion = useRef(false);
   const abortControllerRef = useRef<AbortController | null>(null);
+
+  /**
+   * Sincroniza el perfil con el backend y obtiene el rol del usuario.
+   * Extrae la lógica repetida en login, registro y verificarEmail.
+   */
+  const sincronizarPerfilYRol = useCallback(async (sesion: SesionUsuario, contexto: string) => {
+    try {
+      await sincronizarPerfil(sesion.authUserId, sesion.displayName, sesion.email);
+      const rol = await obtenerRolDesdeBackend(sesion.authUserId, sesion.email);
+      if (rol) {
+        console.log(`[Auth] ${contexto} - Rol obtenido:`, rol);
+        useSesionStore.getState().setRol(rol);
+        queryClient.setQueryData(['userRole', sesion.authUserId], rol);
+        setUser((prev) => prev ? { ...prev, role: rol } : prev);
+      }
+    } catch (err) {
+      console.error(`[Auth] Error en ${contexto} sincronizando perfil:`, err);
+    }
+  }, [queryClient]);
 
   // Sincronizar zustand store cuando cambia el usuario del contexto
   useEffect(() => {
@@ -214,20 +222,8 @@ export function ProveedorAutenticacion({ children }: { children: React.ReactNode
     await queryClient.invalidateQueries({ queryKey: ['historial-sesiones'] });
     enviarEventoLogin(sesion.authUserId).catch((e) => console.warn('[Auth] Sesión no registrada:', e));
 
-    // Sincronizar perfil y obtener rol UNA sola vez
-    try {
-      await sincronizarPerfil(sesion.authUserId, sesion.displayName, sesion.email);
-      const rol = await obtenerRolDesdeBackend(sesion.authUserId, sesion.email);
-      if (rol) {
-        useSesionStore.getState().setRol(rol);
-        queryClient.setQueryData(['userRole', sesion.authUserId], rol);
-        // Actualizar usuario con rol
-        setUser((prev) => prev ? { ...prev, role: rol } : prev);
-      }
-    } catch (err) {
-      console.error('[Auth] Error en login sincronizando perfil:', err);
-    }
-  }, [queryClient]);
+    await sincronizarPerfilYRol(sesion, 'Login');
+  }, [queryClient, sincronizarPerfilYRol]);
 
   const registro = useCallback(async (email: string, password: string, displayName: string): Promise<ResultadoRegistro> => {
     const resultado = await registrarUsuario(email, password, displayName);
@@ -237,21 +233,10 @@ export function ProveedorAutenticacion({ children }: { children: React.ReactNode
       await queryClient.invalidateQueries({ queryKey: ['historial-sesiones'] });
       enviarEventoLogin(resultado.sesion.authUserId).catch((e) => console.warn('[Auth] Sesión no registrada:', e));
 
-      // Sincronizar perfil y obtener rol UNA sola vez
-      try {
-        await sincronizarPerfil(resultado.sesion.authUserId, resultado.sesion.displayName, resultado.sesion.email);
-        const rol = await obtenerRolDesdeBackend(resultado.sesion.authUserId, resultado.sesion.email);
-        if (rol) {
-          useSesionStore.getState().setRol(rol);
-          queryClient.setQueryData(['userRole', resultado.sesion.authUserId], rol);
-          setUser((prev) => prev ? { ...prev, role: rol } : prev);
-        }
-      } catch (err) {
-        console.error('[Auth] Error en registro sincronizando perfil:', err);
-      }
+      await sincronizarPerfilYRol(resultado.sesion, 'Registro');
     }
     return resultado;
-  }, [queryClient]);
+  }, [queryClient, sincronizarPerfilYRol]);
 
   const verificarEmailFn = useCallback(async (email: string, otp: string) => {
     const sesion = await verificarEmail(email, otp);
@@ -260,19 +245,8 @@ export function ProveedorAutenticacion({ children }: { children: React.ReactNode
     await queryClient.invalidateQueries({ queryKey: ['historial-sesiones'] });
     enviarEventoLogin(sesion.authUserId).catch((e) => console.warn('[Auth] Sesión no registrada:', e));
 
-    // Sincronizar perfil y obtener rol UNA sola vez
-    try {
-      await sincronizarPerfil(sesion.authUserId, sesion.displayName, sesion.email);
-      const rol = await obtenerRolDesdeBackend(sesion.authUserId, sesion.email);
-      if (rol) {
-        useSesionStore.getState().setRol(rol);
-        queryClient.setQueryData(['userRole', sesion.authUserId], rol);
-        setUser((prev) => prev ? { ...prev, role: rol } : prev);
-      }
-    } catch (err) {
-      console.error('[Auth] Error en verificarEmail sincronizando perfil:', err);
-    }
-  }, [queryClient]);
+    await sincronizarPerfilYRol(sesion, 'VerificarEmail');
+  }, [queryClient, sincronizarPerfilYRol]);
 
   const loginConOAuthFn = useCallback(async (provider: string) => {
     await loginConOAuth(provider, `${window.location.origin}/login`);
