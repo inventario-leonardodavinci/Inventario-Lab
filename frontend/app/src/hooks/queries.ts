@@ -42,6 +42,7 @@ import type {
   FiltrosArticulos,
   FiltrosMovimiento,
   FiltrosAuditoria,
+  FiltrosMantenimiento,
   ActivoMantenimiento,
   Rol,
 } from '@/types'
@@ -124,8 +125,8 @@ export const queryKeys = {
     ['auditoria', filtros?.entidad_tipo, filtros?.tipo_evento, filtros?.desde, filtros?.hasta, filtros?.pagina] as const,
   usuarios: (authUserId?: string) =>
     ['usuarios', authUserId ?? ''] as const,
-  mantenimiento: () =>
-    ['mantenimiento'] as const,
+  mantenimiento: (filtros?: FiltrosMantenimiento) =>
+    ['mantenimiento', filtros?.estado, filtros?.per_page] as const,
   resumenHoy: () =>
     ['resumen-hoy'] as const,
   historialSesiones: (authUserId?: string) =>
@@ -521,16 +522,21 @@ export function useUserRole() {
 
 // ─── Mantenimiento ────────────────────────────────────────────────────────────
 
-export function useMantenimiento() {
+export function useMantenimiento(filtros?: FiltrosMantenimiento) {
   const { user } = useAuth()
   return useQuery({
-    queryKey: queryKeys.mantenimiento(),
-    queryFn: () =>
-      apiClient<{ data: ActivoMantenimiento[]; meta: { current_page: number; last_page: number; total: number } }>(
-        '/mantenimiento/activos',
+    queryKey: queryKeys.mantenimiento(filtros),
+    queryFn: () => {
+      const params = new URLSearchParams()
+      if (filtros?.per_page) params.set('per_page', String(filtros.per_page))
+      if (filtros?.estado) params.set('estado', filtros.estado)
+      const qs = params.toString() ? `?${params.toString()}` : ''
+      return apiClient<{ data: ActivoMantenimiento[]; meta: { current_page: number; last_page: number; total: number } }>(
+        `/mantenimiento/activos${qs}`,
         {},
         { authUserId: user!.authUserId },
-      ).then(unwrapPaginated),
+      ).then(unwrapPaginated)
+    },
     enabled: !!user,
     staleTime: STALE_TIME_LONG_MS,
     placeholderData: (prev) => prev,

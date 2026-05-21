@@ -188,6 +188,11 @@ export interface FiltrosAuditoria {
   pagina?: number
 }
 
+export interface FiltrosMantenimiento {
+  per_page?: number
+  estado?: EstadoActivo
+}
+
 // ─── Re-exports de tipos modulares ──────────────────────────────────────────────
 export type { SubUbicacion, SubUbicacionConArticulos, EntradaCrearSubUbicacion, EntradaActualizarSubUbicacion } from './subUbicaciones'
 
