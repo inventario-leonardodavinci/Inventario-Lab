@@ -65,6 +65,6 @@ class MantenimientoController extends Controller
     public function destroy(ActivoMantenimiento $activo): JsonResponse
     {
         $activo->delete();
-        return ApiResponse::success(['message' => 'Activo de mantenimiento eliminado exitosamente.']);
+        return ApiResponse::deleted();
     }
 }
