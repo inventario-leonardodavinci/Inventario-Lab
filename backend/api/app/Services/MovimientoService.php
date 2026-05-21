@@ -139,6 +139,9 @@ class MovimientoService
     public function incrementarStock(int $articuloId, int $ubicacionId, float $cantidad, ?int $subUbicacionId = null): void
     {
         $query = NivelStock::query()
+            // lockForUpdate evita condiciones de carrera: si dos movimientos
+            // se procesan en paralelo sobre el mismo artículo/ubicación,
+            // el segundo esperará a que el primero libere el bloqueo.
             ->lockForUpdate()
             ->where('articulo_id', $articuloId)
             ->where('ubicacion_id', $ubicacionId);
@@ -172,12 +175,17 @@ class MovimientoService
     public function decrementarStock(int $articuloId, int $ubicacionId, float $cantidad, ?int $subUbicacionId = null): void
     {
         $query = NivelStock::query()
+            // lockForUpdate evita condiciones de carrera: si dos movimientos
+            // se procesan en paralelo sobre el mismo artículo/ubicación,
+            // el segundo esperará a que el primero libere el bloqueo.
             ->lockForUpdate()
             ->where('articulo_id', $articuloId)
             ->where('ubicacion_id', $ubicacionId);
 
         if ($subUbicacionId !== null) {
             $query->where('sub_ubicacion_id', $subUbicacionId);
+        } else {
+            $query->whereNull('sub_ubicacion_id');
         }
 
         $stock = $query->first();

@@ -42,6 +42,7 @@ import type {
   FiltrosArticulos,
   FiltrosMovimiento,
   FiltrosAuditoria,
+  FiltrosMantenimiento,
   ActivoMantenimiento,
   Rol,
 } from '@/types'
@@ -124,8 +125,8 @@ export const queryKeys = {
     ['auditoria', filtros?.entidad_tipo, filtros?.tipo_evento, filtros?.desde, filtros?.hasta, filtros?.pagina] as const,
   usuarios: (authUserId?: string) =>
     ['usuarios', authUserId ?? ''] as const,
-  mantenimiento: () =>
-    ['mantenimiento'] as const,
+  mantenimiento: (filtros?: FiltrosMantenimiento) =>
+    ['mantenimiento', filtros?.estado, filtros?.per_page] as const,
   resumenHoy: () =>
     ['resumen-hoy'] as const,
   historialSesiones: (authUserId?: string) =>
@@ -357,6 +358,7 @@ export function useMovimientos(filtros?: FiltrosMovimiento) {
     queryFn: () => getMovimientos(user!.authUserId, filtros),
     enabled: !!user,
     placeholderData: (prev) => prev,
+    staleTime: STALE_TIME_MS,
   })
 }
 
@@ -396,6 +398,7 @@ export function useAuditoria(filtros?: FiltrosAuditoria) {
     queryFn: () => getAuditoria(user!.authUserId, filtros),
     enabled: !!user,
     placeholderData: (prev) => prev,
+    staleTime: STALE_TIME_LONG_MS,
   })
 }
 
@@ -519,16 +522,21 @@ export function useUserRole() {
 
 // ─── Mantenimiento ────────────────────────────────────────────────────────────
 
-export function useMantenimiento() {
+export function useMantenimiento(filtros?: FiltrosMantenimiento) {
   const { user } = useAuth()
   return useQuery({
-    queryKey: queryKeys.mantenimiento(),
-    queryFn: () =>
-      apiClient<{ data: ActivoMantenimiento[]; meta: { current_page: number; last_page: number; total: number } }>(
-        '/mantenimiento/activos',
+    queryKey: queryKeys.mantenimiento(filtros),
+    queryFn: () => {
+      const params = new URLSearchParams()
+      if (filtros?.per_page) params.set('per_page', String(filtros.per_page))
+      if (filtros?.estado) params.set('estado', filtros.estado)
+      const qs = params.toString() ? `?${params.toString()}` : ''
+      return apiClient<{ data: ActivoMantenimiento[]; meta: { current_page: number; last_page: number; total: number } }>(
+        `/mantenimiento/activos${qs}`,
         {},
         { authUserId: user!.authUserId },
-      ).then(unwrapPaginated),
+      ).then(unwrapPaginated)
+    },
     enabled: !!user,
     staleTime: STALE_TIME_LONG_MS,
     placeholderData: (prev) => prev,
@@ -639,8 +647,8 @@ export function useHistorialSesiones() {
         { authUserId: user!.authUserId }
       ),
     enabled: !!user,
-    staleTime: 5 * 60 * 1000, // 5 minutos
-    gcTime: 10 * 60 * 1000, // 10 minutos
+    staleTime: STALE_TIME_LONG_MS,
+    gcTime: GC_TIME_MS,
   })
 }
 

@@ -15,6 +15,10 @@ export function formatearKpi(valor: number | null): string {
 }
 
 /**
+ * @deprecated La API ya devuelve los tipos en español. Usar formatearTipoMovimiento
+ * de '@/utils/formatters' en su lugar. Esta función se mantiene solo por compatibilidad
+ * con código antiguo y será eliminada en una versión futura.
+ *
  * Traduce los tipos de movimiento del inglés al español.
  * Clave legacy de la antigua API en inglés.
  */

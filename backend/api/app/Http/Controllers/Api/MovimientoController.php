@@ -10,6 +10,7 @@ use App\Models\UsuarioApp;
 use App\Services\MovimientoService;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\DB;
 use RuntimeException;
 
 /**
@@ -76,8 +77,7 @@ class MovimientoController extends Controller
 
         $base = Movimiento::query()
             ->when($usuarioApp, fn ($query) => $query->where('usuario_id', $usuarioApp->id))
-            ->whereDate('created_at', '>=', $desde)
-            ->whereDate('created_at', '<=', $hasta);
+            ->whereBetween(DB::raw('DATE(created_at)'), [$desde, $hasta]);
 
         $conteos = (clone $base)
             ->selectRaw('tipo, COUNT(*) as total')

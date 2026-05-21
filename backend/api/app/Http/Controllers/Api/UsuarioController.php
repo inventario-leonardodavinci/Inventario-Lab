@@ -4,6 +4,8 @@ namespace App\Http\Controllers\Api;
 
 use App\Http\Controllers\Controller;
 use App\Http\Helpers\ApiResponse;
+use App\Http\Requests\ActualizarEstadoRequest;
+use App\Http\Requests\ActualizarRolRequest;
 use App\Http\Requests\UsuarioIndexRequest;
 use App\Http\Resources\UsuarioResource;
 use App\Models\UsuarioApp;
@@ -52,15 +54,8 @@ class UsuarioController extends Controller
      * Actualiza el rol de un usuario.
      * Un profesor no puede cambiar su propio rol.
      */
-    public function actualizarRol(Request $request, UsuarioApp $usuario): JsonResponse
+    public function actualizarRol(ActualizarRolRequest $request, UsuarioApp $usuario): JsonResponse
     {
-        $validados = $request->validate([
-            'rol' => ['required', 'string', 'in:profesor,consultor'],
-        ], [
-            'rol.required' => 'El rol es obligatorio.',
-            'rol.in'       => 'El rol debe ser profesor o consultor.',
-        ]);
-
         /** @var UsuarioApp $usuarioAutenticado */
         $usuarioAutenticado = $request->attributes->get('app_user');
 
@@ -68,7 +63,7 @@ class UsuarioController extends Controller
             return ApiResponse::error('No puedes cambiar tu propio rol.', 422);
         }
 
-        $usuario->syncRoles([$validados['rol']]);
+        $usuario->syncRoles([$request->validated('rol')]);
         $usuario->load('roles:id,name');
 
         return ApiResponse::success((new UsuarioResource($usuario))->toArray($request));
@@ -78,12 +73,8 @@ class UsuarioController extends Controller
      * Activa o desactiva un usuario.
      * Un profesor no puede desactivarse a sí mismo.
      */
-    public function actualizarEstado(Request $request, UsuarioApp $usuario): JsonResponse
+    public function actualizarEstado(ActualizarEstadoRequest $request, UsuarioApp $usuario): JsonResponse
     {
-        $validados = $request->validate([
-            'activo' => ['required', 'boolean'],
-        ]);
-
         /** @var UsuarioApp $usuarioAutenticado */
         $usuarioAutenticado = $request->attributes->get('app_user');
 
@@ -91,7 +82,7 @@ class UsuarioController extends Controller
             return ApiResponse::error('No puedes desactivar tu propia cuenta.', 422);
         }
 
-        $usuario->update(['activo' => $validados['activo']]);
+        $usuario->update(['activo' => $request->validated('activo')]);
         $usuario->load('roles:id,name');
 
         return ApiResponse::success((new UsuarioResource($usuario))->toArray($request));

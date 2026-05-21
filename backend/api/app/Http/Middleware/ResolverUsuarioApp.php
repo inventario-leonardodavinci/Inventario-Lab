@@ -52,10 +52,6 @@ class ResolverUsuarioApp
             ->first();
 
         if (! $usuarioApp) {
-            // Primer acceso: crear el usuario automáticamente.
-            // Usamos X-Auth-User-Name si el cliente lo envía (flujo OAuth/Google/Apple).
-            // Nunca guardar el placeholder genérico 'Usuario' — si no hay nombre real,
-            // usar la parte local del email (cabecera X-Auth-User-Email) como fallback.
             $nombreCabecera = $request->header('X-Auth-User-Name');
             $emailCabecera  = $request->header('X-Auth-User-Email') ?? '';
 
@@ -64,15 +60,12 @@ class ResolverUsuarioApp
                 : null;
 
             if (! $nombreLimpio && $emailCabecera !== '') {
-                // Parte local del email como fallback (p.ej. "juan.garcia" de "juan.garcia@gmail.com")
                 $nombreLimpio = mb_substr(explode('@', $emailCabecera)[0], 0, 180);
             }
 
-            $nombreInicial = $nombreLimpio ?? 'Usuario';
-
             $usuarioApp = UsuarioApp::query()->create([
                 'auth_user_id'   => $idUsuarioAutenticado,
-                'nombre_visible' => $nombreInicial,
+                'nombre_visible' => $nombreLimpio ?? 'Usuario',
                 'activo'         => true,
             ]);
 
@@ -86,32 +79,39 @@ class ResolverUsuarioApp
         // Asignar rol 'consultor' si el usuario no tiene ninguno aún
         if (! $usuarioApp->hasAnyRole(['profesor', 'consultor'])) {
             $usuarioApp->assignRole('consultor');
-            app(\Spatie\Permission\PermissionRegistrar::class)->forgetCachedPermissions();
+            app(PermissionRegistrar::class)->forgetCachedPermissions();
             $usuarioApp->load('roles');
         }
 
-        // ── Promoverse por email si está en la lista PROFESOR_EMAILS ────────────
-        // Si el email del usuario coincide con uno de los emails de profesor
-        // configurados en .env, se promueve automáticamente a profesor.
-        // Útil para cuentas OAuth (Google) que se crean como 'consultor' por defecto.
-        $emailHeader  = $request->header('X-Auth-User-Email');
-        $profesorEmails = array_filter(array_map('trim', explode(',', (string) config('constantes.profesor_emails', env('PROFESOR_EMAILS', '')))));
+        $this->promoverSiEsProfesor($usuarioApp, $request->header('X-Auth-User-Email'));
 
-        if ($emailHeader && in_array($emailHeader, $profesorEmails, true)) {
-            $rolActual = $usuarioApp->roles->first()?->name;
-            if ($rolActual !== 'profesor') {
-                $usuarioApp->syncRoles(['profesor']);
-                app(\Spatie\Permission\PermissionRegistrar::class)->forgetCachedPermissions();
-                $usuarioApp->load('roles');
-            }
-        }
-
-        // Almacenar el usuario resuelto en los atributos de la request.
-        // El middleware AuditarEscritura se encarga de SET LOCAL app.current_user_id
-        // dentro de una transacción explícita para que los triggers de auditoría
-        // puedan leerlo correctamente incluso con connection pooling.
         $request->attributes->set('app_user', $usuarioApp);
 
         return $next($request);
+    }
+
+    /**
+     * Promueve al usuario a profesor si su email está en la lista PROFESOR_EMAILS.
+     * Útil para cuentas OAuth (Google) que se crean como 'consultor' por defecto.
+     */
+    private function promoverSiEsProfesor(UsuarioApp $usuarioApp, ?string $emailHeader): void
+    {
+        if (! $emailHeader) {
+            return;
+        }
+
+        $profesorEmails = array_filter(
+            array_map('trim', explode(',', (string) config('constantes.profesor_emails', env('PROFESOR_EMAILS', ''))))
+        );
+
+        if (! in_array($emailHeader, $profesorEmails, true)) {
+            return;
+        }
+
+        if ($usuarioApp->roles->first()?->name !== 'profesor') {
+            $usuarioApp->syncRoles(['profesor']);
+            app(PermissionRegistrar::class)->forgetCachedPermissions();
+            $usuarioApp->load('roles');
+        }
     }
 }

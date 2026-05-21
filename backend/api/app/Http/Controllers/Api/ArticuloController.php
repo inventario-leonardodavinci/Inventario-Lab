@@ -227,7 +227,7 @@ class ArticuloController extends Controller
                 'notas'           => $articulo->notas,
                 'stock_total'     => (float) $stockTotal,
                 'stock_minimo'    => $cantidadMinima,
-                'estado_stock'    => ($cantidadMinima > 0 && (float) $stockTotal <= $cantidadMinima) ? 'critico' : 'ok',
+                'estado_stock'    => ($cantidadMinima > 0 && (float) $stockTotal < $cantidadMinima) ? 'critico' : 'ok',
                 'numero_serie'      => $articulo->serial_number,
                 'tipo_material'     => $articulo->material_type,
                 'capacidad_ml'      => $articulo->capacity_ml,
