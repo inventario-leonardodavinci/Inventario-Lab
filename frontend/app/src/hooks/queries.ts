@@ -641,8 +641,8 @@ export function useHistorialSesiones() {
         { authUserId: user!.authUserId }
       ),
     enabled: !!user,
-    staleTime: 5 * 60 * 1000, // 5 minutos
-    gcTime: 10 * 60 * 1000, // 10 minutos
+    staleTime: STALE_TIME_LONG_MS,
+    gcTime: GC_TIME_MS,
   })
 }
 
