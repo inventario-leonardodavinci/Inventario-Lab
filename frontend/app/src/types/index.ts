@@ -101,7 +101,7 @@ export interface Movimiento {
   ubicacion_origen_id: number | null
   ubicacion_destino_id: number | null
   usuario_id: number
-  usuario: string | null
+  usuario: { id: number; nombre_visible: string | null } | null
   lineas: LineaMovimiento[]
   created_at: string
 }

@@ -90,7 +90,6 @@ export function ProveedorAutenticacion({ children }: { children: React.ReactNode
       await sincronizarPerfil(sesion.authUserId, sesion.displayName, sesion.email);
       const rol = await obtenerRolDesdeBackend(sesion.authUserId, sesion.email);
       if (rol) {
-        console.log(`[Auth] ${contexto} - Rol obtenido:`, rol);
         useSesionStore.getState().setRol(rol);
         queryClient.setQueryData(['userRole', sesion.authUserId], rol);
         setUser((prev) => prev ? { ...prev, role: rol } : prev);
