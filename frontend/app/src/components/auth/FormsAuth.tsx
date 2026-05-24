@@ -8,6 +8,8 @@ import { toast } from "sonner";
 import { useState, useRef, useEffect } from "react";
 import { InputOTP, InputOTPGroup, InputOTPSlot } from "@/components/ui/input-otp";
 import { AlertCircle, Loader2 } from "lucide-react";
+import { formatearIniciales } from "@/utils/formatters";
+import { validarEmail } from "@/utils/validators";
 
 // ─── Componente de alerta inline ─────────────────────────────────────────────
 
@@ -220,10 +222,6 @@ export function BotonesOAuth({
   );
 }
 
-export function validarEmail(email: string): boolean {
-  return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email);
-}
-
 export function VistaLogin({ onNavegar, oAuthProviders }: { onNavegar: (ruta: string) => void; oAuthProviders: string[] }) {
   const navigate = useNavigate();
   const { login, loginConOAuth } = useAuth();
@@ -252,10 +250,6 @@ export function VistaLogin({ onNavegar, oAuthProviders }: { onNavegar: (ruta: st
   const [showPassword, setShowPassword] = useState(false);
   const [submitting, setSubmitting] = useState(false);
   const [oauthProviderEnCurso, setOauthProviderEnCurso] = useState<string | null>(null);
-
-  function iniciales(nombre: string): string {
-    return nombre.split(" ").slice(0, 2).map((p) => p[0]?.toUpperCase() ?? "").join("");
-  }
 
   const validar = () => {
     const e: typeof errores = {};
@@ -313,7 +307,7 @@ export function VistaLogin({ onNavegar, oAuthProviders }: { onNavegar: (ruta: st
           <div className="relative">
             {ultimoUsuario.avatarUrl
               ? <img src={ultimoUsuario.avatarUrl} alt={ultimoUsuario.nombre} className="size-16 rounded-full object-cover ring-4 ring-background shadow-md" />
-              : <div className="size-16 rounded-full bg-primary/15 ring-4 ring-background shadow-md flex items-center justify-center text-xl font-bold text-primary">{iniciales(ultimoUsuario.nombre)}</div>
+              : <div className="size-16 rounded-full bg-primary/15 ring-4 ring-background shadow-md flex items-center justify-center text-xl font-bold text-primary">{formatearIniciales(ultimoUsuario.nombre)}</div>
             }
             <div className="absolute -bottom-1 -right-1 size-5 rounded-full bg-green-500 ring-2 ring-background" />
           </div>

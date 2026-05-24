@@ -22,6 +22,10 @@ class MovimientoService
 {
     /**
      * Crea un movimiento completo dentro de una transacción atómica.
+     * 
+     * IMPORTANTE: Toda la operación se ejecuta dentro de una transacción de base de datos.
+     * Si cualquier parte falla (creación del movimiento, líneas o actualización de stock),
+     * todos los cambios se revierten automáticamente para mantener la consistencia de datos.
      *
      * @param array{
      *   tipo: string,
@@ -76,7 +80,22 @@ class MovimientoService
     }
 
     /**
-     * Despacha la actualización de stock según el tipo de movimiento.
+     * Aplica cambios de stock según el tipo de movimiento.
+     * 
+     * Despacha la actualización de stock a los métodos específicos según el tipo:
+     * - entrada: incrementa stock en ubicación destino
+     * - salida: decrementa stock en ubicación origen
+     * - traslado: decrementa origen e incrementa destino
+     * - ajuste: establece stock a valor específico
+     * 
+     * @param string $tipo Tipo de movimiento (entrada|salida|traslado|ajuste)
+     * @param int $articuloId ID del artículo
+     * @param float $cantidad Cantidad a mover
+     * @param int|null $origenId ID de ubicación origen (requerido para salida/traslado)
+     * @param int|null $destinoId ID de ubicación destino (requerido para entrada/traslado/ajuste)
+     * @param int|null $subOrigenId ID de sub-ubicación origen (opcional)
+     * @param int|null $subDestinoId ID de sub-ubicación destino (opcional)
+     * @throws RuntimeException Si el tipo de movimiento es desconocido
      */
     public function aplicarDeltaStock(
         string $tipo,

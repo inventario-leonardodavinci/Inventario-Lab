@@ -19,7 +19,7 @@ import {
   restablecerContrasena,
   logoutDeInsforge,
 } from "@/services/authApi";
-import { formatearRol } from "@/utils/formatters";
+import { formatearRol, formatearIniciales } from "@/utils/formatters";
 import type { Rol } from "@/types";
 import {
   Camera,
@@ -54,10 +54,6 @@ const COLOR_ROL: Record<string, string> = {
   profesor: "default",
   consultor: "secondary",
 };
-
-function iniciales(nombre: string): string {
-  return nombre.split(" ").slice(0, 2).map((p) => p[0]?.toUpperCase() ?? "").join("");
-}
 
 function formatearFecha(iso: string): string {
   if (!iso) return "—";
@@ -373,7 +369,7 @@ export default function Perfil() {
                 <Avatar className="size-20 text-xl ring-4 ring-background shadow-lg transition-all group-hover:shadow-xl cursor-pointer">
                   <AvatarImage src={avatarLocal} alt={user.displayName} />
                   <AvatarFallback className="bg-primary/20 text-lg font-bold text-primary">
-                    {iniciales(user.displayName)}
+                    {formatearIniciales(user.displayName)}
                   </AvatarFallback>
                 </Avatar>
                 <div className="absolute inset-0 flex items-center justify-center rounded-full bg-black/50 opacity-0 transition-opacity group-hover:opacity-100 pointer-events-none">

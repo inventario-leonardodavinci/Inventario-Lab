@@ -10,14 +10,7 @@ import {
 } from "@/components/ui/dropdown-menu";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { LogOut, Settings, Shield, User } from "lucide-react";
-
-function iniciales(nombre: string): string {
-  return nombre
-    .split(" ")
-    .slice(0, 2)
-    .map((p) => p[0]?.toUpperCase() ?? "")
-    .join("");
-}
+import { formatearIniciales } from "@/utils/formatters";
 
 const COLORES_ROL: Record<string, string> = {
   profesor: 'bg-primary/10 text-primary',
@@ -48,7 +41,7 @@ export function MenuUsuario() {
           <Avatar className="size-8">
             <AvatarImage src={user.avatarUrl} alt={user.displayName} />
             <AvatarFallback className="bg-primary/10 text-xs font-bold text-primary">
-              {iniciales(user.displayName)}
+              {formatearIniciales(user.displayName)}
             </AvatarFallback>
           </Avatar>
           {/* Indicador de estado online */}
@@ -63,7 +56,7 @@ export function MenuUsuario() {
             <Avatar className="size-10 shrink-0">
               <AvatarImage src={user.avatarUrl} alt={user.displayName} />
               <AvatarFallback className="bg-primary/10 text-sm font-bold text-primary">
-                {iniciales(user.displayName)}
+                {formatearIniciales(user.displayName)}
               </AvatarFallback>
             </Avatar>
             <div className="flex min-w-0 flex-col gap-0.5">

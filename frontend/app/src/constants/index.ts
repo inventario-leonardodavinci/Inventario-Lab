@@ -16,6 +16,7 @@ export const RETRY_DELAY_MAX_MS = 10_000 // 10 segundos max
 // ── Paginación ───────────────────────────────────────────────────────────
 export const DEFAULT_PAGE_SIZE = 20
 export const MAX_PAGE_SIZE = 100
+export const ARTICULOS_PER_PAGE = 200 // Número de artículos a cargar en vista principal
 
 // ── API ────────────────────────────────────────────────────────────────────
 export const API_RATE_LIMIT_PER_MINUTE = 60
@@ -33,6 +34,7 @@ export type FiltroArticulo = (typeof FILTROS_ARTICULO)[number]
 // ── UI ─────────────────────────────────────────────────────────────────────
 export const MODOS_VISTA = ['grid', 'lista'] as const
 export type ModoVista = (typeof MODOS_VISTA)[number]
+export const SKELETON_COUNT = 10 // Número de skeletons a mostrar durante carga
 
 // ── Validación ────────────────────────────────────────────────────────────
 export const CANTIDAD_MINIMA_MOVIMIENTO = 0.01

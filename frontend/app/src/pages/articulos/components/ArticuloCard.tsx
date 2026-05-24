@@ -134,6 +134,7 @@ export function ArticuloCard({
                 size="sm"
                 className="h-8 px-1 text-[11px] gap-0.5 border-green-200 dark:border-green-800 hover:bg-green-50 dark:hover:bg-green-950 text-green-700 dark:text-green-400"
                 onClick={() => onEntrada(articulo)}
+                aria-label={`Registrar entrada de ${articulo.nombre}`}
               >
                 <Plus className="size-3 shrink-0" />
                 <span className="hidden sm:inline">Entrada</span>
@@ -147,6 +148,7 @@ export function ArticuloCard({
                 className="h-8 px-1 text-[11px] gap-0.5 border-amber-200 dark:border-amber-800 hover:bg-amber-50 dark:hover:bg-amber-950 text-amber-700 dark:text-amber-400"
                 onClick={() => onSalida(articulo)}
                 disabled={articulo.stock_total === 0}
+                aria-label={`Registrar salida de ${articulo.nombre}`}
               >
                 <Minus className="size-3 shrink-0" />
                 <span className="hidden sm:inline">Salida</span>
@@ -160,6 +162,7 @@ export function ArticuloCard({
                 className="h-8 px-1 text-[11px] gap-0.5 border-blue-200 dark:border-blue-800 hover:bg-blue-50 dark:hover:bg-blue-950 text-blue-700 dark:text-blue-400"
                 onClick={() => onTraslado(articulo)}
                 disabled={articulo.stock_total === 0}
+                aria-label={`Trasladar ${articulo.nombre}`}
               >
                 <ArrowRightLeft className="size-3 shrink-0" />
                 <span className="hidden sm:inline">Traslado</span>

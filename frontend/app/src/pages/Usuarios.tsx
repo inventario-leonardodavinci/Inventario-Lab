@@ -30,7 +30,7 @@ import {
   useEliminarUsuario,
   usePerfil,
 } from '@/hooks/queries'
-import { formatearRol, formatearFecha, formatearFechaRelativa } from '@/utils/formatters'
+import { formatearRol, formatearFecha, formatearFechaRelativa, formatearIniciales } from '@/utils/formatters'
 import type { Rol, UsuarioApp } from '@/types'
 import {
   Shield,
@@ -63,16 +63,6 @@ function badgeVarianteRol(rol: Rol): 'default' | 'secondary' {
   return 'secondary'
 }
 
-function iniciales(nombre: string | null | undefined): string {
-  if (!nombre) return '?'
-  return nombre
-    .trim()
-    .split(/\s+/)
-    .slice(0, 2)
-    .map((p) => p[0]?.toUpperCase() ?? '')
-    .join('')
-}
-
 // ─── Componente avatar ────────────────────────────────────────────────────────
 
 function AvatarUsuario({
@@ -94,7 +84,7 @@ function AvatarUsuario({
         <AvatarImage src={usuario.avatar_url} alt={usuario.nombre_visible ?? 'Usuario'} />
       )}
       <AvatarFallback className="bg-primary/10 text-primary font-semibold">
-        {iniciales(usuario.nombre_visible)}
+        {formatearIniciales(usuario.nombre_visible)}
       </AvatarFallback>
     </Avatar>
   )

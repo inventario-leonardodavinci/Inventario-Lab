@@ -3,7 +3,7 @@
  * Apple/Meta style: Todo integrado sin tabs, acciones rápidas, UI minimalista
  */
 import { useMemo } from 'react'
-import { Plus, ArrowRightLeft } from 'lucide-react'
+import { Plus } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { useAuth } from '@/context/ContextoAutenticacion'
 import {
@@ -25,7 +25,7 @@ import { ArticuloDrawer } from './articulos/components/ArticuloDrawer'
 import { ArticuloFormSheet, type DatosFormArticulo } from './articulos/components/ArticuloFormSheet'
 import { validarMovimiento, type EntradaCrearMovimiento } from '@/services/movimientosApi'
 import { toast } from 'sonner'
-import { DEBOUNCE_DELAY_MS } from '@/constants'
+import { DEBOUNCE_DELAY_MS, SKELETON_COUNT, ARTICULOS_PER_PAGE } from '@/constants'
 import { useDebounce } from '@/hooks/useDebounce'
 
 export default function Articulos() {
@@ -38,7 +38,7 @@ export default function Articulos() {
   
   // Queries - usar busquedaDebounced para evitar peticiones en cada tecla
   const { data: articulosData, isLoading, isFetching } = useArticulos({
-    per_page: 200,
+    per_page: ARTICULOS_PER_PAGE,
     ...(busquedaDebounced ? { search: busquedaDebounced } : {}),
     ...(view.categoriaId ? { categoria_id: Number(view.categoriaId) } : {}),
     ...(view.ubicacionId ? { ubicacion_id: Number(view.ubicacionId) } : {}),
@@ -82,10 +82,10 @@ export default function Articulos() {
   const handleCrearArticulo = async (datos: DatosFormArticulo) => {
     try {
       await crearArticulo.mutateAsync(datos)
-      toast.success('Artículo creado correctamente')
+      toast.success(`Artículo "${datos.nombre}" creado correctamente`)
       view.cerrarForm()
     } catch (error) {
-      toast.error(error instanceof Error ? error.message : 'Error al crear artículo')
+      toast.error(error instanceof Error ? error.message : 'Error al crear el artículo')
     }
   }
   
@@ -96,10 +96,10 @@ export default function Articulos() {
         id: view.articuloEditando.id,
         datos,
       })
-      toast.success('Artículo actualizado')
+      toast.success(`Artículo "${datos.nombre}" actualizado correctamente`)
       view.cerrarForm()
     } catch (error) {
-      toast.error(error instanceof Error ? error.message : 'Error al actualizar')
+      toast.error(error instanceof Error ? error.message : 'Error al actualizar el artículo')
     }
   }
 
@@ -161,8 +161,6 @@ export default function Articulos() {
       toast.error(error instanceof Error ? error.message : 'Error al registrar movimiento')
     }
   }
-  
-  const SKELETON_COUNT = 10
 
   if (isLoading) {
     return (
@@ -202,12 +200,6 @@ export default function Articulos() {
         </div>
 
         <div className="flex flex-wrap items-center gap-2">
-          {esProfesor && (
-            <Button variant="outline" size="sm" className="hidden sm:inline-flex">
-              <ArrowRightLeft className="size-4 mr-2" />
-              Historial
-            </Button>
-          )}
           {esProfesor && (
             <Button size="sm" onClick={view.abrirCrear} className="ml-auto sm:ml-0">
               <Plus className="size-4 mr-2" />

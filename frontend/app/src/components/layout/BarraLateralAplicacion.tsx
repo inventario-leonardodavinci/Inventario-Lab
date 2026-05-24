@@ -19,6 +19,7 @@ import {
   SidebarMenuItem,
 } from '@/components/ui/sidebar'
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar'
+import { formatearIniciales } from '@/utils/formatters'
 
 const menuItems = [
   { title: 'Panel', url: '/', icon: LayoutDashboard },
@@ -27,10 +28,6 @@ const menuItems = [
   { title: 'Ubicaciones', url: '/ubicaciones', icon: MapPin },
   { title: 'Categorías', url: '/categorias', icon: FolderOpen },
 ]
-
-function iniciales(nombre: string): string {
-  return nombre.split(' ').slice(0, 2).map((p) => p[0]?.toUpperCase() ?? '').join('')
-}
 
 function esRutaActiva(pathname: string, url: string, end = false): boolean {
   if (end) {
@@ -109,7 +106,7 @@ export function BarraLateralAplicacion() {
                   <Avatar className="size-8 shrink-0 ring-2 ring-primary/20 transition-all group-hover:ring-primary/40">
                     <AvatarImage src={user.avatarUrl} alt={user.displayName} />
                     <AvatarFallback className="bg-primary/10 text-xs font-bold text-primary">
-                      {iniciales(user.displayName)}
+                      {formatearIniciales(user.displayName)}
                     </AvatarFallback>
                   </Avatar>
                   <div className="flex flex-1 flex-col items-start overflow-hidden leading-tight">
