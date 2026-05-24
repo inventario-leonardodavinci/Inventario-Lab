@@ -3,7 +3,7 @@
  * Apple/Meta style: Todo integrado sin tabs, acciones rápidas, UI minimalista
  */
 import { useMemo } from 'react'
-import { Plus, ArrowRightLeft } from 'lucide-react'
+import { Plus } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { useAuth } from '@/context/ContextoAutenticacion'
 import {
@@ -202,12 +202,6 @@ export default function Articulos() {
         </div>
 
         <div className="flex flex-wrap items-center gap-2">
-          {esProfesor && (
-            <Button variant="outline" size="sm" className="hidden sm:inline-flex">
-              <ArrowRightLeft className="size-4 mr-2" />
-              Historial
-            </Button>
-          )}
           {esProfesor && (
             <Button size="sm" onClick={view.abrirCrear} className="ml-auto sm:ml-0">
               <Plus className="size-4 mr-2" />
