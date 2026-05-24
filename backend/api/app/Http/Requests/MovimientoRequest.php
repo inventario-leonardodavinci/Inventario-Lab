@@ -62,6 +62,32 @@ class MovimientoRequest extends FormRequest
                     );
                 }
             }
+            
+            // Validar que sub-ubicación origen pertenezca a ubicación origen
+            $subOrigenId = $this->input('sub_ubicacion_origen_id');
+            $origenId = $this->input('ubicacion_origen_id');
+            if ($subOrigenId && $origenId) {
+                $subUbicacion = \App\Models\SubUbicacion::find($subOrigenId);
+                if ($subUbicacion && $subUbicacion->ubicacion_id !== (int)$origenId) {
+                    $validator->errors()->add(
+                        'sub_ubicacion_origen_id',
+                        'La sub-ubicación de origen no pertenece a la ubicación seleccionada.'
+                    );
+                }
+            }
+            
+            // Validar que sub-ubicación destino pertenezca a ubicación destino
+            $subDestinoId = $this->input('sub_ubicacion_destino_id');
+            $destinoId = $this->input('ubicacion_destino_id');
+            if ($subDestinoId && $destinoId) {
+                $subUbicacion = \App\Models\SubUbicacion::find($subDestinoId);
+                if ($subUbicacion && $subUbicacion->ubicacion_id !== (int)$destinoId) {
+                    $validator->errors()->add(
+                        'sub_ubicacion_destino_id',
+                        'La sub-ubicación de destino no pertenece a la ubicación seleccionada.'
+                    );
+                }
+            }
         });
     }
 
