@@ -214,6 +214,19 @@ export function PanelAccionRapida({
   const handleSubmit = () => {
     const tipoFinal = tipoSeleccionado || tipo || 'entrada'
     
+    // Validar cantidad positiva
+    if (cantidad <= 0) {
+      return // No hacer nada si la cantidad no es válida
+    }
+    
+    // Validar que no exceda el stock disponible para salidas
+    if (tipoFinal === 'salida') {
+      const stockDisponible = stockPorUbicacion[Number(ubicacionOrigen)]?.stockTotal || 0
+      if (cantidad > stockDisponible) {
+        return // No hacer nada si excede el stock
+      }
+    }
+    
     if (tipoFinal === 'entrada') {
       onSubmit(tipoFinal, cantidad, undefined, ubicacionDestino, undefined, subUbicacionDestino || undefined)
     } else if (tipoFinal === 'salida') {
