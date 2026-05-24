@@ -25,7 +25,7 @@ import { ArticuloDrawer } from './articulos/components/ArticuloDrawer'
 import { ArticuloFormSheet, type DatosFormArticulo } from './articulos/components/ArticuloFormSheet'
 import { validarMovimiento, type EntradaCrearMovimiento } from '@/services/movimientosApi'
 import { toast } from 'sonner'
-import { DEBOUNCE_DELAY_MS } from '@/constants'
+import { DEBOUNCE_DELAY_MS, SKELETON_COUNT } from '@/constants'
 import { useDebounce } from '@/hooks/useDebounce'
 
 export default function Articulos() {
@@ -161,8 +161,6 @@ export default function Articulos() {
       toast.error(error instanceof Error ? error.message : 'Error al registrar movimiento')
     }
   }
-  
-  const SKELETON_COUNT = 10
 
   if (isLoading) {
     return (

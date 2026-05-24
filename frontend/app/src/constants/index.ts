@@ -33,6 +33,7 @@ export type FiltroArticulo = (typeof FILTROS_ARTICULO)[number]
 // ── UI ─────────────────────────────────────────────────────────────────────
 export const MODOS_VISTA = ['grid', 'lista'] as const
 export type ModoVista = (typeof MODOS_VISTA)[number]
+export const SKELETON_COUNT = 10 // Número de skeletons a mostrar durante carga
 
 // ── Validación ────────────────────────────────────────────────────────────
 export const CANTIDAD_MINIMA_MOVIMIENTO = 0.01
