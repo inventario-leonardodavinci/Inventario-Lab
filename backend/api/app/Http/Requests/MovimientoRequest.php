@@ -41,6 +41,31 @@ class MovimientoRequest extends FormRequest
     }
 
     /**
+     * Validación adicional después de las reglas básicas.
+     *
+     * @return void
+     */
+    public function withValidator($validator): void
+    {
+        $validator->after(function ($validator) {
+            if ($this->input('tipo') === 'traslado') {
+                $origenId = $this->input('ubicacion_origen_id');
+                $destinoId = $this->input('ubicacion_destino_id');
+                $subOrigenId = $this->input('sub_ubicacion_origen_id');
+                $subDestinoId = $this->input('sub_ubicacion_destino_id');
+
+                // Validar que no sea el mismo lugar (ubicación + sub-ubicación)
+                if ($origenId === $destinoId && $subOrigenId === $subDestinoId) {
+                    $validator->errors()->add(
+                        'ubicacion_destino_id',
+                        'El traslado debe ser a una ubicación diferente.'
+                    );
+                }
+            }
+        });
+    }
+
+    /**
      * Mensajes de error personalizados en español.
      *
      * @return array<string, string> Mensajes de error
