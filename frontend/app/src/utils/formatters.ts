@@ -121,3 +121,20 @@ export function formatearCantidad(n: number, unidad?: string): string {
   const numero = n.toLocaleString(LOCALE)
   return unidad ? `${numero} ${unidad}` : numero
 }
+
+// ─── Texto ────────────────────────────────────────────────────────────────────
+
+/**
+ * Obtiene las iniciales de un nombre completo.
+ * formatearIniciales('Juan Pérez') → "JP"
+ * formatearIniciales('María') → "M"
+ * formatearIniciales(null) → "?"
+ */
+export function formatearIniciales(nombre: string | null | undefined): string {
+  if (!nombre) return '?'
+  return nombre
+    .split(' ')
+    .slice(0, 2)
+    .map((p) => p[0]?.toUpperCase() ?? '')
+    .join('')
+}
