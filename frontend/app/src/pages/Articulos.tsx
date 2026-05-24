@@ -25,7 +25,7 @@ import { ArticuloDrawer } from './articulos/components/ArticuloDrawer'
 import { ArticuloFormSheet, type DatosFormArticulo } from './articulos/components/ArticuloFormSheet'
 import { validarMovimiento, type EntradaCrearMovimiento } from '@/services/movimientosApi'
 import { toast } from 'sonner'
-import { DEBOUNCE_DELAY_MS, SKELETON_COUNT } from '@/constants'
+import { DEBOUNCE_DELAY_MS, SKELETON_COUNT, ARTICULOS_PER_PAGE } from '@/constants'
 import { useDebounce } from '@/hooks/useDebounce'
 
 export default function Articulos() {
@@ -38,7 +38,7 @@ export default function Articulos() {
   
   // Queries - usar busquedaDebounced para evitar peticiones en cada tecla
   const { data: articulosData, isLoading, isFetching } = useArticulos({
-    per_page: 200,
+    per_page: ARTICULOS_PER_PAGE,
     ...(busquedaDebounced ? { search: busquedaDebounced } : {}),
     ...(view.categoriaId ? { categoria_id: Number(view.categoriaId) } : {}),
     ...(view.ubicacionId ? { ubicacion_id: Number(view.ubicacionId) } : {}),
