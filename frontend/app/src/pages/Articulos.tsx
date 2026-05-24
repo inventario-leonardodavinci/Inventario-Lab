@@ -82,10 +82,10 @@ export default function Articulos() {
   const handleCrearArticulo = async (datos: DatosFormArticulo) => {
     try {
       await crearArticulo.mutateAsync(datos)
-      toast.success('Artículo creado correctamente')
+      toast.success(`Artículo "${datos.nombre}" creado correctamente`)
       view.cerrarForm()
     } catch (error) {
-      toast.error(error instanceof Error ? error.message : 'Error al crear artículo')
+      toast.error(error instanceof Error ? error.message : 'Error al crear el artículo')
     }
   }
   
@@ -96,10 +96,10 @@ export default function Articulos() {
         id: view.articuloEditando.id,
         datos,
       })
-      toast.success('Artículo actualizado')
+      toast.success(`Artículo "${datos.nombre}" actualizado correctamente`)
       view.cerrarForm()
     } catch (error) {
-      toast.error(error instanceof Error ? error.message : 'Error al actualizar')
+      toast.error(error instanceof Error ? error.message : 'Error al actualizar el artículo')
     }
   }
 
