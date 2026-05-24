@@ -132,7 +132,7 @@ export function ArticulosTabla({
                       )}>
                         {urgente && <AlertTriangle className="size-3 shrink-0" />}
                         {dias < 0
-                          ? `Caducado hace ${Math.abs(dias)}d`
+                          ? new Date(articulo.fecha_caducidad!).toLocaleDateString('es-ES', { day: '2-digit', month: 'short', year: '2-digit' })
                           : dias === 0 ? 'Caduca hoy'
                           : urgente ? `${dias}d`
                           : new Date(articulo.fecha_caducidad!).toLocaleDateString('es-ES', { day: '2-digit', month: 'short', year: '2-digit' })}

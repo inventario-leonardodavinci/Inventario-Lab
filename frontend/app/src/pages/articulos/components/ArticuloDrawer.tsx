@@ -84,7 +84,7 @@ function proximaCaducidad(fecha: string): { texto: string; urgente: boolean } {
   const hoy = new Date()
   const cad = new Date(fecha)
   const dias = Math.ceil((cad.getTime() - hoy.getTime()) / (1000 * 60 * 60 * 24))
-  if (dias < 0) return { texto: `Caducado hace ${Math.abs(dias)} días`, urgente: true }
+  if (dias < 0) return { texto: `Caducado: ${formatFecha(fecha)}`, urgente: true }
   if (dias === 0) return { texto: 'Caduca hoy', urgente: true }
   if (dias <= 30) return { texto: `Caduca en ${dias} días`, urgente: true }
   return { texto: formatFecha(fecha), urgente: false }

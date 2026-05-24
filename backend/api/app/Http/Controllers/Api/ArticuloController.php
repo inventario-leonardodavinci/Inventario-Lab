@@ -98,7 +98,7 @@ class ArticuloController extends Controller
         $orderDir = strtolower($orderDir) === 'desc' ? 'desc' : 'asc';
 
         $stockSubquery = NivelStock::query()
-            ->selectRaw('articulo_id, SUM(cantidad) as stock_total, MIN(cantidad_minima) as stock_minimo')
+            ->selectRaw('articulo_id, SUM(cantidad) as stock_total, SUM(cantidad_minima) as stock_minimo')
             ->groupBy('articulo_id');
 
         $articulosQuery = Articulo::query()
@@ -182,7 +182,7 @@ class ArticuloController extends Controller
         $ubicacionId = $request->query('ubicacion_id');
 
         $stockSubquery = NivelStock::query()
-            ->selectRaw('articulo_id, SUM(cantidad) as stock_total, MIN(cantidad_minima) as stock_minimo')
+            ->selectRaw('articulo_id, SUM(cantidad) as stock_total, SUM(cantidad_minima) as stock_minimo')
             ->groupBy('articulo_id');
 
         $base = Articulo::query()
@@ -214,7 +214,7 @@ class ArticuloController extends Controller
         $articulo->load(['categoria:id,nombre', 'nivelesStock.ubicacion', 'nivelesStock.subUbicacion']);
 
         $stockTotal = $articulo->nivelesStock->sum('cantidad');
-        $cantidadMinima = (float) ($articulo->nivelesStock->min('cantidad_minima') ?? 0);
+        $cantidadMinima = (float) $articulo->nivelesStock->sum('cantidad_minima');
 
         return ApiResponse::success([
                 'id'              => $articulo->id,
@@ -311,7 +311,7 @@ class ArticuloController extends Controller
         $articulo->load('categoria:id,nombre');
 
         $stockTotal = (float) $articulo->nivelesStock()->sum('cantidad');
-        $cantidadMinima = (float) ($articulo->nivelesStock()->min('cantidad_minima') ?? 0);
+        $cantidadMinima = (float) $articulo->nivelesStock()->sum('cantidad_minima');
 
         return ApiResponse::success($this->serializar($articulo, $stockTotal, $cantidadMinima));
     }

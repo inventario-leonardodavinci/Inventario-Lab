@@ -103,7 +103,9 @@ export function ArticuloCard({
               )}
             >
               <AlertTriangle className="size-2.5" />
-              {diasCad! < 0 ? 'Caducado' : `${diasCad}d`}
+              {diasCad! < 0 
+                ? new Date(articulo.fecha_caducidad!).toLocaleDateString('es-ES', { day: '2-digit', month: 'short' })
+                : `${diasCad}d`}
             </Badge>
           )}
         </div>
