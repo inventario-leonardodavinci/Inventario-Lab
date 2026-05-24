@@ -9,6 +9,7 @@ import { useState, useRef, useEffect } from "react";
 import { InputOTP, InputOTPGroup, InputOTPSlot } from "@/components/ui/input-otp";
 import { AlertCircle, Loader2 } from "lucide-react";
 import { formatearIniciales } from "@/utils/formatters";
+import { validarEmail } from "@/utils/validators";
 
 // ─── Componente de alerta inline ─────────────────────────────────────────────
 
@@ -219,10 +220,6 @@ export function BotonesOAuth({
       </div>
     </div>
   );
-}
-
-export function validarEmail(email: string): boolean {
-  return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email);
 }
 
 export function VistaLogin({ onNavegar, oAuthProviders }: { onNavegar: (ruta: string) => void; oAuthProviders: string[] }) {
