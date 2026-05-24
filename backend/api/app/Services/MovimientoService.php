@@ -22,6 +22,10 @@ class MovimientoService
 {
     /**
      * Crea un movimiento completo dentro de una transacción atómica.
+     * 
+     * IMPORTANTE: Toda la operación se ejecuta dentro de una transacción de base de datos.
+     * Si cualquier parte falla (creación del movimiento, líneas o actualización de stock),
+     * todos los cambios se revierten automáticamente para mantener la consistencia de datos.
      *
      * @param array{
      *   tipo: string,
