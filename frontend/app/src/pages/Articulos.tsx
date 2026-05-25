@@ -16,6 +16,7 @@ import {
   useMovimientos,
   useArticulo,
   useActualizarNivelStock,
+  useEliminarNivelStock,
 } from '@/hooks/queries'
 import { useArticulosView } from './articulos/hooks/useArticulosView'
 import { FiltrosBar } from './articulos/components/FiltrosBar'
@@ -59,6 +60,7 @@ export default function Articulos() {
   const actualizarArticulo = useActualizarArticulo()
   const crearMovimiento = useCrearMovimiento()
   const actualizarNivelStock = useActualizarNivelStock()
+  const eliminarNivelStock = useEliminarNivelStock()
   
   // Datos
   const articulos = useMemo(() => articulosData?.data ?? [], [articulosData])
@@ -117,6 +119,19 @@ export default function Articulos() {
       toast.success('Stock mínimo actualizado correctamente')
     } catch (error) {
       toast.error(error instanceof Error ? error.message : 'Error al actualizar el stock mínimo')
+    }
+  }
+
+  const handleDeleteNivelStock = async (nivelId: number) => {
+    if (!view.articuloDetalle) return
+    try {
+      await eliminarNivelStock.mutateAsync({
+        articuloId: view.articuloDetalle.id,
+        nivelId,
+      })
+      toast.success('Ubicación eliminada correctamente')
+    } catch (error) {
+      toast.error(error instanceof Error ? error.message : 'Error al eliminar la ubicación')
     }
   }
 
@@ -315,6 +330,7 @@ export default function Articulos() {
           }
         } : undefined}
         onUpdateNivelStock={esProfesor ? handleUpdateNivelStock : undefined}
+        onDeleteNivelStock={esProfesor ? handleDeleteNivelStock : undefined}
       />
       
       {esProfesor && (

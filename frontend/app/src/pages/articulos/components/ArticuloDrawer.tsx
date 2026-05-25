@@ -5,6 +5,7 @@ import {
   ShoppingCart,
   Check,
   X,
+  Trash2,
 } from 'lucide-react'
 import { useState } from 'react'
 import { Button } from '@/components/ui/button'
@@ -33,6 +34,7 @@ interface ArticuloDrawerProps {
   onEditar?: () => void
   onMovimiento?: (tipo: 'entrada' | 'salida' | 'traslado') => void
   onUpdateNivelStock?: (nivelId: number, cantidadMinima: number) => void
+  onDeleteNivelStock?: (nivelId: number) => void
 }
 
 function SectionTitle({ icon: Icon, label }: { icon: React.ElementType; label: string }) {
@@ -105,6 +107,7 @@ export function ArticuloDrawer({
   onEditar,
   onMovimiento,
   onUpdateNivelStock,
+  onDeleteNivelStock,
 }: ArticuloDrawerProps) {
   const [editingNivelId, setEditingNivelId] = useState<number | null>(null)
   const [editValue, setEditValue] = useState('')
@@ -336,6 +339,16 @@ export function ArticuloDrawer({
                                     className="text-[10px] text-primary hover:underline flex items-center gap-1"
                                   >
                                     <Pencil className="size-2.5" /> Editar mín.
+                                  </button>
+                                )}
+                                {onDeleteNivelStock && (
+                                  <button
+                                    onClick={() => onDeleteNivelStock(nivel.id)}
+                                    disabled={nivel.cantidad > 0}
+                                    className="text-[10px] text-destructive hover:underline flex items-center gap-1 ml-3 disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:no-underline"
+                                    title={nivel.cantidad > 0 ? "Vacía el stock (haz una salida o traslado) antes de eliminar la ubicación" : "Eliminar ubicación"}
+                                  >
+                                    <Trash2 className="size-2.5" /> Eliminar
                                   </button>
                                 )}
                               </>
