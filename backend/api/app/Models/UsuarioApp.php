@@ -46,4 +46,9 @@ class UsuarioApp extends Model implements AuthenticatableContract
     {
         return $this->hasMany(Movimiento::class, 'usuario_id');
     }
+
+    public function historialSesiones(): HasMany
+    {
+        return $this->hasMany(HistorialSesion::class, 'usuario_id');
+    }
 }

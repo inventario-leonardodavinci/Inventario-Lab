@@ -25,6 +25,7 @@ class UsuarioController extends Controller
 
         $usuarios = UsuarioApp::query()
             ->with('roles:id,name')
+            ->withMax('historialSesiones as last_login_at', 'iniciada_en')
             ->orderBy('created_at', 'desc')
             ->paginate($perPage)
             ->through(fn (UsuarioApp $u) => (new UsuarioResource($u))->toArray($request));

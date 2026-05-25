@@ -39,6 +39,7 @@ export interface Articulo {
   estado_stock: 'critico' | 'ok'
   created_at: string
   updated_at: string
+  last_login_at?: string | null
   // Campos opcionales que pueden existir en BD
   numero_serie?: string | null
   tipo_material?: string | null
@@ -126,6 +127,7 @@ export interface UsuarioApp {
   nombre_visible: string | null
   activo: boolean
   roles: Array<{ id: number; name: string }>
+  last_login_at?: string | null
   created_at: string
   updated_at: string
   // Campos enriquecidos desde InsForge Auth (getProfile)

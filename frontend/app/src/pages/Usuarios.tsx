@@ -180,7 +180,7 @@ function ModalDetalleUsuario({
 
           <div className="flex items-center gap-3 px-3 py-2.5">
             <span className="text-muted-foreground text-xs w-24 shrink-0">Últ. actividad</span>
-            <span>{formatearFechaRelativa(usuario.updated_at ?? usuario.created_at)}</span>
+            <span>{usuario.last_login_at ? formatearFechaRelativa(usuario.last_login_at) : 'Nunca'}</span>
           </div>
 
           <div className="flex items-center gap-3 px-3 py-2.5">
