@@ -3,6 +3,12 @@
  */
 import { Download, Loader2 } from 'lucide-react'
 import { Button } from '@/components/ui/button'
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipProvider,
+  TooltipTrigger,
+} from '@/components/ui/tooltip'
 import { useExportarArticulos } from '@/hooks/queries'
 import { descargarBlob } from '@/utils/descargas'
 import { toast } from 'sonner'
@@ -23,20 +29,29 @@ export function BotonExportar() {
   }
 
   return (
-    <Button
-      variant="outline"
-      size="sm"
-      onClick={handleExportar}
-      disabled={exportar.isPending}
-      aria-label="Exportar inventario como CSV"
-    >
-      {exportar.isPending ? (
-        <Loader2 className="size-4 mr-2 animate-spin" />
-      ) : (
-        <Download className="size-4 mr-2" />
-      )}
-      <span className="hidden sm:inline">Exportar</span>
-      <span className="sm:hidden">CSV</span>
-    </Button>
+    <TooltipProvider>
+      <Tooltip>
+        <TooltipTrigger asChild>
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={handleExportar}
+            disabled={exportar.isPending}
+            aria-label="Exportar inventario como CSV ordenado por categoría"
+          >
+            {exportar.isPending ? (
+              <Loader2 className="size-4 mr-2 animate-spin" />
+            ) : (
+              <Download className="size-4 mr-2" />
+            )}
+            <span className="hidden sm:inline">Exportar</span>
+            <span className="sm:hidden">CSV</span>
+          </Button>
+        </TooltipTrigger>
+        <TooltipContent>
+          <p>Exportar inventario como CSV ordenado por categoría</p>
+        </TooltipContent>
+      </Tooltip>
+    </TooltipProvider>
   )
 }
