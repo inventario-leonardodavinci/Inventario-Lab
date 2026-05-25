@@ -113,6 +113,7 @@ export function ArticuloDrawer({
 }: ArticuloDrawerProps) {
   const [editingNivelId, setEditingNivelId] = useState<number | null>(null)
   const [editValue, setEditValue] = useState('')
+  const [deleteConfirmOpen, setDeleteConfirmOpen] = useState(false)
 
   if (!articulo) return null
 
@@ -270,7 +271,7 @@ export function ArticuloDrawer({
                         </div>
                         <span className={cn("font-mono font-semibold tabular-nums", bajo && "text-destructive")}>
                           {nivel.cantidad}
-                          {articulo.unidad && <span className="text-xs font-normal text-muted-foreground ml-1">{articulo.unidad}</span>}
+                          {articulo.unidad && <span className="text-xs font-normal text-muted-foreground">{' '}{articulo.unidad}</span>}
                         </span>
                       </div>
                       {nivel.cantidad_minima != null && (
@@ -512,22 +513,47 @@ export function ArticuloDrawer({
                     </Button>
                   )}
                   {onDelete && (
-                    <Button
-                      variant="destructive"
-                      className="flex-1 gap-2"
-                      onClick={() => {
-                        if (
-                          window.confirm(
-                            `¿Estás seguro de que deseas eliminar permanentemente el artículo "${articulo.nombre}"? Esta acción no se puede deshacer y borrará todo su stock e historial.`
-                          )
-                        ) {
-                          onDelete()
-                        }
-                      }}
-                    >
-                      <Trash2 className="size-3.5" />
-                      Eliminar artículo
-                    </Button>
+                    <>
+                      <Button
+                        variant="destructive"
+                        className="flex-1 gap-2"
+                        onClick={() => setDeleteConfirmOpen(true)}
+                      >
+                        <Trash2 className="size-3.5" />
+                        Eliminar artículo
+                      </Button>
+                      <Dialog open={deleteConfirmOpen} onOpenChange={setDeleteConfirmOpen}>
+                        <DialogContent className="sm:max-w-md">
+                          <DialogHeader>
+                            <DialogTitle className="flex items-center gap-2">
+                              <AlertTriangle className="size-5 text-destructive shrink-0" />
+                              ¿Eliminar artículo?
+                            </DialogTitle>
+                            <DialogDescription className="pt-2 text-sm leading-relaxed">
+                              Se eliminará permanentemente el artículo{' '}
+                              <span className="font-semibold text-foreground">{articulo.nombre}</span>.
+                              Esta acción no se puede deshacer y borrará todo su stock, movimientos e historial.
+                            </DialogDescription>
+                          </DialogHeader>
+                          <div className="flex justify-end gap-2 pt-2">
+                            <Button variant="outline" size="sm" onClick={() => setDeleteConfirmOpen(false)}>
+                              Cancelar
+                            </Button>
+                            <Button
+                              variant="destructive"
+                              size="sm"
+                              onClick={() => {
+                                setDeleteConfirmOpen(false)
+                                onDelete()
+                              }}
+                            >
+                              <Trash2 className="size-3.5 mr-1" />
+                              Eliminar
+                            </Button>
+                          </div>
+                        </DialogContent>
+                      </Dialog>
+                    </>
                   )}
                 </div>
               </div>
