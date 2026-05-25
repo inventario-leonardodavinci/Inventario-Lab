@@ -414,6 +414,7 @@ class ArticuloController extends Controller
         return response($contenidoCsv, 200, [
             'Content-Type'        => 'text/csv; charset=UTF-8',
             'Content-Disposition' => 'attachment; filename="' . $nombreArchivo . '"',
+            'Content-Length'      => strlen($contenidoCsv),
             'Cache-Control'       => 'no-cache, no-store, must-revalidate',
         ]);
     }
