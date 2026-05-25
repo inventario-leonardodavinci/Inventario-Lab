@@ -365,7 +365,11 @@ class ArticuloController extends Controller
      */
     public function destroy(Articulo $articulo): JsonResponse
     {
-        $articulo->delete();
+        DB::transaction(function () use ($articulo) {
+            $articulo->lineasMovimiento()->delete();
+            $articulo->nivelesStock()->delete();
+            $articulo->delete();
+        });
 
         return ApiResponse::success([], 'Artículo eliminado correctamente');
     }
