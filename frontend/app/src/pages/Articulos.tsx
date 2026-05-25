@@ -12,6 +12,7 @@ import {
   useUbicaciones,
   useCrearArticulo,
   useActualizarArticulo,
+  useEliminarArticulo,
   useCrearMovimiento,
   useMovimientos,
   useArticulo,
@@ -58,6 +59,7 @@ export default function Articulos() {
   // Mutations
   const crearArticulo = useCrearArticulo()
   const actualizarArticulo = useActualizarArticulo()
+  const eliminarArticulo = useEliminarArticulo()
   const crearMovimiento = useCrearMovimiento()
   const actualizarNivelStock = useActualizarNivelStock()
   const eliminarNivelStock = useEliminarNivelStock()
@@ -132,6 +134,16 @@ export default function Articulos() {
       toast.success('Ubicación eliminada correctamente')
     } catch (error) {
       toast.error(error instanceof Error ? error.message : 'Error al eliminar la ubicación')
+    }
+  }
+
+  const handleEliminarArticulo = async (id: number) => {
+    try {
+      await eliminarArticulo.mutateAsync(id)
+      toast.success('Artículo eliminado correctamente')
+      view.cerrarDetalle()
+    } catch (error) {
+      toast.error(error instanceof Error ? error.message : 'Error al eliminar el artículo')
     }
   }
 
@@ -322,6 +334,7 @@ export default function Articulos() {
             view.cerrarDetalle()
           }
         } : undefined}
+        onDelete={esProfesor && view.articuloDetalle ? () => handleEliminarArticulo(view.articuloDetalle!.id) : undefined}
         onMovimiento={esProfesor ? (tipo) => {
           if (view.articuloDetalle) {
             view.seleccionarArticulo(view.articuloDetalle, tipo)

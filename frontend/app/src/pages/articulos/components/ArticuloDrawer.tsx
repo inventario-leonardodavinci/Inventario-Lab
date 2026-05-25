@@ -32,6 +32,7 @@ interface ArticuloDrawerProps {
   open: boolean
   onClose: () => void
   onEditar?: () => void
+  onDelete?: () => void
   onMovimiento?: (tipo: 'entrada' | 'salida' | 'traslado') => void
   onUpdateNivelStock?: (nivelId: number, cantidadMinima: number) => void
   onDeleteNivelStock?: (nivelId: number) => void
@@ -105,6 +106,7 @@ export function ArticuloDrawer({
   open,
   onClose,
   onEditar,
+  onDelete,
   onMovimiento,
   onUpdateNivelStock,
   onDeleteNivelStock,
@@ -498,7 +500,7 @@ export function ArticuloDrawer({
           </div>
 
           {/* ── Gestión ── */}
-          {onEditar && (
+          {(onEditar || onDelete) && (
             <>
               <Separator />
               <div className="space-y-2 pb-1">
@@ -507,6 +509,24 @@ export function ArticuloDrawer({
                     <Button variant="outline" className="flex-1 gap-2" onClick={onEditar}>
                       <Pencil className="size-3.5" />
                       Editar artículo
+                    </Button>
+                  )}
+                  {onDelete && (
+                    <Button
+                      variant="destructive"
+                      className="flex-1 gap-2"
+                      onClick={() => {
+                        if (
+                          window.confirm(
+                            `¿Estás seguro de que deseas eliminar permanentemente el artículo "${articulo.nombre}"? Esta acción no se puede deshacer y borrará todo su stock e historial.`
+                          )
+                        ) {
+                          onDelete()
+                        }
+                      }}
+                    >
+                      <Trash2 className="size-3.5" />
+                      Eliminar artículo
                     </Button>
                   )}
                 </div>
