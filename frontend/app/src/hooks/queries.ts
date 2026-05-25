@@ -238,7 +238,8 @@ export function useEliminarArticulo() {
   const queryClient = useQueryClient()
   return useMutation({
     mutationFn: (id: number) => eliminarArticulo(user!.authUserId, id),
-    onSuccess: () => {
+    onSuccess: (_data, id) => {
+      queryClient.removeQueries({ queryKey: ['articulo', id] })
       void queryClient.invalidateQueries({ queryKey: ['articulos'] })
     },
   })
