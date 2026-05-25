@@ -168,10 +168,10 @@ export function TarjetaUbicacion({ ub, onEdit }: TarjetaUbicacionProps) {
 
           {/* Add sub-ubicacion button */}
           <GuardRol roles={['profesor']}>
-            <button onClick={() => { resetSubForm(); setCrearSubDialog(true) }}
-              className="flex items-center gap-1.5 text-[11px] text-muted-foreground hover:text-foreground transition-colors self-start">
+            <Button variant="ghost" size="sm" onClick={() => { resetSubForm(); setCrearSubDialog(true) }}
+              className="h-auto gap-1.5 text-[11px] text-muted-foreground hover:text-foreground px-0">
               <Plus className="size-3" /> Añadir sub-ubicación
-            </button>
+            </Button>
           </GuardRol>
         </div>
       </CardPremium>

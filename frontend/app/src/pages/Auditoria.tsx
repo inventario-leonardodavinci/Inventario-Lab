@@ -7,7 +7,7 @@ import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from '@/components/ui/dialog'
-import { Input } from '@/components/ui/input'
+import { DatePickerSimple } from '@/components/ui/date-picker'
 import { Label } from '@/components/ui/label'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
 import { Separator } from '@/components/ui/separator'
@@ -579,12 +579,12 @@ export default function Auditoria() {
             </Select>
           </div>
           <div className="flex flex-col gap-1.5">
-            <Label htmlFor="filtro-desde" className="text-xs text-muted-foreground">Desde</Label>
-            <Input id="filtro-desde" type="date" value={desde} onChange={(e) => setDesde(e.target.value)} className="h-9 w-[148px] text-sm" />
+            <Label className="text-xs text-muted-foreground">Desde</Label>
+            <DatePickerSimple value={desde} onChange={(d) => setDesde(d ?? '')} placeholder="Desde" className="w-[148px]" />
           </div>
           <div className="flex flex-col gap-1.5">
-            <Label htmlFor="filtro-hasta" className="text-xs text-muted-foreground">Hasta</Label>
-            <Input id="filtro-hasta" type="date" value={hasta} onChange={(e) => setHasta(e.target.value)} className="h-9 w-[148px] text-sm" />
+            <Label className="text-xs text-muted-foreground">Hasta</Label>
+            <DatePickerSimple value={hasta} onChange={(d) => setHasta(d ?? '')} placeholder="Hasta" className="w-[148px]" />
           </div>
           <div className="flex gap-2 ml-auto">
             <Button variant="outline" size="sm" onClick={onLimpiarFiltros} className="h-9">Limpiar</Button>

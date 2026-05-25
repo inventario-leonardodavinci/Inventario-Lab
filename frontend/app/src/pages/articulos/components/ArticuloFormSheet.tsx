@@ -3,7 +3,7 @@ import { Package, Layers, MapPin, FlaskConical, FileText, Loader2, ShoppingCart 
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
-import { DatePickerSimple } from '@/components/ui/date-picker'
+import { DatePicker } from '@/components/ui/date-picker'
 import {
   Select,
   SelectContent,
@@ -381,14 +381,13 @@ export function ArticuloFormSheet({
               </div>
             </div>
 
-            <div className="space-y-2">
-              <Label>Fecha de caducidad</Label>
-              <DatePickerSimple
-                value={expirationDate}
-                onChange={(d) => setExpirationDate(d ?? '')}
-                placeholder="Seleccionar fecha"
-              />
-            </div>
+            <DatePicker
+              id="expirationDate"
+              label="Fecha de caducidad"
+              value={expirationDate}
+              onChange={(d) => setExpirationDate(d ?? '')}
+              placeholder="Seleccionar fecha"
+            />
           </div>
 
           <Separator />
@@ -398,14 +397,13 @@ export function ArticuloFormSheet({
             <SectionTitle icon={ShoppingCart} label="Información de adquisición" />
 
             <div className="grid grid-cols-2 gap-3">
-              <div className="space-y-2">
-                <Label>Fecha de adquisición</Label>
-                <DatePickerSimple
-                  value={fechaAdquisicion}
-                  onChange={(d) => setFechaAdquisicion(d ?? '')}
-                  placeholder="Seleccionar fecha"
-                />
-              </div>
+              <DatePicker
+                id="fechaAdquisicion"
+                label="Fecha de adquisición"
+                value={fechaAdquisicion}
+                onChange={(d) => setFechaAdquisicion(d ?? '')}
+                placeholder="Seleccionar fecha"
+              />
               <div className="space-y-2">
                 <Label htmlFor="precioCompra">Precio de compra (€)</Label>
                 <Input

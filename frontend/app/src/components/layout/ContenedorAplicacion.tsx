@@ -18,7 +18,6 @@ const RUTAS: Record<string, string> = {
   "/auditoria": "Auditoría",
   "/usuarios": "Usuarios",
   "/perfil": "Mi perfil",
-  "/movimientos": "Movimientos",
 }
 
 function useTituloRuta(): string {

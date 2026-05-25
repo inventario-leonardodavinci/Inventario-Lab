@@ -152,6 +152,11 @@ export function DatePickerSimple({
     setOpen(false)
   }
 
+  const handleClear = (e: React.MouseEvent) => {
+    e.stopPropagation()
+    onChange(undefined)
+  }
+
   return (
     <Popover open={open} onOpenChange={setOpen}>
       <PopoverTrigger asChild>
@@ -171,6 +176,17 @@ export function DatePickerSimple({
               : placeholder
             }
           </span>
+          {isValidDate && (
+            <span
+              role="button"
+              tabIndex={0}
+              onClick={handleClear}
+              onKeyDown={(e) => e.key === 'Enter' && handleClear(e as unknown as React.MouseEvent)}
+              className="ml-auto size-4 rounded-full hover:bg-muted flex items-center justify-center text-muted-foreground hover:text-foreground"
+            >
+              ×
+            </span>
+          )}
         </Button>
       </PopoverTrigger>
       <PopoverContent className="w-auto p-0" align="start">

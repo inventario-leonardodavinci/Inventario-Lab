@@ -951,8 +951,9 @@ export default function Perfil() {
 
                         {/* Botón eliminar */}
                         {!esActual ? (
-                          <button
-                            type="button"
+                          <Button
+                            variant="ghost"
+                            size="icon"
                             onClick={() =>
                               eliminarSesionMutation.mutate(sesion.id, {
                                 onSuccess: () => toast.success("Registro eliminado"),
@@ -960,7 +961,7 @@ export default function Perfil() {
                               })
                             }
                             disabled={borrando || eliminarSesionMutation.isPending}
-                            className="mt-0.5 shrink-0 rounded-md p-1.5 text-muted-foreground transition-colors hover:bg-destructive/10 hover:text-destructive disabled:cursor-not-allowed disabled:opacity-30"
+                            className="mt-0.5 size-7 shrink-0 text-muted-foreground hover:text-destructive hover:bg-destructive/10"
                             aria-label="Eliminar este registro de sesión"
                           >
                             {borrando ? (
@@ -968,7 +969,7 @@ export default function Perfil() {
                             ) : (
                               <Trash2 className="size-3.5" />
                             )}
-                          </button>
+                          </Button>
                         ) : (
                           <div className="size-8 shrink-0" />
                         )}

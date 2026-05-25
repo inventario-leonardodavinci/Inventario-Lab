@@ -296,7 +296,7 @@ export default function PanelPrincipal() {
               <p className="text-sm text-muted-foreground">Últimos movimientos en el inventario</p>
             </div>
             {movimientos.length > 0 && (
-              <Button variant="ghost" size="sm" className="text-xs gap-1" onClick={() => navigate('/movimientos')}>
+              <Button variant="ghost" size="sm" className="text-xs gap-1" onClick={() => navigate('/auditoria')}>
                 Ver todos <ChevronRight className="size-3.5" />
               </Button>
             )}
@@ -340,7 +340,7 @@ export default function PanelPrincipal() {
                     <div
                       key={mov.id}
                       className="group flex items-center gap-3 px-6 py-3.5 hover:bg-accent/50 transition-all cursor-pointer stagger-row"
-                      onClick={() => navigate('/movimientos')}
+                      onClick={() => navigate('/auditoria')}
                       style={{ animationDelay: `${i * 40}ms` }}
                     >
                       <div className={cn("flex size-8 shrink-0 items-center justify-center rounded-lg transition-transform group-hover:scale-110", mov.tipo ? colorFondo(mov.tipo) : 'bg-muted')}>
