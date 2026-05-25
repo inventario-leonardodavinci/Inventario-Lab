@@ -220,7 +220,14 @@ export default function Articulos() {
         </div>
 
         <div className="flex flex-wrap items-center gap-2">
-          <BotonExportar />
+          <BotonExportar 
+            filtros={{
+              search: busquedaDebounced || undefined,
+              categoria_id: view.categoriaId ? Number(view.categoriaId) : undefined,
+              ubicacion_id: view.ubicacionId ? Number(view.ubicacionId) : undefined,
+              estado_stock: view.filtro === 'critico' ? 'critico' : undefined,
+            }}
+          />
           {esProfesor && (
             <Button size="sm" onClick={view.abrirCrear} className="ml-auto sm:ml-0">
               <Plus className="size-4 mr-2" />

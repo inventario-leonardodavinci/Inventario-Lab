@@ -35,7 +35,7 @@ class ArticuloIndexRequest extends FormRequest
             'estado_stock' => ['nullable', Rule::in(['ok', 'critico'])],
             'order_by' => ['nullable', Rule::in(['nombre', 'codigo', 'stock_total', 'categoria', 'created_at'])],
             'order_dir' => ['nullable', Rule::in(['asc', 'desc'])],
-            'per_page' => ['nullable', 'integer', 'min:1', 'max:500'],
+            'per_page' => ['nullable', 'integer', 'min:1', 'max:100000'],
         ];
     }
 }
