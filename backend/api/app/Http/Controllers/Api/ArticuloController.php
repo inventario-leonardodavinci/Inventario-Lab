@@ -10,13 +10,15 @@ use App\Models\Articulo;
 use App\Models\NivelStock;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
+use Illuminate\Http\Response;
 use Illuminate\Support\Facades\DB;
 
 /**
  * Controlador para la gestión de artículos del inventario.
  *
  * Proporciona endpoints CRUD completos con filtrado, ordenamiento
- * y gestión de stock asociado.
+ * y gestión de stock asociado. También expone un endpoint de exportación
+ * CSV con todos los artículos agrupados por categoría.
  */
 class ArticuloController extends Controller
 {
@@ -327,5 +329,105 @@ class ArticuloController extends Controller
         $articulo->delete();
 
         return ApiResponse::success([], 'Artículo eliminado correctamente');
+    }
+
+    /**
+     * Exportar todos los artículos agrupados por categoría en formato CSV.
+     *
+     * Devuelve un archivo CSV con todos los artículos del inventario,
+     * ordenados por categoría y luego por nombre dentro de cada categoría.
+     * No aplica paginación — devuelve el inventario completo.
+     *
+     * @return Response Respuesta CSV descargable
+     */
+    public function exportar(): Response
+    {
+        $stockSubquery = NivelStock::query()
+            ->selectRaw('articulo_id, SUM(cantidad) as stock_total, SUM(cantidad_minima) as stock_minimo')
+            ->groupBy('articulo_id');
+
+        $articulos = Articulo::query()
+            ->with('categoria:id,nombre')
+            ->leftJoinSub($stockSubquery, 'stock_agg', function ($join): void {
+                $join->on('stock_agg.articulo_id', '=', 'articulos.id');
+            })
+            ->leftJoin('categorias', 'categorias.id', '=', 'articulos.categoria_id')
+            ->select('articulos.*')
+            ->selectRaw('COALESCE(stock_agg.stock_total, 0) as stock_total_calc')
+            ->selectRaw('COALESCE(stock_agg.stock_minimo, 0) as stock_minimo_calc')
+            ->orderByRaw('COALESCE(categorias.nombre, \'Sin categoría\') ASC')
+            ->orderBy('articulos.nombre', 'asc')
+            ->get();
+
+        $cabeceras = [
+            'Categoría',
+            'Código',
+            'Nombre',
+            'Descripción',
+            'Unidad',
+            'Stock Total',
+            'Stock Mínimo',
+            'Estado Stock',
+            'Número de Serie',
+            'Tipo de Material',
+            'Capacidad (ml)',
+            'Fecha Caducidad',
+            'Fecha Adquisición',
+            'Precio Compra',
+            'Proveedor',
+            'Número Factura',
+            'Notas',
+        ];
+
+        $filas = [];
+        $filas[] = implode(';', array_map(fn ($c) => '"' . str_replace('"', '""', $c) . '"', $cabeceras));
+
+        $categoriaActual = null;
+
+        foreach ($articulos as $articulo) {
+            $nombreCategoria = $articulo->categoria?->nombre ?? 'Sin categoría';
+
+            // Insertar línea vacía entre categorías para facilitar la lectura
+            if ($categoriaActual !== null && $categoriaActual !== $nombreCategoria) {
+                $filas[] = '';
+            }
+            $categoriaActual = $nombreCategoria;
+
+            $stockTotal  = (float) ($articulo->stock_total_calc ?? 0);
+            $stockMinimo = (float) ($articulo->stock_minimo_calc ?? 0);
+            $estadoStock = ($stockMinimo > 0 && $stockTotal < $stockMinimo) ? 'Crítico' : 'OK';
+
+            $fila = [
+                $articulo->categoria?->nombre ?? 'Sin categoría',
+                $articulo->codigo ?? '',
+                $articulo->nombre,
+                $articulo->descripcion ?? '',
+                $articulo->unidad ?? '',
+                $stockTotal,
+                $stockMinimo,
+                $estadoStock,
+                $articulo->serial_number ?? '',
+                $articulo->material_type ?? '',
+                $articulo->capacity_ml !== null ? (float) $articulo->capacity_ml : '',
+                $articulo->expiration_date?->format('Y-m-d') ?? '',
+                $articulo->fecha_adquisicion?->format('Y-m-d') ?? '',
+                $articulo->precio_compra !== null ? number_format((float) $articulo->precio_compra, 2, '.', '') : '',
+                $articulo->proveedor ?? '',
+                $articulo->numero_factura ?? '',
+                $articulo->notas ?? '',
+            ];
+
+            $filas[] = implode(';', array_map(fn ($v) => '"' . str_replace('"', '""', (string) $v) . '"', $fila));
+        }
+
+        $contenidoCsv = "\xEF\xBB\xBF" . implode("\r\n", $filas);
+        $nombreArchivo = 'inventario_' . now()->format('Y-m-d') . '.csv';
+
+        return response($contenidoCsv, 200, [
+            'Content-Type'        => 'text/csv; charset=UTF-8',
+            'Content-Disposition' => 'attachment; filename="' . $nombreArchivo . '"',
+            'Content-Length'      => strlen($contenidoCsv),
+            'Cache-Control'       => 'no-cache, no-store, must-revalidate',
+        ]);
     }
 }

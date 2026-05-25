@@ -16,6 +16,7 @@ import {
   getArticulo,
   crearArticulo,
   actualizarArticulo,
+  exportarArticulosCSV,
 } from '@/services/inventarioApi'
 import { getMovimientos, getResumenHoy, crearMovimiento } from '@/services/movimientosApi'
 import { getUbicaciones, crearUbicacion, actualizarUbicacion } from '@/services/ubicacionesApi'
@@ -200,6 +201,17 @@ export function useActualizarArticulo() {
       void queryClient.invalidateQueries({ queryKey: ['articulos'] })
       void queryClient.invalidateQueries({ queryKey: queryKeys.articulo(id) })
     },
+  })
+}
+
+/**
+ * Mutation para exportar todos los artículos como CSV agrupado por categoría.
+ * Devuelve un Blob listo para descargar.
+ */
+export function useExportarArticulos() {
+  const { user } = useAuth()
+  return useMutation({
+    mutationFn: () => exportarArticulosCSV(user!.authUserId),
   })
 }
 
