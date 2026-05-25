@@ -49,20 +49,20 @@ describe('descargarBlob', () => {
 
   it('asigna el nombre de archivo correcto al enlace', () => {
     const blob = new Blob(['contenido'], { type: 'text/csv' })
-    let enlaceCreado: { href: string; download: string; click: () => void } | null = null
+    const enlaceCreado = { current: null as { href: string; download: string; click: () => void } | null }
 
     vi.spyOn(document, 'createElement').mockImplementation((tag: string) => {
       if (tag === 'a') {
-        enlaceCreado = { href: '', download: '', click: clickMock }
-        return enlaceCreado as unknown as HTMLAnchorElement
+        enlaceCreado.current = { href: '', download: '', click: clickMock }
+        return enlaceCreado.current as unknown as HTMLAnchorElement
       }
       return document.createElement(tag)
     })
 
     descargarBlob(blob, 'inventario_2024-01-01.csv')
 
-    expect(enlaceCreado?.download).toBe('inventario_2024-01-01.csv')
-    expect(enlaceCreado?.href).toBe('blob:http://localhost/test-url')
+    expect(enlaceCreado.current?.download).toBe('inventario_2024-01-01.csv')
+    expect(enlaceCreado.current?.href).toBe('blob:http://localhost/test-url')
   })
 
   it('revoca la URL de objeto tras 1 segundo', () => {
