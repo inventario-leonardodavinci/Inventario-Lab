@@ -65,13 +65,10 @@ export function ArticuloCard({
             )}
           </div>
 
-          {/* Categoría + unidad */}
+          {/* Categoría */}
           <div className="flex items-center gap-1.5 mt-1 flex-wrap">
             {articulo.categoria && (
               <span className="text-xs text-muted-foreground">{articulo.categoria}</span>
-            )}
-            {articulo.unidad && (
-              <span className="text-xs text-muted-foreground">· {articulo.unidad}</span>
             )}
           </div>
 
