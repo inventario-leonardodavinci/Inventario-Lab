@@ -382,7 +382,17 @@ class ArticuloController extends Controller
         $filas = [];
         $filas[] = implode(';', array_map(fn ($c) => '"' . str_replace('"', '""', $c) . '"', $cabeceras));
 
+        $categoriaActual = null;
+
         foreach ($articulos as $articulo) {
+            $nombreCategoria = $articulo->categoria?->nombre ?? 'Sin categoría';
+
+            // Insertar línea vacía entre categorías para facilitar la lectura
+            if ($categoriaActual !== null && $categoriaActual !== $nombreCategoria) {
+                $filas[] = '';
+            }
+            $categoriaActual = $nombreCategoria;
+
             $stockTotal  = (float) ($articulo->stock_total_calc ?? 0);
             $stockMinimo = (float) ($articulo->stock_minimo_calc ?? 0);
             $estadoStock = ($stockMinimo > 0 && $stockTotal < $stockMinimo) ? 'Crítico' : 'OK';
