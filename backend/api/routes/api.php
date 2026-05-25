@@ -31,6 +31,7 @@ Route::prefix('v1')->middleware(['throttle:api', 'app.user', 'audit.write'])->gr
         Route::patch('/{articulo}', [ArticuloController::class, 'update'])->middleware('role:profesor');
         Route::delete('/{articulo}', [ArticuloController::class, 'destroy'])->middleware('role:profesor');
         Route::patch('/{articulo}/niveles-stock/{nivel}', [ArticuloController::class, 'updateNivelStock'])->middleware('role:profesor');
+        Route::delete('/{articulo}/niveles-stock/{nivel}', [ArticuloController::class, 'destroyNivelStock'])->middleware('role:profesor');
     });
 
     // ── Ubicaciones ───────────────────────────────────────────────────────────

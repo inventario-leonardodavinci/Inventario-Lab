@@ -92,6 +92,18 @@ export function actualizarNivelStock(
   ).then((res) => ({ data: unwrapData(res) }))
 }
 
+export function eliminarNivelStock(
+  authUserId: string,
+  articuloId: number,
+  nivelId: number,
+) {
+  return apiClient<{ data: Articulo }>(
+    `/articulos/${articuloId}/niveles-stock/${nivelId}`,
+    { method: 'DELETE' },
+    { authUserId },
+  ).then((res) => ({ data: unwrapData(res) }))
+}
+
 /**
  * Descarga el inventario completo en formato CSV agrupado por categoría.
  * Devuelve un Blob listo para generar un enlace de descarga.

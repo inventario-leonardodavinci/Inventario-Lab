@@ -40,6 +40,7 @@ export interface Articulo {
   created_at: string
   updated_at: string
   last_login_at?: string | null
+  ubicaciones?: string | null
   // Campos opcionales que pueden existir en BD
   numero_serie?: string | null
   tipo_material?: string | null

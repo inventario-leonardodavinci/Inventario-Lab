@@ -60,6 +60,7 @@ class ArticuloController extends Controller
             'precio_compra'     => $articulo->precio_compra !== null ? (float) $articulo->precio_compra : null,
             'proveedor'         => $articulo->proveedor,
             'numero_factura'    => $articulo->numero_factura,
+            'ubicaciones'       => $articulo->nombres_ubicaciones ?? null,
             'created_at'        => $articulo->created_at,
             'updated_at'        => $articulo->updated_at,
         ];
@@ -103,16 +104,34 @@ class ArticuloController extends Controller
             ->selectRaw('articulo_id, SUM(cantidad) as stock_total, SUM(cantidad_minima) as stock_minimo')
             ->groupBy('articulo_id');
 
+        $driver = \Illuminate\Support\Facades\DB::getDriverName();
+        if ($driver === 'pgsql') {
+            $aggFunc = "STRING_AGG(DISTINCT ubicaciones.nombre, ', ')";
+        } elseif ($driver === 'sqlite') {
+            $aggFunc = "GROUP_CONCAT(ubicaciones.nombre, ', ')";
+        } else {
+            $aggFunc = "GROUP_CONCAT(DISTINCT ubicaciones.nombre SEPARATOR ', ')";
+        }
+
+        $ubicacionesSubquery = NivelStock::query()
+            ->join('ubicaciones', 'ubicaciones.id', '=', 'niveles_stock.ubicacion_id')
+            ->selectRaw("articulo_id, {$aggFunc} as nombres_ubicaciones")
+            ->groupBy('articulo_id');
+
         $articulosQuery = Articulo::query()
             ->with('categoria:id,nombre')
             ->leftJoinSub($stockSubquery, 'stock_agg', function ($join): void {
                 $join->on('stock_agg.articulo_id', '=', 'articulos.id');
             })
+            ->leftJoinSub($ubicacionesSubquery, 'ubicaciones_agg', function ($join): void {
+                $join->on('ubicaciones_agg.articulo_id', '=', 'articulos.id');
+            })
             ->select('articulos.*')
             ->selectRaw('COALESCE(stock_agg.stock_total, 0) as stock_total_calc')
             ->selectRaw('COALESCE(stock_agg.stock_minimo, 0) as stock_minimo_calc')
-            ->when($busqueda !== '', function ($query) use ($busqueda): void {
-                $op = \Illuminate\Support\Facades\DB::getDriverName() === 'pgsql' ? 'ILIKE' : 'LIKE';
+            ->selectRaw('ubicaciones_agg.nombres_ubicaciones')
+            ->when($busqueda !== '', function ($query) use ($busqueda, $driver): void {
+                $op = $driver === 'pgsql' ? 'ILIKE' : 'LIKE';
                 $query->where(function ($q) use ($busqueda, $op): void {
                     $q->where('nombre', $op, "%{$busqueda}%")
                         ->orWhere('codigo', $op, "%{$busqueda}%");
@@ -356,6 +375,32 @@ class ArticuloController extends Controller
         $cantidadMinima = (float) $articulo->nivelesStock()->sum('cantidad_minima');
 
         return ApiResponse::success($this->serializar($articulo, $stockTotal, $cantidadMinima));
+    }
+
+    /**
+     * Eliminar un nivel de stock. Solo permitido si la cantidad es 0.
+     *
+     * @param Articulo $articulo
+     * @param NivelStock $nivel
+     * @return JsonResponse
+     */
+    public function destroyNivelStock(Articulo $articulo, NivelStock $nivel): JsonResponse
+    {
+        if ($nivel->articulo_id !== $articulo->id) {
+            return ApiResponse::error('El nivel de stock no pertenece al artículo', 400);
+        }
+
+        if ($nivel->cantidad > 0) {
+            return ApiResponse::error('No se puede eliminar una ubicación que aún tiene stock', 400);
+        }
+
+        $nivel->delete();
+
+        $articulo->load('categoria:id,nombre');
+        $stockTotal = (float) $articulo->nivelesStock()->sum('cantidad');
+        $cantidadMinima = (float) $articulo->nivelesStock()->sum('cantidad_minima');
+
+        return ApiResponse::success($this->serializar($articulo, $stockTotal, $cantidadMinima), 'Ubicación eliminada correctamente');
     }
 
     /**

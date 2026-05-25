@@ -1,12 +1,8 @@
 /**
- * Botón para exportar el inventario completo como CSV agrupado por categoría.
+ * Botón para exportar el inventario completo como Excel agrupado por categoría.
  *
- * Llama al endpoint GET /articulos/exportar del backend, que devuelve
- * un archivo CSV con BOM UTF-8, separador punto y coma, y artículos
- * ordenados alfabéticamente por categoría y nombre.
- *
- * El archivo se descarga automáticamente con el nombre
- * `inventario_YYYY-MM-DD.csv`.
+ * Llama al endpoint GET /articulos/exportar del backend (o usa frontend) que devuelve
+ * un archivo Excel / PDF.
  */
 import { Download, Loader2, FileText, FileSpreadsheet, ChevronDown } from 'lucide-react'
 import { Button } from '@/components/ui/button'
@@ -16,52 +12,12 @@ import {
   DropdownMenuItem,
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu'
-import { descargarBlob } from '@/utils/descargas'
 import { toast } from 'sonner'
-import { format } from 'date-fns'
 import { getArticulos } from '@/services/inventarioApi'
 import { useAuth } from '@/context/ContextoAutenticacion'
 import { generarPDFInventario } from '@/utils/exportarPDF'
+import { generarExcelInventario } from '@/utils/exportarExcel'
 import { useState } from 'react'
-import type { Articulo } from '@/types'
-
-function generarCSVInventario(articulos: Articulo[]) {
-  const cabeceras = [
-    'Categoría', 'Código', 'Nombre', 'Descripción', 'Unidad', 
-    'Stock Total', 'Stock Mínimo', 'Estado Stock', 'Número de Serie', 
-    'Tipo de Material', 'Capacidad (ml)', 'Fecha Caducidad', 
-    'Fecha Adquisición', 'Precio Compra', 'Proveedor', 
-    'Número Factura', 'Notas'
-  ]
-  const escapeCsv = (str: string | number | null | undefined) => {
-    if (str === null || str === undefined) return '""'
-    return `"${String(str).replace(/"/g, '""')}"`
-  }
-  
-  const filas = articulos.map(a => [
-    a.categoria ?? 'Sin categoría',
-    a.codigo ?? '',
-    a.nombre,
-    a.descripcion ?? '',
-    a.unidad ?? '',
-    a.stock_total ?? 0,
-    a.stock_minimo ?? 0,
-    a.estado_stock === 'critico' ? 'Crítico' : 'OK',
-    a.numero_serie ?? '',
-    a.tipo_material ?? '',
-    a.capacidad_ml ?? '',
-    a.fecha_caducidad ?? '',
-    a.fecha_adquisicion ?? '',
-    a.precio_compra ?? '',
-    a.proveedor ?? '',
-    a.numero_factura ?? '',
-    a.notas ?? ''
-  ])
-  
-  const contenido = [ cabeceras, ...filas ].map(row => row.map(escapeCsv).join(';')).join('\r\n')
-  const bom = "\uFEFF"
-  return new Blob([bom + contenido], { type: 'text/csv;charset=utf-8;' })
-}
 
 export interface BotonExportarProps {
   filtros?: {
@@ -74,7 +30,7 @@ export interface BotonExportarProps {
 
 export function BotonExportar({ filtros = {} }: BotonExportarProps) {
   const { user } = useAuth()
-  const [isExportingCsv, setIsExportingCsv] = useState(false)
+  const [isExportingExcel, setIsExportingExcel] = useState(false)
   const [isExportingPdf, setIsExportingPdf] = useState(false)
 
   const fetchExportData = async () => {
@@ -83,19 +39,17 @@ export function BotonExportar({ filtros = {} }: BotonExportarProps) {
     return res.data ?? []
   }
 
-  const handleExportarCSV = async () => {
-    setIsExportingCsv(true)
-    const toastId = toast.loading('Generando CSV...')
+  const handleExportarExcel = async () => {
+    setIsExportingExcel(true)
+    const toastId = toast.loading('Generando Excel...')
     try {
       const articulos = await fetchExportData()
-      const blob = generarCSVInventario(articulos)
-      const nombreArchivo = `inventario_${format(new Date(), 'yyyy-MM-dd')}.csv`
-      descargarBlob(blob, nombreArchivo)
-      toast.success(`Exportado como ${nombreArchivo}`, { id: toastId })
+      generarExcelInventario(articulos)
+      toast.success('Excel generado correctamente', { id: toastId })
     } catch {
-      toast.error('No se pudo exportar el CSV. Inténtalo de nuevo.', { id: toastId })
+      toast.error('No se pudo exportar el Excel. Inténtalo de nuevo.', { id: toastId })
     } finally {
-      setIsExportingCsv(false)
+      setIsExportingExcel(false)
     }
   }
 
@@ -113,7 +67,7 @@ export function BotonExportar({ filtros = {} }: BotonExportarProps) {
     }
   }
 
-  const isPending = isExportingCsv || isExportingPdf
+  const isPending = isExportingExcel || isExportingPdf
 
   return (
     <DropdownMenu>
@@ -131,7 +85,7 @@ export function BotonExportar({ filtros = {} }: BotonExportarProps) {
             <Download className="size-4 mr-2" />
           )}
           <span className="hidden sm:inline">Exportar</span>
-          <span className="sm:hidden">CSV/PDF</span>
+          <span className="sm:hidden">Exportar</span>
           <ChevronDown className="size-3 ml-2 opacity-50" />
         </Button>
       </DropdownMenuTrigger>
@@ -140,9 +94,9 @@ export function BotonExportar({ filtros = {} }: BotonExportarProps) {
           <FileText className="size-4 mr-2 text-red-500" />
           Exportar como PDF
         </DropdownMenuItem>
-        <DropdownMenuItem onClick={handleExportarCSV}>
+        <DropdownMenuItem onClick={handleExportarExcel}>
           <FileSpreadsheet className="size-4 mr-2 text-green-600" />
-          Exportar como CSV
+          Exportar como Excel
         </DropdownMenuItem>
       </DropdownMenuContent>
     </DropdownMenu>

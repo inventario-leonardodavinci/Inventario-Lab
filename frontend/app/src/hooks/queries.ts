@@ -17,6 +17,7 @@ import {
   crearArticulo,
   actualizarArticulo,
   actualizarNivelStock,
+  eliminarNivelStock,
   exportarArticulosCSV,
 } from '@/services/inventarioApi'
 import { getMovimientos, getResumenHoy, crearMovimiento } from '@/services/movimientosApi'
@@ -211,6 +212,19 @@ export function useActualizarNivelStock() {
   return useMutation({
     mutationFn: ({ articuloId, nivelId, cantidadMinima }: { articuloId: number; nivelId: number; cantidadMinima: number }) =>
       actualizarNivelStock(user!.authUserId, articuloId, nivelId, cantidadMinima),
+    onSuccess: (_data, { articuloId }) => {
+      void queryClient.invalidateQueries({ queryKey: ['articulos'] })
+      void queryClient.invalidateQueries({ queryKey: queryKeys.articulo(articuloId) })
+    },
+  })
+}
+
+export function useEliminarNivelStock() {
+  const { user } = useAuth()
+  const queryClient = useQueryClient()
+  return useMutation({
+    mutationFn: ({ articuloId, nivelId }: { articuloId: number; nivelId: number }) =>
+      eliminarNivelStock(user!.authUserId, articuloId, nivelId),
     onSuccess: (_data, { articuloId }) => {
       void queryClient.invalidateQueries({ queryKey: ['articulos'] })
       void queryClient.invalidateQueries({ queryKey: queryKeys.articulo(articuloId) })
