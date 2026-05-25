@@ -78,3 +78,25 @@ export function actualizarArticulo(
     { authUserId },
   ).then((res) => ({ data: unwrapData(res) }))
 }
+
+/**
+ * Descarga el inventario completo en formato CSV agrupado por categoría.
+ * Devuelve un Blob listo para generar un enlace de descarga.
+ */
+export async function exportarArticulosCSV(authUserId: string): Promise<Blob> {
+  // Necesitamos la respuesta raw (Blob), no JSON — usamos fetch directamente
+  // con el mismo mecanismo de autenticación que apiClient.
+  const API_BASE_URL = import.meta.env.VITE_API_BASE_URL as string
+  const response = await fetch(`${API_BASE_URL}/articulos/exportar`, {
+    method: 'GET',
+    headers: {
+      'X-Auth-User-Id': authUserId,
+    },
+  })
+
+  if (!response.ok) {
+    throw new Error(`Error al exportar: ${response.status} ${response.statusText}`)
+  }
+
+  return response.blob()
+}
