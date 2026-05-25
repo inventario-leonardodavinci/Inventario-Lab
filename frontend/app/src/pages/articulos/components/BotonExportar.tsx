@@ -1,5 +1,12 @@
 /**
  * Botón para exportar el inventario completo como CSV agrupado por categoría.
+ *
+ * Llama al endpoint GET /articulos/exportar del backend, que devuelve
+ * un archivo CSV con BOM UTF-8, separador punto y coma, y artículos
+ * ordenados alfabéticamente por categoría y nombre.
+ *
+ * El archivo se descarga automáticamente con el nombre
+ * `inventario_YYYY-MM-DD.csv`.
  */
 import { Download, Loader2 } from 'lucide-react'
 import { Button } from '@/components/ui/button'
