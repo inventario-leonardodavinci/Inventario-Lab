@@ -17,7 +17,8 @@ use Illuminate\Support\Facades\DB;
  * Controlador para la gestión de artículos del inventario.
  *
  * Proporciona endpoints CRUD completos con filtrado, ordenamiento
- * y gestión de stock asociado.
+ * y gestión de stock asociado. También expone un endpoint de exportación
+ * CSV con todos los artículos agrupados por categoría.
  */
 class ArticuloController extends Controller
 {
