@@ -101,7 +101,7 @@ class ArticuloController extends Controller
         $orderDir = strtolower($orderDir) === 'desc' ? 'desc' : 'asc';
 
         $stockSubquery = NivelStock::query()
-            ->selectRaw('articulo_id, SUM(cantidad) as stock_total, SUM(cantidad_minima) as stock_minimo, MAX(CASE WHEN cantidad_minima > 0 AND cantidad < cantidad_minima THEN 1 ELSE 0 END) as es_critico')
+            ->selectRaw('articulo_id, SUM(cantidad) as stock_total, SUM(cantidad_minima) as stock_minimo')
             ->groupBy('articulo_id');
 
         $driver = \Illuminate\Support\Facades\DB::getDriverName();
@@ -129,7 +129,12 @@ class ArticuloController extends Controller
             ->select('articulos.*')
             ->selectRaw('COALESCE(stock_agg.stock_total, 0) as stock_total_calc')
             ->selectRaw('COALESCE(stock_agg.stock_minimo, 0) as stock_minimo_calc')
-            ->selectRaw('COALESCE(stock_agg.es_critico, 0) as es_critico_calc')
+            ->selectRaw('CASE WHEN EXISTS (
+                SELECT 1 FROM niveles_stock 
+                WHERE niveles_stock.articulo_id = articulos.id 
+                AND niveles_stock.cantidad_minima > 0 
+                AND niveles_stock.cantidad < niveles_stock.cantidad_minima
+            ) THEN 1 ELSE 0 END as es_critico_calc')
             ->selectRaw('ubicaciones_agg.nombres_ubicaciones')
             ->when($busqueda !== '', function ($query) use ($busqueda, $driver): void {
                 $op = $driver === 'pgsql' ? 'ILIKE' : 'LIKE';
@@ -163,9 +168,21 @@ class ArticuloController extends Controller
         }
 
         if ($estadoStock === 'critico') {
-            $articulosQuery->whereRaw('COALESCE(stock_agg.es_critico, 0) = 1');
+            $articulosQuery->whereExists(function ($query): void {
+                $query->selectRaw('1')
+                    ->from('niveles_stock')
+                    ->whereColumn('niveles_stock.articulo_id', 'articulos.id')
+                    ->whereRaw('cantidad_minima > 0')
+                    ->whereRaw('cantidad < cantidad_minima');
+            });
         } elseif ($estadoStock === 'ok') {
-            $articulosQuery->whereRaw('COALESCE(stock_agg.es_critico, 0) = 0');
+            $articulosQuery->whereNotExists(function ($query): void {
+                $query->selectRaw('1')
+                    ->from('niveles_stock')
+                    ->whereColumn('niveles_stock.articulo_id', 'articulos.id')
+                    ->whereRaw('cantidad_minima > 0')
+                    ->whereRaw('cantidad < cantidad_minima');
+            });
         }
 
         $orderField = match ($orderBy) {
@@ -200,12 +217,7 @@ class ArticuloController extends Controller
         $categoriaId = $request->query('categoria_id');
         $ubicacionId = $request->query('ubicacion_id');
 
-        $stockSubquery = NivelStock::query()
-            ->selectRaw('articulo_id, SUM(cantidad) as stock_total, SUM(cantidad_minima) as stock_minimo, MAX(CASE WHEN cantidad_minima > 0 AND cantidad < cantidad_minima THEN 1 ELSE 0 END) as es_critico')
-            ->groupBy('articulo_id');
-
         $base = Articulo::query()
-            ->leftJoinSub($stockSubquery, 'stock_agg', fn ($join) => $join->on('stock_agg.articulo_id', '=', 'articulos.id'))
             ->when($categoriaId !== null, fn ($query) => $query->where('articulos.categoria_id', (int) $categoriaId))
             ->when($ubicacionId !== null, function ($query) use ($ubicacionId): void {
                 $query->whereExists(function ($sub) use ($ubicacionId): void {
@@ -219,7 +231,13 @@ class ArticuloController extends Controller
         return ApiResponse::success([
             'total_articulos' => (clone $base)->count('articulos.id'),
             'stock_critico' => (clone $base)
-                ->whereRaw('COALESCE(stock_agg.es_critico, 0) = 1')
+                ->whereExists(function ($query): void {
+                    $query->selectRaw('1')
+                        ->from('niveles_stock')
+                        ->whereColumn('niveles_stock.articulo_id', 'articulos.id')
+                        ->whereRaw('cantidad_minima > 0')
+                        ->whereRaw('cantidad < cantidad_minima');
+                })
                 ->count('articulos.id'),
         ]);
     }
@@ -419,7 +437,7 @@ class ArticuloController extends Controller
     public function exportar(): Response
     {
         $stockSubquery = NivelStock::query()
-            ->selectRaw('articulo_id, SUM(cantidad) as stock_total, SUM(cantidad_minima) as stock_minimo, MAX(CASE WHEN cantidad_minima > 0 AND cantidad < cantidad_minima THEN 1 ELSE 0 END) as es_critico')
+            ->selectRaw('articulo_id, SUM(cantidad) as stock_total, SUM(cantidad_minima) as stock_minimo')
             ->groupBy('articulo_id');
 
         $articulos = Articulo::query()
@@ -431,7 +449,12 @@ class ArticuloController extends Controller
             ->select('articulos.*')
             ->selectRaw('COALESCE(stock_agg.stock_total, 0) as stock_total_calc')
             ->selectRaw('COALESCE(stock_agg.stock_minimo, 0) as stock_minimo_calc')
-            ->selectRaw('COALESCE(stock_agg.es_critico, 0) as es_critico_calc')
+            ->selectRaw('CASE WHEN EXISTS (
+                SELECT 1 FROM niveles_stock 
+                WHERE niveles_stock.articulo_id = articulos.id 
+                AND niveles_stock.cantidad_minima > 0 
+                AND niveles_stock.cantidad < niveles_stock.cantidad_minima
+            ) THEN 1 ELSE 0 END as es_critico_calc')
             ->orderByRaw('COALESCE(categorias.nombre, \'Sin categoría\') ASC')
             ->orderBy('articulos.nombre', 'asc')
             ->get();
