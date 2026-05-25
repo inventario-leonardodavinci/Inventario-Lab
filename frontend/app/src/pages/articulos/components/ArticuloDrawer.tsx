@@ -331,7 +331,7 @@ export function ArticuloDrawer({
                             ) : (
                               <>
                                 <p className="text-[10px] text-muted-foreground">
-                                  Mín. {nivel.cantidad_minima} {articulo.unidad ?? ''}
+                                  Mín. {nivel.cantidad_minima}
                                 </p>
                                 {onUpdateNivelStock && (
                                   <button

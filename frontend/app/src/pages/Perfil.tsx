@@ -9,6 +9,7 @@ import { Label } from "@/components/ui/label";
 import { Separator } from "@/components/ui/separator";
 import { EditorRecorteImagen } from "@/components/ui/EditorRecorteImagen";
 import { InputOTP, InputOTPGroup, InputOTPSlot } from "@/components/ui/input-otp";
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter } from "@/components/ui/dialog";
 import { useAuth } from "@/context/ContextoAutenticacion";
 import { usePerfil, useActualizarPerfil, useHistorialSesiones, useEliminarSesion } from "@/hooks/queries";
 import {
@@ -138,6 +139,18 @@ export default function Perfil() {
   // ─── Historial de sesiones ────────────────────────────────────────────────
   const { data: historialData, isLoading: cargandoHistorial } = useHistorialSesiones();
   const eliminarSesionMutation = useEliminarSesion();
+  const [sesionAEliminar, setSesionAEliminar] = useState<SesionHistorial | null>(null);
+
+  const handleConfirmarEliminarSesion = () => {
+    if (!sesionAEliminar) return;
+    eliminarSesionMutation.mutate(sesionAEliminar.id, {
+      onSuccess: () => {
+        toast.success("Registro eliminado");
+        setSesionAEliminar(null);
+      },
+      onError: () => toast.error("No se pudo eliminar el registro"),
+    });
+  };
 
   useEffect(() => {
     import("@/services/authApi").then(({ obtenerUsuarioCompleto }) => {
@@ -954,21 +967,11 @@ export default function Perfil() {
                           <Button
                             variant="ghost"
                             size="icon"
-                            onClick={() =>
-                              eliminarSesionMutation.mutate(sesion.id, {
-                                onSuccess: () => toast.success("Registro eliminado"),
-                                onError: () => toast.error("No se pudo eliminar el registro"),
-                              })
-                            }
-                            disabled={borrando || eliminarSesionMutation.isPending}
+                            onClick={() => setSesionAEliminar(sesion)}
                             className="mt-0.5 size-7 shrink-0 text-muted-foreground hover:text-destructive hover:bg-destructive/10"
                             aria-label="Eliminar este registro de sesión"
                           >
-                            {borrando ? (
-                              <RefreshCw className="size-3.5 animate-spin" />
-                            ) : (
-                              <Trash2 className="size-3.5" />
-                            )}
+                            <Trash2 className="size-3.5" />
                           </Button>
                         ) : (
                           <div className="size-8 shrink-0" />
@@ -982,6 +985,24 @@ export default function Perfil() {
           </Card>
         </div>
       )}
+
+      {/* Dialog: Confirmar eliminación de sesión */}
+      <Dialog open={!!sesionAEliminar} onOpenChange={(open) => { if (!open) setSesionAEliminar(null) }}>
+        <DialogContent className="sm:max-w-[380px]">
+          <DialogHeader>
+            <DialogTitle>¿Eliminar registro de sesión?</DialogTitle>
+            <DialogDescription>
+              Esta acción eliminará permanentemente este registro del historial. No se puede deshacer.
+            </DialogDescription>
+          </DialogHeader>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setSesionAEliminar(null)}>Cancelar</Button>
+            <Button variant="destructive" onClick={handleConfirmarEliminarSesion} disabled={eliminarSesionMutation.isPending}>
+              {eliminarSesionMutation.isPending ? 'Eliminando...' : 'Eliminar'}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
 
       {/* Editor de recorte */}
       <EditorRecorteImagen
