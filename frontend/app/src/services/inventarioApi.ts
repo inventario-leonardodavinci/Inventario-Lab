@@ -95,7 +95,15 @@ export async function exportarArticulosCSV(authUserId: string): Promise<Blob> {
   })
 
   if (!response.ok) {
-    throw new Error(`Error al exportar: ${response.status} ${response.statusText}`)
+    // Intentar leer el mensaje de error del cuerpo si es JSON
+    let mensajeError = `Error al exportar: ${response.status} ${response.statusText}`
+    try {
+      const cuerpo = await response.json() as { message?: string }
+      if (cuerpo.message) mensajeError = cuerpo.message
+    } catch {
+      // Ignorar si el cuerpo no es JSON
+    }
+    throw new Error(mensajeError)
   }
 
   return response.blob()
