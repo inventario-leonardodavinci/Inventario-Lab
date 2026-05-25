@@ -39,6 +39,7 @@ export function BotonExportar() {
             onClick={handleExportar}
             disabled={exportar.isPending}
             aria-label="Exportar inventario como CSV ordenado por categoría"
+            aria-busy={exportar.isPending}
           >
             {exportar.isPending ? (
               <Loader2 className="size-4 mr-2 animate-spin" />
