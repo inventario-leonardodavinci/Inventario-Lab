@@ -24,6 +24,7 @@ Route::prefix('v1')->middleware(['throttle:api', 'app.user', 'audit.write'])->gr
     Route::prefix('/articulos')->group(function (): void {
         Route::get('/', [ArticuloController::class, 'index']);
         Route::get('/resumen', [ArticuloController::class, 'resumen']);
+        // Exportación CSV completa ordenada por categoría (sin paginación)
         Route::get('/exportar', [ArticuloController::class, 'exportar']);
         Route::post('/', [ArticuloController::class, 'store'])->middleware('role:profesor');
         Route::get('/{articulo}', [ArticuloController::class, 'show']);
