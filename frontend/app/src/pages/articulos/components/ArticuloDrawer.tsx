@@ -285,6 +285,7 @@ export function ArticuloDrawer({
                                 <Input 
                                   type="number" 
                                   min="0"
+                                  step="1"
                                   className="h-6 text-xs px-1 py-0" 
                                   value={editValue} 
                                   onChange={(e) => setEditValue(e.target.value)} 

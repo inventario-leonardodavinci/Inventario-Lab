@@ -216,10 +216,9 @@ export function ArticuloFormSheet({
       numero_factura: numeroFactura.trim() || undefined,
     }
 
-    if (stockMinimo !== '') datos.stock_minimo = Number(stockMinimo)
-
     if (!esEditar) {
-      if (stockInicial !== '') datos.stock_inicial = Number(stockInicial)
+      if (stockMinimo !== '') datos.stock_minimo = Math.round(Number(stockMinimo))
+      if (stockInicial !== '') datos.stock_inicial = Math.round(Number(stockInicial))
       if (ubicacionId !== '') datos.ubicacion_id = Number(ubicacionId)
       if (subUbicacionId !== '') datos.sub_ubicacion_id = Number(subUbicacionId)
     }
@@ -373,7 +372,7 @@ export function ArticuloFormSheet({
                   id="capacityMl"
                   type="number"
                   min="0"
-                  step="0.1"
+                  step="any"
                   placeholder={unidad && UNIDAD_CAPACIDAD[unidad] ? `Ej. 500 ${UNIDAD_CAPACIDAD[unidad]}` : 'Ej. 500'}
                   value={capacityMl}
                   onChange={(e) => setCapacityMl(e.target.value)}
@@ -440,49 +439,45 @@ export function ArticuloFormSheet({
             </div>
           </div>
 
-          <Separator />
+          {!esEditar && (
+            <>
+              <Separator />
 
-          {/* ── Stock ── */}
-          <div className="space-y-4">
-            <SectionTitle icon={MapPin} label={esEditar ? 'Stock' : 'Stock inicial y ubicación'} />
+              {/* ── Stock ── */}
+              <div className="space-y-4">
+                <SectionTitle icon={MapPin} label="Stock inicial y ubicación" />
 
-            {!esEditar && (
-              <p className="text-xs text-muted-foreground -mt-2">
-                Puedes registrar la cantidad actual y dónde se encuentra. Se creará el nivel de stock automáticamente.
-              </p>
-            )}
+                <p className="text-xs text-muted-foreground -mt-2">
+                  Puedes registrar la cantidad actual y dónde se encuentra. Se creará el nivel de stock automáticamente.
+                </p>
 
-            <div className={esEditar ? 'space-y-2' : 'grid grid-cols-2 gap-3'}>
-              {!esEditar && (
-                <div className="space-y-2">
-                  <Label htmlFor="stockInicial">Cantidad actual</Label>
-                  <Input
-                    id="stockInicial"
-                    type="number"
-                    min="0"
-                    step="0.01"
-                    placeholder="Ej. 50"
-                    value={stockInicial}
-                    onChange={(e) => setStockInicial(e.target.value)}
-                  />
+                <div className="grid grid-cols-2 gap-3">
+                  <div className="space-y-2">
+                    <Label htmlFor="stockInicial">Cantidad actual</Label>
+                    <Input
+                      id="stockInicial"
+                      type="number"
+                      min="0"
+                      step="1"
+                      placeholder="Ej. 50"
+                      value={stockInicial}
+                      onChange={(e) => setStockInicial(e.target.value)}
+                    />
+                  </div>
+                  <div className="space-y-2">
+                    <Label htmlFor="stockMinimo">Stock mínimo</Label>
+                    <Input
+                      id="stockMinimo"
+                      type="number"
+                      min="0"
+                      step="1"
+                      placeholder="Ej. 10"
+                      value={stockMinimo}
+                      onChange={(e) => setStockMinimo(e.target.value)}
+                    />
+                  </div>
                 </div>
-              )}
-              <div className="space-y-2">
-                <Label htmlFor="stockMinimo">Stock mínimo</Label>
-                <Input
-                  id="stockMinimo"
-                  type="number"
-                  min="0"
-                  step="0.01"
-                  placeholder="Ej. 10"
-                  value={stockMinimo}
-                  onChange={(e) => setStockMinimo(e.target.value)}
-                />
-              </div>
-            </div>
 
-            {!esEditar && (
-              <>
                 <div className="space-y-2">
                   <Label>Ubicación inicial</Label>
                   <Select
@@ -527,9 +522,9 @@ export function ArticuloFormSheet({
                     </Select>
                   </div>
                 )}
-              </>
-            )}
-          </div>
+              </div>
+            </>
+          )}
 
           <Separator />
 
