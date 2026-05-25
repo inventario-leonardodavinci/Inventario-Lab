@@ -5,6 +5,7 @@ import { RutaProtegida } from './components/auth/RutaProtegida'
 import { SkeletonTabla } from './components/ui/PageSkeleton'
 
 // Wrapper para manejar errores de carga de chunks tras un nuevo despliegue en producción (Vercel)
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
 const lazyWithRetry = (componentImport: () => Promise<any>) =>
   lazy(async () => {
     const pageHasAlreadyBeenForceRefreshed = JSON.parse(

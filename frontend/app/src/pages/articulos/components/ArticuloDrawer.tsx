@@ -3,8 +3,12 @@ import {
   TrendingUp, TrendingDown, Activity, Layers, FlaskConical,
   FileText, Hash, Barcode, CalendarClock, RefreshCw, AlertTriangle,
   ShoppingCart,
+  Check,
+  X,
 } from 'lucide-react'
+import { useState } from 'react'
 import { Button } from '@/components/ui/button'
+import { Input } from '@/components/ui/input'
 import { Badge } from '@/components/ui/badge'
 import { Separator } from '@/components/ui/separator'
 import {
@@ -102,6 +106,9 @@ export function ArticuloDrawer({
   onMovimiento,
   onUpdateNivelStock,
 }: ArticuloDrawerProps) {
+  const [editingNivelId, setEditingNivelId] = useState<number | null>(null)
+  const [editValue, setEditValue] = useState('')
+
   if (!articulo) return null
 
   const esCritico = articulo.estado_stock === 'critico'
@@ -269,25 +276,69 @@ export function ArticuloDrawer({
                               style={{ width: `${pct}%` }}
                             />
                           </div>
-                          <div className="flex items-center justify-between mt-1">
-                            <p className="text-[10px] text-muted-foreground">
-                              Mín. {nivel.cantidad_minima} {articulo.unidad ?? ''}
-                            </p>
-                            {onUpdateNivelStock && (
-                              <button
-                                onClick={() => {
-                                  const val = window.prompt(`Nuevo stock mínimo para ${nivel.ubicacion || 'la ubicación'}`, String(nivel.cantidad_minima))
-                                  if (val !== null) {
-                                    const num = Number(val)
-                                    if (!isNaN(num) && num >= 0) {
-                                      onUpdateNivelStock(nivel.id, num)
+                          <div className="flex items-center justify-between mt-1 h-6">
+                            {editingNivelId === nivel.id ? (
+                              <div className="flex items-center gap-1 w-full max-w-[120px]">
+                                <Input 
+                                  type="number" 
+                                  min="0"
+                                  className="h-6 text-xs px-1 py-0" 
+                                  value={editValue} 
+                                  onChange={(e) => setEditValue(e.target.value)} 
+                                  onKeyDown={(e) => {
+                                    if (e.key === 'Enter') {
+                                      const num = Number(editValue)
+                                      if (!isNaN(num) && num >= 0 && onUpdateNivelStock) {
+                                        onUpdateNivelStock(nivel.id, num)
+                                        setEditingNivelId(null)
+                                      }
+                                    } else if (e.key === 'Escape') {
+                                      setEditingNivelId(null)
                                     }
-                                  }
-                                }}
-                                className="text-[10px] text-primary hover:underline flex items-center gap-1"
-                              >
-                                <Pencil className="size-2.5" /> Editar mín.
-                              </button>
+                                  }}
+                                  autoFocus
+                                  aria-label={`Nuevo stock mínimo para ${nivel.ubicacion}`}
+                                />
+                                <button
+                                  onClick={() => {
+                                    const num = Number(editValue)
+                                    if (!isNaN(num) && num >= 0 && onUpdateNivelStock) {
+                                      onUpdateNivelStock(nivel.id, num)
+                                      setEditingNivelId(null)
+                                    }
+                                  }}
+                                  className="text-green-600 hover:bg-green-100 p-0.5 rounded"
+                                  aria-label="Guardar stock mínimo"
+                                  title="Guardar"
+                                >
+                                  <Check className="size-3" />
+                                </button>
+                                <button
+                                  onClick={() => setEditingNivelId(null)}
+                                  className="text-red-600 hover:bg-red-100 p-0.5 rounded"
+                                  aria-label="Cancelar edición"
+                                  title="Cancelar"
+                                >
+                                  <X className="size-3" />
+                                </button>
+                              </div>
+                            ) : (
+                              <>
+                                <p className="text-[10px] text-muted-foreground">
+                                  Mín. {nivel.cantidad_minima} {articulo.unidad ?? ''}
+                                </p>
+                                {onUpdateNivelStock && (
+                                  <button
+                                    onClick={() => {
+                                      setEditValue(String(nivel.cantidad_minima))
+                                      setEditingNivelId(nivel.id)
+                                    }}
+                                    className="text-[10px] text-primary hover:underline flex items-center gap-1"
+                                  >
+                                    <Pencil className="size-2.5" /> Editar mín.
+                                  </button>
+                                )}
+                              </>
                             )}
                           </div>
                         </>

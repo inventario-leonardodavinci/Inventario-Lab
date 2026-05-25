@@ -8,59 +8,89 @@
  * El archivo se descarga automáticamente con el nombre
  * `inventario_YYYY-MM-DD.csv`.
  */
-import { Download, Loader2 } from 'lucide-react'
+import { Download, Loader2, FileText, FileSpreadsheet, ChevronDown } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import {
-  Tooltip,
-  TooltipContent,
-  TooltipProvider,
-  TooltipTrigger,
-} from '@/components/ui/tooltip'
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from '@/components/ui/dropdown-menu'
 import { useExportarArticulos } from '@/hooks/queries'
 import { descargarBlob } from '@/utils/descargas'
 import { toast } from 'sonner'
 import { format } from 'date-fns'
+import { getArticulos } from '@/services/inventarioApi'
+import { useAuth } from '@/context/ContextoAutenticacion'
+import { generarPDFInventario } from '@/utils/exportarPDF'
+import { useState } from 'react'
 
 export function BotonExportar() {
-  const exportar = useExportarArticulos()
+  const exportarCsv = useExportarArticulos()
+  const { user } = useAuth()
+  const [isExportingPdf, setIsExportingPdf] = useState(false)
 
-  const handleExportar = async () => {
-    const toastId = toast.loading('Generando exportación...')
+  const handleExportarCSV = async () => {
+    const toastId = toast.loading('Generando CSV...')
     try {
-      const blob = await exportar.mutateAsync()
+      const blob = await exportarCsv.mutateAsync()
       const nombreArchivo = `inventario_${format(new Date(), 'yyyy-MM-dd')}.csv`
       descargarBlob(blob, nombreArchivo)
       toast.success(`Exportado como ${nombreArchivo}`, { id: toastId })
     } catch {
-      toast.error('No se pudo exportar el inventario. Inténtalo de nuevo.', { id: toastId })
+      toast.error('No se pudo exportar el CSV. Inténtalo de nuevo.', { id: toastId })
     }
   }
 
+  const handleExportarPDF = async () => {
+    if (!user) return
+    setIsExportingPdf(true)
+    const toastId = toast.loading('Generando PDF...')
+    try {
+      // Obtenemos todos los artículos (sin paginar limitando a un max alto)
+      const res = await getArticulos(user.authUserId, { per_page: 10000 })
+      const articulos = res.data ?? []
+      generarPDFInventario(articulos)
+      toast.success('PDF generado correctamente', { id: toastId })
+    } catch {
+      toast.error('Error al generar el PDF.', { id: toastId })
+    } finally {
+      setIsExportingPdf(false)
+    }
+  }
+
+  const isPending = exportarCsv.isPending || isExportingPdf
+
   return (
-    <TooltipProvider>
-      <Tooltip>
-        <TooltipTrigger asChild>
-          <Button
-            variant="outline"
-            size="sm"
-            onClick={handleExportar}
-            disabled={exportar.isPending}
-            aria-label="Exportar inventario como CSV ordenado por categoría"
-            aria-busy={exportar.isPending}
-          >
-            {exportar.isPending ? (
-              <Loader2 className="size-4 mr-2 animate-spin" />
-            ) : (
-              <Download className="size-4 mr-2" />
-            )}
-            <span className="hidden sm:inline">Exportar</span>
-            <span className="sm:hidden">CSV</span>
-          </Button>
-        </TooltipTrigger>
-        <TooltipContent>
-          <p>Exportar inventario como CSV ordenado por categoría</p>
-        </TooltipContent>
-      </Tooltip>
-    </TooltipProvider>
+    <DropdownMenu>
+      <DropdownMenuTrigger asChild>
+        <Button
+          variant="outline"
+          size="sm"
+          disabled={isPending}
+          aria-label="Opciones de exportación"
+          aria-busy={isPending}
+        >
+          {isPending ? (
+            <Loader2 className="size-4 mr-2 animate-spin" />
+          ) : (
+            <Download className="size-4 mr-2" />
+          )}
+          <span className="hidden sm:inline">Exportar</span>
+          <span className="sm:hidden">CSV/PDF</span>
+          <ChevronDown className="size-3 ml-2 opacity-50" />
+        </Button>
+      </DropdownMenuTrigger>
+      <DropdownMenuContent align="end">
+        <DropdownMenuItem onClick={handleExportarPDF}>
+          <FileText className="size-4 mr-2 text-red-500" />
+          Exportar como PDF
+        </DropdownMenuItem>
+        <DropdownMenuItem onClick={handleExportarCSV}>
+          <FileSpreadsheet className="size-4 mr-2 text-green-600" />
+          Exportar como CSV
+        </DropdownMenuItem>
+      </DropdownMenuContent>
+    </DropdownMenu>
   )
 }
