@@ -23,6 +23,7 @@ import { ArticulosGrid } from './articulos/components/ArticulosGrid'
 import { PanelAccionRapida } from './articulos/components/PanelAccionRapida'
 import { ArticuloDrawer } from './articulos/components/ArticuloDrawer'
 import { ArticuloFormSheet, type DatosFormArticulo } from './articulos/components/ArticuloFormSheet'
+import { BotonExportar } from './articulos/components/BotonExportar'
 import { validarMovimiento, type EntradaCrearMovimiento } from '@/services/movimientosApi'
 import { toast } from 'sonner'
 import { DEBOUNCE_DELAY_MS, SKELETON_COUNT, ARTICULOS_PER_PAGE } from '@/constants'
@@ -200,6 +201,7 @@ export default function Articulos() {
         </div>
 
         <div className="flex flex-wrap items-center gap-2">
+          <BotonExportar />
           {esProfesor && (
             <Button size="sm" onClick={view.abrirCrear} className="ml-auto sm:ml-0">
               <Plus className="size-4 mr-2" />
