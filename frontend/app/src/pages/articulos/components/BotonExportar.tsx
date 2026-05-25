@@ -23,7 +23,7 @@ export function BotonExportar() {
       const blob = await exportar.mutateAsync()
       const nombreArchivo = `inventario_${format(new Date(), 'yyyy-MM-dd')}.csv`
       descargarBlob(blob, nombreArchivo)
-      toast.success('Inventario exportado correctamente', { id: toastId })
+      toast.success(`Exportado como ${nombreArchivo}`, { id: toastId })
     } catch {
       toast.error('No se pudo exportar el inventario. Inténtalo de nuevo.', { id: toastId })
     }
