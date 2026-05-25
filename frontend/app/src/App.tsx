@@ -34,6 +34,7 @@ const Auditoria = lazyWithRetry(() => import('./pages/Auditoria'))
 const Usuarios = lazyWithRetry(() => import('./pages/Usuarios'))
 const ListaUbicaciones = lazyWithRetry(() => import('./pages/ListaUbicaciones'))
 const ListaCategorias = lazyWithRetry(() => import('./pages/ListaCategorias'))
+const NoEncontrado = lazyWithRetry(() => import('./pages/NoEncontrado'))
 
 function App() {
   return (
@@ -62,7 +63,7 @@ function App() {
                     <Route path="/usuarios" element={<Usuarios />} />
                     <Route path="/ubicaciones" element={<ListaUbicaciones />} />
                     <Route path="/categorias" element={<ListaCategorias />} />
-                    <Route path="*" element={<Navigate to="/" replace />} />
+                    <Route path="*" element={<NoEncontrado />} />
                   </Routes>
                 </ContenedorAplicacion>
               </RutaProtegida>

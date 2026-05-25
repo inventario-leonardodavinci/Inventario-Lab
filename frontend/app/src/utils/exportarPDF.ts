@@ -3,109 +3,134 @@ import autoTable from 'jspdf-autotable'
 import { format } from 'date-fns'
 import type { Articulo } from '@/types'
 
+const ETIQUETAS_MATERIAL: Record<string, string> = {
+  plastico: 'Plástico',
+  vidrio: 'Vidrio',
+  metal: 'Metal',
+  latex: 'Latex',
+  papel: 'Papel',
+  tela: 'Tela',
+  ceramica: 'Cerámica',
+  goma: 'Goma',
+  silicona: 'Silicona',
+  acero: 'Acero',
+  cristal: 'Cristal',
+  polietileno: 'Polietileno',
+  polipropileno: 'Polipropileno',
+  pvc: 'PVC',
+  teflon: 'Teflón',
+  otros: 'Otros',
+}
+
 export function generarPDFInventario(articulos: Articulo[]) {
   const doc = new jsPDF('landscape', 'mm', 'a4')
+  const pageWidth = doc.internal.pageSize.width
+  const margin = 12
 
-  // Colores corporativos (ajustar según tu frontend, ej. azul oscuro y gris claro)
-  const colorPrimario: [number, number, number] = [15, 23, 42] // slate-900
-  const colorSecundario: [number, number, number] = [71, 85, 105] // slate-600
+  const colorHeader = [15, 23, 42] as [number, number, number]
+  const colorSubHeader = [71, 85, 105] as [number, number, number]
+  const colorCritical = [220, 38, 38] as [number, number, number]
+  const colorOk = [22, 163, 74] as [number, number, number]
 
-  // Header
-  doc.setFillColor(...colorPrimario)
-  doc.rect(0, 0, doc.internal.pageSize.width, 30, 'F')
-  
+  doc.setFillColor(...colorHeader)
+  doc.rect(0, 0, pageWidth, 28, 'F')
+
   doc.setTextColor(255, 255, 255)
-  doc.setFontSize(22)
+  doc.setFontSize(20)
   doc.setFont('helvetica', 'bold')
-  doc.text('Inventario - Salud Ambiental', 14, 20)
+  doc.text('Inventario - Salud Ambiental', margin, 18)
 
-  // Subtítulo
-  doc.setTextColor(50, 50, 50)
-  doc.setFontSize(10)
+  doc.setFontSize(9)
   doc.setFont('helvetica', 'normal')
-  const fechaStr = format(new Date(), 'dd/MM/yyyy HH:mm')
-  doc.text(`Fecha de exportación: ${fechaStr}`, 14, 40)
-  doc.text(`Total de artículos: ${articulos.length}`, 14, 46)
+  const fechaStr = format(new Date(), "dd 'de' MMMM 'de' yyyy, HH:mm")
+  doc.text(`Exportado: ${fechaStr}  |  Total: ${articulos.length} artículos`, margin, 24)
 
-  // Columnas principales y detalladas
   const columnas = [
     'Categoría',
     'Código',
     'Nombre',
-    'Capacidad',
+    'Material',
     'Stock',
-    'Mínimo',
+    'Mín',
     'Estado',
     'Caducidad',
-    'Notas'
+    'N.º Serie',
+    'Proveedor',
+    'Notas',
   ]
 
   const filas = articulos.map((art) => [
     art.categoria ?? '-',
     art.codigo ?? '-',
     art.nombre,
-    art.capacidad_ml ? `${art.capacidad_ml} ml` : '-',
-    `${art.stock_total ?? 0} ${art.unidad ?? ''}`,
-    `${art.stock_minimo ?? 0} ${art.unidad ?? ''}`,
+    art.tipo_material ? (ETIQUETAS_MATERIAL[art.tipo_material] ?? art.tipo_material) : '-',
+    `${art.stock_total ?? 0}`,
+    `${art.stock_minimo ?? 0}`,
     art.estado_stock === 'critico' ? 'Crítico' : 'OK',
     art.fecha_caducidad ?? '-',
-    art.notas ? (art.notas.length > 20 ? art.notas.substring(0, 20) + '...' : art.notas) : '-'
+    art.numero_serie ?? '-',
+    art.proveedor ?? '-',
+    art.notas ?? '-',
   ])
 
   autoTable(doc, {
-    startY: 55,
+    startY: 34,
     head: [columnas],
     body: filas,
     theme: 'grid',
     styles: {
-      fontSize: 8,
-      cellPadding: 3,
+      fontSize: 7.5,
+      cellPadding: 2.5,
       font: 'helvetica',
       textColor: [50, 50, 50],
-      lineColor: [220, 220, 220],
+      lineColor: [210, 210, 210],
       lineWidth: 0.1,
+      overflow: 'linebreak',
+      valign: 'middle',
     },
     headStyles: {
-      fillColor: colorSecundario,
+      fillColor: colorSubHeader,
       textColor: 255,
       fontStyle: 'bold',
-      halign: 'center'
+      halign: 'center',
+      fontSize: 7.5,
     },
     alternateRowStyles: {
-      fillColor: [248, 250, 252] // slate-50
+      fillColor: [248, 250, 252],
     },
     columnStyles: {
-      0: { cellWidth: 35 }, // Categoría
-      1: { cellWidth: 25 }, // Código
-      2: { cellWidth: 'auto' }, // Nombre
-      3: { cellWidth: 20, halign: 'center' }, // Capacidad
-      4: { cellWidth: 20, halign: 'right' }, // Stock
-      5: { cellWidth: 20, halign: 'right' }, // Mínimo
-      6: { cellWidth: 20, halign: 'center' }, // Estado
-      7: { cellWidth: 25, halign: 'center' }, // Caducidad
-      8: { cellWidth: 35 }, // Notas
+      0: { cellWidth: 28 },
+      1: { cellWidth: 20 },
+      2: { cellWidth: 'auto' },
+      3: { cellWidth: 18 },
+      4: { cellWidth: 16, halign: 'right' },
+      5: { cellWidth: 14, halign: 'right' },
+      6: { cellWidth: 14, halign: 'center' },
+      7: { cellWidth: 22, halign: 'center' },
+      8: { cellWidth: 24 },
+      9: { cellWidth: 24 },
+      10: { cellWidth: 35 },
     },
-    didParseCell: function(data) {
-      if (data.section === 'body' && data.column.index === 6) { // Columna Estado
-        if (data.cell.raw === 'Crítico') {
-          data.cell.styles.textColor = [220, 38, 38] // red-600
-          data.cell.styles.fontStyle = 'bold'
-        } else {
-          data.cell.styles.textColor = [22, 163, 74] // green-600
+    didParseCell(data) {
+      if (data.section === 'body') {
+        if (data.column.index === 6) {
+          if (data.cell.raw === 'Crítico') {
+            data.cell.styles.textColor = colorCritical
+            data.cell.styles.fontStyle = 'bold'
+          } else {
+            data.cell.styles.textColor = colorOk
+          }
         }
       }
     },
-    didDrawPage: (data) => {
-      // Footer
+    didDrawPage() {
       const str = `Página ${doc.internal.pages.length - 1}`
-      doc.setFontSize(8)
-      doc.setTextColor(150)
-      doc.text(
-        str,
-        data.settings.margin.left,
-        doc.internal.pageSize.height - 10
-      )
+      doc.setFontSize(7)
+      doc.setTextColor(160)
+      doc.text(str, margin, doc.internal.pageSize.height - 8)
+      doc.text(`Generado el ${fechaStr}`, pageWidth - margin, doc.internal.pageSize.height - 8, { align: 'right' })
     },
+    margin: { top: 34, bottom: 16, left: margin, right: margin },
   })
 
   const nombreArchivo = `Inventario_Salud_Ambiental_${format(new Date(), 'yyyy-MM-dd_HH-mm')}.pdf`
