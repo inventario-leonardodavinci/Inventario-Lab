@@ -39,7 +39,7 @@ export function ArticuloCard({
   return (
     <div
       className={cn(
-        "group relative flex flex-col gap-3 p-4 rounded-xl border bg-card transition-all duration-200",
+        "group relative flex flex-col gap-3 p-4 rounded-xl border bg-card transition-all duration-200 h-full",
         "hover:-translate-y-1 hover:shadow-lg hover:border-primary/30 cursor-pointer",
         esCritico && "border-destructive/30",
         caducidadUrgente && !esCritico && "border-amber-400/40 dark:border-amber-500/30"
@@ -112,7 +112,7 @@ export function ArticuloCard({
       </div>
 
       {/* Info de stock */}
-      <div className="flex items-baseline gap-1">
+      <div className="flex items-baseline gap-1 mt-auto pt-2">
         <span className={cn(
           "text-2xl font-semibold tabular-nums",
           esCritico ? "text-destructive" : "text-foreground"

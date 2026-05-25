@@ -248,7 +248,7 @@ export function ArticuloFormSheet({
 
         <form
           onSubmit={handleSubmit}
-          className="flex-1 min-h-0 overflow-y-auto p-6 space-y-6 [&::-webkit-scrollbar]:w-2 [&::-webkit-scrollbar-thumb]:rounded-full [&::-webkit-scrollbar-thumb]:bg-muted-foreground/30 hover:[&::-webkit-scrollbar-thumb]:bg-muted-foreground/50"
+          className="flex-1 min-h-0 overflow-y-auto p-6 space-y-6"
         >
           {/* ── Identificación ── */}
           <div className="space-y-4">

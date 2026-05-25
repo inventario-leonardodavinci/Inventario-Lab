@@ -67,7 +67,7 @@ export function ArticulosGrid({
       {articulos.map((articulo, index) => (
         <div 
           key={articulo.id} 
-          className="animate-fade-in"
+          className="animate-fade-in h-full"
           style={{ animationDelay: `${Math.min(index * 30, 300)}ms` }}
         >
           <ArticuloCard
