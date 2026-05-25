@@ -351,11 +351,12 @@ class ArticuloController extends Controller
             ->leftJoinSub($stockSubquery, 'stock_agg', function ($join): void {
                 $join->on('stock_agg.articulo_id', '=', 'articulos.id');
             })
+            ->leftJoin('categorias', 'categorias.id', '=', 'articulos.categoria_id')
             ->select('articulos.*')
             ->selectRaw('COALESCE(stock_agg.stock_total, 0) as stock_total_calc')
             ->selectRaw('COALESCE(stock_agg.stock_minimo, 0) as stock_minimo_calc')
-            ->orderBy('categoria_id', 'asc')
-            ->orderBy('nombre', 'asc')
+            ->orderByRaw('COALESCE(categorias.nombre, \'Sin categoría\') ASC')
+            ->orderBy('articulos.nombre', 'asc')
             ->get();
 
         $cabeceras = [
