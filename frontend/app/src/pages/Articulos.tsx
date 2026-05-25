@@ -168,7 +168,10 @@ export default function Articulos() {
       <main className="flex flex-1 flex-col gap-4 md:gap-6 bg-muted/20 p-3 sm:p-4 lg:p-6">
         <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
           <div className="h-8 w-48 bg-muted animate-pulse rounded" />
-          <div className="h-9 w-32 bg-muted animate-pulse rounded hidden sm:block" />
+          <div className="flex items-center gap-2">
+            <div className="h-9 w-24 bg-muted animate-pulse rounded hidden sm:block" />
+            <div className="h-9 w-32 bg-muted animate-pulse rounded hidden sm:block" />
+          </div>
         </div>
         <div className="h-20 bg-muted animate-pulse rounded-lg" />
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 2xl:grid-cols-5 gap-4">
