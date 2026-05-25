@@ -332,6 +332,33 @@ class ArticuloController extends Controller
     }
 
     /**
+     * Actualizar la cantidad mínima de un nivel de stock específico.
+     *
+     * @param Request $request
+     * @param Articulo $articulo
+     * @param NivelStock $nivel
+     * @return JsonResponse
+     */
+    public function updateNivelStock(Request $request, Articulo $articulo, NivelStock $nivel): JsonResponse
+    {
+        $validados = $request->validate([
+            'cantidad_minima' => 'required|numeric|min:0'
+        ]);
+
+        if ($nivel->articulo_id !== $articulo->id) {
+            return ApiResponse::error('El nivel de stock no pertenece al artículo', 400);
+        }
+
+        $nivel->update(['cantidad_minima' => $validados['cantidad_minima']]);
+
+        $articulo->load('categoria:id,nombre');
+        $stockTotal = (float) $articulo->nivelesStock()->sum('cantidad');
+        $cantidadMinima = (float) $articulo->nivelesStock()->sum('cantidad_minima');
+
+        return ApiResponse::success($this->serializar($articulo, $stockTotal, $cantidadMinima));
+    }
+
+    /**
      * Exportar todos los artículos agrupados por categoría en formato CSV.
      *
      * Devuelve un archivo CSV con todos los artículos del inventario,

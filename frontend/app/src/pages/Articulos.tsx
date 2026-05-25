@@ -15,6 +15,7 @@ import {
   useCrearMovimiento,
   useMovimientos,
   useArticulo,
+  useActualizarNivelStock,
 } from '@/hooks/queries'
 import { useArticulosView } from './articulos/hooks/useArticulosView'
 import { FiltrosBar } from './articulos/components/FiltrosBar'
@@ -49,7 +50,7 @@ export default function Articulos() {
   const { data: categoriasData } = useCategorias()
   const { data: ubicacionesData, isLoading: isLoadingUbicaciones } = useUbicaciones()
   const { data: movimientosData } = useMovimientos({ per_page: 50 })
-  const { data: articuloDetalle } = useArticulo(view.articuloDetalle?.id ?? 0)
+  const { data: articuloDetalle, isLoading: isLoadingArticuloDetalle } = useArticulo(view.articuloDetalle?.id ?? 0)
   const { data: articuloEditandoDetalle } = useArticulo(view.articuloEditando?.id ?? 0)
   const { data: articuloPanelDetalle, isLoading: isLoadingPanelDetalle } = useArticulo(view.articuloSeleccionado?.id ?? 0)
   
@@ -57,6 +58,7 @@ export default function Articulos() {
   const crearArticulo = useCrearArticulo()
   const actualizarArticulo = useActualizarArticulo()
   const crearMovimiento = useCrearMovimiento()
+  const actualizarNivelStock = useActualizarNivelStock()
   
   // Datos
   const articulos = useMemo(() => articulosData?.data ?? [], [articulosData])
@@ -101,6 +103,20 @@ export default function Articulos() {
       view.cerrarForm()
     } catch (error) {
       toast.error(error instanceof Error ? error.message : 'Error al actualizar el artículo')
+    }
+  }
+
+  const handleUpdateNivelStock = async (nivelId: number, cantidadMinima: number) => {
+    if (!view.articuloDetalle) return
+    try {
+      await actualizarNivelStock.mutateAsync({
+        articuloId: view.articuloDetalle.id,
+        nivelId,
+        cantidadMinima,
+      })
+      toast.success('Stock mínimo actualizado correctamente')
+    } catch (error) {
+      toast.error(error instanceof Error ? error.message : 'Error al actualizar el stock mínimo')
     }
   }
 
@@ -275,6 +291,7 @@ export default function Articulos() {
         articulo={view.articuloDetalle}
         movimientos={movimientosArticulo}
         nivelesStock={articuloDetalle?.data?.niveles_stock ?? []}
+        isLoadingStock={isLoadingArticuloDetalle}
         open={view.drawerAbierto}
         onClose={view.cerrarDetalle}
         onEditar={esProfesor ? () => {
@@ -290,6 +307,7 @@ export default function Articulos() {
             view.cerrarDetalle()
           }
         } : undefined}
+        onUpdateNivelStock={esProfesor ? handleUpdateNivelStock : undefined}
       />
       
       {esProfesor && (

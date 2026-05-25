@@ -28,6 +28,7 @@ interface ArticuloDrawerProps {
   onClose: () => void
   onEditar?: () => void
   onMovimiento?: (tipo: 'entrada' | 'salida' | 'traslado') => void
+  onUpdateNivelStock?: (nivelId: number, cantidadMinima: number) => void
 }
 
 function SectionTitle({ icon: Icon, label }: { icon: React.ElementType; label: string }) {
@@ -99,6 +100,7 @@ export function ArticuloDrawer({
   onClose,
   onEditar,
   onMovimiento,
+  onUpdateNivelStock,
 }: ArticuloDrawerProps) {
   if (!articulo) return null
 
@@ -250,7 +252,7 @@ export function ArticuloDrawer({
                           </span>
                           {nivel.sub_ubicacion && (
                             <span className="text-xs text-muted-foreground">
-                              📦 {nivel.sub_ubicacion}
+                              {nivel.sub_ubicacion}
                             </span>
                           )}
                         </div>
@@ -267,9 +269,27 @@ export function ArticuloDrawer({
                               style={{ width: `${pct}%` }}
                             />
                           </div>
-                          <p className="text-[10px] text-muted-foreground text-right">
-                            Mín. {nivel.cantidad_minima} {articulo.unidad ?? ''}
-                          </p>
+                          <div className="flex items-center justify-between mt-1">
+                            <p className="text-[10px] text-muted-foreground">
+                              Mín. {nivel.cantidad_minima} {articulo.unidad ?? ''}
+                            </p>
+                            {onUpdateNivelStock && (
+                              <button
+                                onClick={() => {
+                                  const val = window.prompt(`Nuevo stock mínimo para ${nivel.ubicacion || 'la ubicación'}`, String(nivel.cantidad_minima))
+                                  if (val !== null) {
+                                    const num = Number(val)
+                                    if (!isNaN(num) && num >= 0) {
+                                      onUpdateNivelStock(nivel.id, num)
+                                    }
+                                  }
+                                }}
+                                className="text-[10px] text-primary hover:underline flex items-center gap-1"
+                              >
+                                <Pencil className="size-2.5" /> Editar mín.
+                              </button>
+                            )}
+                          </div>
                         </>
                       )}
                     </div>

@@ -79,6 +79,19 @@ export function actualizarArticulo(
   ).then((res) => ({ data: unwrapData(res) }))
 }
 
+export function actualizarNivelStock(
+  authUserId: string,
+  articuloId: number,
+  nivelId: number,
+  cantidadMinima: number,
+) {
+  return apiClient<{ data: Articulo }>(
+    `/articulos/${articuloId}/niveles-stock/${nivelId}`,
+    { method: 'PATCH', body: JSON.stringify({ cantidad_minima: cantidadMinima }) },
+    { authUserId },
+  ).then((res) => ({ data: unwrapData(res) }))
+}
+
 /**
  * Descarga el inventario completo en formato CSV agrupado por categoría.
  * Devuelve un Blob listo para generar un enlace de descarga.

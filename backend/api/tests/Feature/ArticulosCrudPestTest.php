@@ -369,3 +369,67 @@ describe('DELETE /articulos/{id} — eliminación física', function () {
             ->assertStatus(403);
     });
 });
+
+// ─── UPDATE NIVEL STOCK ──────────────────────────────────────────────────────
+
+describe('PATCH /articulos/{id}/niveles-stock/{nivel} — actualización cantidad mínima', function () {
+    it('actualiza la cantidad_minima del nivel específico', function () {
+        $articulo = Articulo::factory()->create();
+        $ubi = Ubicacion::factory()->create();
+        $nivel = NivelStock::factory()->create([
+            'articulo_id' => $articulo->id,
+            'ubicacion_id' => $ubi->id,
+            'cantidad_minima' => 0
+        ]);
+
+        $this->patchJson("/api/v1/articulos/{$articulo->id}/niveles-stock/{$nivel->id}", [
+            'cantidad_minima' => 15
+        ], articulosHeaders())
+            ->assertStatus(200);
+
+        $this->assertDatabaseHas('niveles_stock', [
+            'id' => $nivel->id,
+            'cantidad_minima' => 15
+        ]);
+    });
+
+    it('devuelve 400 si el nivel no pertenece al artículo', function () {
+        $articulo1 = Articulo::factory()->create();
+        $articulo2 = Articulo::factory()->create();
+        $ubi = Ubicacion::factory()->create();
+        
+        $nivel = NivelStock::factory()->create([
+            'articulo_id' => $articulo2->id,
+            'ubicacion_id' => $ubi->id,
+            'cantidad_minima' => 0
+        ]);
+
+        $this->patchJson("/api/v1/articulos/{$articulo1->id}/niveles-stock/{$nivel->id}", [
+            'cantidad_minima' => 10
+        ], articulosHeaders())
+            ->assertStatus(400)
+            ->assertJsonPath('message', 'El nivel de stock no pertenece al artículo');
+    });
+
+    it('devuelve 422 si cantidad_minima es negativa', function () {
+        $articulo = Articulo::factory()->create();
+        $ubi = Ubicacion::factory()->create();
+        $nivel = NivelStock::factory()->create(['articulo_id' => $articulo->id, 'ubicacion_id' => $ubi->id]);
+
+        $this->patchJson("/api/v1/articulos/{$articulo->id}/niveles-stock/{$nivel->id}", [
+            'cantidad_minima' => -5
+        ], articulosHeaders())
+            ->assertStatus(422);
+    });
+
+    it('consultor recibe 403 al intentar actualizar cantidad mínima', function () {
+        $articulo = Articulo::factory()->create();
+        $ubi = Ubicacion::factory()->create();
+        $nivel = NivelStock::factory()->create(['articulo_id' => $articulo->id, 'ubicacion_id' => $ubi->id]);
+
+        $this->patchJson("/api/v1/articulos/{$articulo->id}/niveles-stock/{$nivel->id}", [
+            'cantidad_minima' => 10
+        ], articulosHeaders('consultor'))
+            ->assertStatus(403);
+    });
+});

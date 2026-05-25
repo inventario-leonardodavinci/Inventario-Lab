@@ -4,15 +4,35 @@ import { ContenedorAplicacion } from './components/layout/ContenedorAplicacion'
 import { RutaProtegida } from './components/auth/RutaProtegida'
 import { SkeletonTabla } from './components/ui/PageSkeleton'
 
-const PanelPrincipal = lazy(() => import('./pages/PanelPrincipal'))
-const Articulos = lazy(() => import('./pages/Articulos'))
-const InicioSesion = lazy(() => import('./pages/InicioSesion'))
-const Mantenimiento = lazy(() => import('./pages/Mantenimiento'))
-const Perfil = lazy(() => import('./pages/Perfil'))
-const Auditoria = lazy(() => import('./pages/Auditoria'))
-const Usuarios = lazy(() => import('./pages/Usuarios'))
-const ListaUbicaciones = lazy(() => import('./pages/ListaUbicaciones'))
-const ListaCategorias = lazy(() => import('./pages/ListaCategorias'))
+// Wrapper para manejar errores de carga de chunks tras un nuevo despliegue en producción (Vercel)
+const lazyWithRetry = (componentImport: () => Promise<any>) =>
+  lazy(async () => {
+    const pageHasAlreadyBeenForceRefreshed = JSON.parse(
+      window.sessionStorage.getItem('page-has-been-force-refreshed') || 'false'
+    )
+    try {
+      const component = await componentImport()
+      window.sessionStorage.setItem('page-has-been-force-refreshed', 'false')
+      return component
+    } catch (error) {
+      if (!pageHasAlreadyBeenForceRefreshed) {
+        window.sessionStorage.setItem('page-has-been-force-refreshed', 'true')
+        window.location.reload()
+        return new Promise(() => {}) // Promesa pendiente para suspender mientras se recarga
+      }
+      throw error
+    }
+  })
+
+const PanelPrincipal = lazyWithRetry(() => import('./pages/PanelPrincipal'))
+const Articulos = lazyWithRetry(() => import('./pages/Articulos'))
+const InicioSesion = lazyWithRetry(() => import('./pages/InicioSesion'))
+const Mantenimiento = lazyWithRetry(() => import('./pages/Mantenimiento'))
+const Perfil = lazyWithRetry(() => import('./pages/Perfil'))
+const Auditoria = lazyWithRetry(() => import('./pages/Auditoria'))
+const Usuarios = lazyWithRetry(() => import('./pages/Usuarios'))
+const ListaUbicaciones = lazyWithRetry(() => import('./pages/ListaUbicaciones'))
+const ListaCategorias = lazyWithRetry(() => import('./pages/ListaCategorias'))
 
 function App() {
   return (
