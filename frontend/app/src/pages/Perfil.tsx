@@ -11,7 +11,7 @@ import { EditorRecorteImagen } from "@/components/ui/EditorRecorteImagen";
 import { InputOTP, InputOTPGroup, InputOTPSlot } from "@/components/ui/input-otp";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter } from "@/components/ui/dialog";
 import { useAuth } from "@/context/ContextoAutenticacion";
-import { usePerfil, useActualizarPerfil, useHistorialSesiones, useEliminarSesion } from "@/hooks/queries";
+import { usePerfil, useActualizarPerfil, useHistorialSesiones, useEliminarSesion, type SesionHistorial } from "@/hooks/queries";
 import {
   actualizarNombreUsuario,
   actualizarCampoPerfil,
@@ -877,8 +877,6 @@ export default function Perfil() {
                       logout:  { label: "Cierre",     icon: LogOut,    color: "text-muted-foreground", bg: "bg-muted" },
                     }[sesion.tipo_evento] ?? { label: sesion.tipo_evento, icon: LogIn, color: "text-muted-foreground", bg: "bg-muted" };
                     const IconoEvento = configEvento.icon;
-                    const borrando = eliminarSesionMutation.isPending && eliminarSesionMutation.variables === sesion.id;
-
                     return (
                       <li
                         key={sesion.id}
