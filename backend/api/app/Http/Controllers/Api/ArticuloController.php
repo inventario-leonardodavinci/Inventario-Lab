@@ -38,7 +38,7 @@ class ArticuloController extends Controller
      * @param float $cantidadMinima Cantidad mínima configurada para alertas
      * @return array<string, mixed> Datos serializados del artículo
      */
-    private function serializar(Articulo $articulo, float $stockTotal = 0.0, float $cantidadMinima = 0.0): array
+    private function serializar(Articulo $articulo, float $stockTotal = 0.0, float $cantidadMinima = 0.0, bool $esCritico = false): array
     {
         return [
             'id'             => $articulo->id,
@@ -51,7 +51,7 @@ class ArticuloController extends Controller
             'notas'          => $articulo->notas,
             'stock_total'    => $stockTotal,
             'stock_minimo'   => $cantidadMinima,
-            'estado_stock'   => ($cantidadMinima > 0 && $stockTotal < $cantidadMinima) ? 'critico' : 'ok',
+            'estado_stock'   => $esCritico ? 'critico' : 'ok',
             'numero_serie'      => $articulo->serial_number,
             'tipo_material'     => $articulo->material_type,
             'capacidad_ml'      => $articulo->capacity_ml,
@@ -101,7 +101,7 @@ class ArticuloController extends Controller
         $orderDir = strtolower($orderDir) === 'desc' ? 'desc' : 'asc';
 
         $stockSubquery = NivelStock::query()
-            ->selectRaw('articulo_id, SUM(cantidad) as stock_total, SUM(cantidad_minima) as stock_minimo')
+            ->selectRaw('articulo_id, SUM(cantidad) as stock_total, SUM(cantidad_minima) as stock_minimo, MAX(CASE WHEN cantidad_minima > 0 AND cantidad < cantidad_minima THEN 1 ELSE 0 END) as es_critico')
             ->groupBy('articulo_id');
 
         $driver = \Illuminate\Support\Facades\DB::getDriverName();
@@ -129,6 +129,7 @@ class ArticuloController extends Controller
             ->select('articulos.*')
             ->selectRaw('COALESCE(stock_agg.stock_total, 0) as stock_total_calc')
             ->selectRaw('COALESCE(stock_agg.stock_minimo, 0) as stock_minimo_calc')
+            ->selectRaw('COALESCE(stock_agg.es_critico, 0) as es_critico_calc')
             ->selectRaw('ubicaciones_agg.nombres_ubicaciones')
             ->when($busqueda !== '', function ($query) use ($busqueda, $driver): void {
                 $op = $driver === 'pgsql' ? 'ILIKE' : 'LIKE';
@@ -162,13 +163,9 @@ class ArticuloController extends Controller
         }
 
         if ($estadoStock === 'critico') {
-            $articulosQuery->whereRaw('COALESCE(stock_agg.stock_minimo, 0) > 0')
-                ->whereRaw('COALESCE(stock_agg.stock_total, 0) < COALESCE(stock_agg.stock_minimo, 0)');
+            $articulosQuery->whereRaw('COALESCE(stock_agg.es_critico, 0) = 1');
         } elseif ($estadoStock === 'ok') {
-            $articulosQuery->where(function ($query): void {
-                $query->whereRaw('COALESCE(stock_agg.stock_minimo, 0) = 0')
-                    ->orWhereRaw('COALESCE(stock_agg.stock_total, 0) >= COALESCE(stock_agg.stock_minimo, 0)');
-            });
+            $articulosQuery->whereRaw('COALESCE(stock_agg.es_critico, 0) = 0');
         }
 
         $orderField = match ($orderBy) {
@@ -184,7 +181,8 @@ class ArticuloController extends Controller
         $filas = $articulos->getCollection()->map(function (Articulo $articulo): array {
             $stockTotal = (float) ($articulo->stock_total_calc ?? 0);
             $stockMinimo = (float) ($articulo->stock_minimo_calc ?? 0);
-            return $this->serializar($articulo, $stockTotal, $stockMinimo);
+            $esCritico = (bool) ($articulo->es_critico_calc ?? false);
+            return $this->serializar($articulo, $stockTotal, $stockMinimo, $esCritico);
         });
 
         return ApiResponse::paginated(
@@ -203,7 +201,7 @@ class ArticuloController extends Controller
         $ubicacionId = $request->query('ubicacion_id');
 
         $stockSubquery = NivelStock::query()
-            ->selectRaw('articulo_id, SUM(cantidad) as stock_total, SUM(cantidad_minima) as stock_minimo')
+            ->selectRaw('articulo_id, SUM(cantidad) as stock_total, SUM(cantidad_minima) as stock_minimo, MAX(CASE WHEN cantidad_minima > 0 AND cantidad < cantidad_minima THEN 1 ELSE 0 END) as es_critico')
             ->groupBy('articulo_id');
 
         $base = Articulo::query()
@@ -221,8 +219,7 @@ class ArticuloController extends Controller
         return ApiResponse::success([
             'total_articulos' => (clone $base)->count('articulos.id'),
             'stock_critico' => (clone $base)
-                ->whereRaw('COALESCE(stock_agg.stock_minimo, 0) > 0')
-                ->whereRaw('COALESCE(stock_agg.stock_total, 0) < COALESCE(stock_agg.stock_minimo, 0)')
+                ->whereRaw('COALESCE(stock_agg.es_critico, 0) = 1')
                 ->count('articulos.id'),
         ]);
     }
@@ -236,6 +233,9 @@ class ArticuloController extends Controller
 
         $stockTotal = $articulo->nivelesStock->sum('cantidad');
         $cantidadMinima = (float) $articulo->nivelesStock->sum('cantidad_minima');
+        $esCritico = $articulo->nivelesStock->contains(function ($nivel) {
+            return $nivel->cantidad_minima > 0 && $nivel->cantidad < $nivel->cantidad_minima;
+        });
 
         return ApiResponse::success([
                 'id'              => $articulo->id,
@@ -248,7 +248,7 @@ class ArticuloController extends Controller
                 'notas'           => $articulo->notas,
                 'stock_total'     => (float) $stockTotal,
                 'stock_minimo'    => $cantidadMinima,
-                'estado_stock'    => ($cantidadMinima > 0 && (float) $stockTotal < $cantidadMinima) ? 'critico' : 'ok',
+                'estado_stock'    => $esCritico ? 'critico' : 'ok',
                 'numero_serie'      => $articulo->serial_number,
                 'tipo_material'     => $articulo->material_type,
                 'capacidad_ml'      => $articulo->capacity_ml,
@@ -304,7 +304,8 @@ class ArticuloController extends Controller
 
         $articulo->load('categoria:id,nombre');
 
-        return ApiResponse::created($this->serializar($articulo, $stockInicial, $stockMinimo));
+        $esCritico = $stockMinimo > 0 && $stockInicial < $stockMinimo;
+        return ApiResponse::created($this->serializar($articulo, $stockInicial, $stockMinimo, $esCritico));
     }
 
     /**
@@ -333,8 +334,9 @@ class ArticuloController extends Controller
 
         $stockTotal = (float) $articulo->nivelesStock()->sum('cantidad');
         $cantidadMinima = (float) $articulo->nivelesStock()->sum('cantidad_minima');
+        $esCritico = $articulo->nivelesStock()->whereRaw('cantidad_minima > 0 AND cantidad < cantidad_minima')->exists();
 
-        return ApiResponse::success($this->serializar($articulo, $stockTotal, $cantidadMinima));
+        return ApiResponse::success($this->serializar($articulo, $stockTotal, $cantidadMinima, $esCritico));
     }
 
     /**
@@ -373,8 +375,9 @@ class ArticuloController extends Controller
         $articulo->load('categoria:id,nombre');
         $stockTotal = (float) $articulo->nivelesStock()->sum('cantidad');
         $cantidadMinima = (float) $articulo->nivelesStock()->sum('cantidad_minima');
+        $esCritico = $articulo->nivelesStock()->whereRaw('cantidad_minima > 0 AND cantidad < cantidad_minima')->exists();
 
-        return ApiResponse::success($this->serializar($articulo, $stockTotal, $cantidadMinima));
+        return ApiResponse::success($this->serializar($articulo, $stockTotal, $cantidadMinima, $esCritico));
     }
 
     /**
@@ -399,8 +402,9 @@ class ArticuloController extends Controller
         $articulo->load('categoria:id,nombre');
         $stockTotal = (float) $articulo->nivelesStock()->sum('cantidad');
         $cantidadMinima = (float) $articulo->nivelesStock()->sum('cantidad_minima');
+        $esCritico = $articulo->nivelesStock()->whereRaw('cantidad_minima > 0 AND cantidad < cantidad_minima')->exists();
 
-        return ApiResponse::success($this->serializar($articulo, $stockTotal, $cantidadMinima), 'Ubicación eliminada correctamente');
+        return ApiResponse::success($this->serializar($articulo, $stockTotal, $cantidadMinima, $esCritico), 'Ubicación eliminada correctamente');
     }
 
     /**
@@ -415,7 +419,7 @@ class ArticuloController extends Controller
     public function exportar(): Response
     {
         $stockSubquery = NivelStock::query()
-            ->selectRaw('articulo_id, SUM(cantidad) as stock_total, SUM(cantidad_minima) as stock_minimo')
+            ->selectRaw('articulo_id, SUM(cantidad) as stock_total, SUM(cantidad_minima) as stock_minimo, MAX(CASE WHEN cantidad_minima > 0 AND cantidad < cantidad_minima THEN 1 ELSE 0 END) as es_critico')
             ->groupBy('articulo_id');
 
         $articulos = Articulo::query()
@@ -427,6 +431,7 @@ class ArticuloController extends Controller
             ->select('articulos.*')
             ->selectRaw('COALESCE(stock_agg.stock_total, 0) as stock_total_calc')
             ->selectRaw('COALESCE(stock_agg.stock_minimo, 0) as stock_minimo_calc')
+            ->selectRaw('COALESCE(stock_agg.es_critico, 0) as es_critico_calc')
             ->orderByRaw('COALESCE(categorias.nombre, \'Sin categoría\') ASC')
             ->orderBy('articulos.nombre', 'asc')
             ->get();
@@ -467,7 +472,8 @@ class ArticuloController extends Controller
 
             $stockTotal  = (float) ($articulo->stock_total_calc ?? 0);
             $stockMinimo = (float) ($articulo->stock_minimo_calc ?? 0);
-            $estadoStock = ($stockMinimo > 0 && $stockTotal < $stockMinimo) ? 'Crítico' : 'OK';
+            $esCritico = (bool) ($articulo->es_critico_calc ?? false);
+            $estadoStock = $esCritico ? 'Crítico' : 'OK';
 
             $fila = [
                 $articulo->categoria?->nombre ?? 'Sin categoría',

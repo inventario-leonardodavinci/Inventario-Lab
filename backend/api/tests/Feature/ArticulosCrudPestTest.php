@@ -187,6 +187,37 @@ describe('GET /articulos/{id} — detalle completo', function () {
         $estadoStock = $this->getJson("/api/v1/articulos/{$articulo->id}", articulosHeaders())->json('data.estado_stock');
         expect($estadoStock)->toBe('critico');
     });
+
+    it('marca estado_stock como critico si al menos una ubicacion esta por debajo del minimo aunque el total supere la suma de minimos', function () {
+        $articulo = Articulo::factory()->create();
+        $ubi1 = Ubicacion::factory()->create();
+        $ubi2 = Ubicacion::factory()->create();
+        
+        // Ubicacion 1: critico (1 < 2)
+        NivelStock::factory()->create([
+            'articulo_id'     => $articulo->id,
+            'ubicacion_id'    => $ubi1->id,
+            'cantidad'        => 1.0,
+            'cantidad_minima' => 2.0,
+        ]);
+
+        // Ubicacion 2: suficiente (5 > 0)
+        NivelStock::factory()->create([
+            'articulo_id'     => $articulo->id,
+            'ubicacion_id'    => $ubi2->id,
+            'cantidad'        => 5.0,
+            'cantidad_minima' => 0.0,
+        ]);
+
+        // Total stock = 6, Sum of min = 2. Total >= Sum, but Location 1 is critical!
+        $estadoStock = $this->getJson("/api/v1/articulos/{$articulo->id}", articulosHeaders())->json('data.estado_stock');
+        expect($estadoStock)->toBe('critico');
+
+        // Tambien en el listado
+        $res = $this->getJson('/api/v1/articulos', articulosHeaders())->json('data');
+        $artEnLista = collect($res)->firstWhere('id', $articulo->id);
+        expect($artEnLista['estado_stock'])->toBe('critico');
+    });
 });
 
 // ─── STORE ────────────────────────────────────────────────────────────────────
