@@ -138,7 +138,7 @@ export function TarjetaUbicacion({ ub, onEdit }: TarjetaUbicacionProps) {
               )}
             </div>
             <GuardRol roles={['profesor']}>
-              <Button variant="ghost" size="icon" className="size-7 shrink-0 opacity-0 group-hover:opacity-100 transition-opacity"
+              <Button variant="ghost" size="icon" className="size-7 shrink-0 opacity-0 group-hover:opacity-100 group-focus-within:opacity-100 focus:opacity-100 focus-visible:opacity-100 focus-visible:ring-2 focus-visible:ring-ring transition-opacity"
                 onClick={() => onEdit(ub)} aria-label="Editar ubicación">
                 <Pencil className="size-3.5" />
               </Button>
@@ -153,11 +153,11 @@ export function TarjetaUbicacion({ ub, onEdit }: TarjetaUbicacionProps) {
                   <span className="text-xs">{sub.nombre}</span>
                   <GuardRol roles={['profesor']}>
                     <button onClick={() => abrirEditarSub(sub)}
-                      className="ml-0.5 rounded p-0.5 hover:bg-foreground/10 transition-colors" aria-label="Editar sub-ubicación">
+                      className="ml-0.5 rounded p-0.5 hover:bg-foreground/10 focus-visible:bg-foreground/10 focus-visible:ring-1 focus-visible:ring-ring focus-visible:outline-none transition-colors" aria-label="Editar sub-ubicación">
                       <Pencil className="size-2.5" />
                     </button>
                     <button onClick={() => setEliminarSub(sub)}
-                      className="rounded p-0.5 hover:bg-destructive/20 text-destructive/60 hover:text-destructive transition-colors" aria-label="Eliminar sub-ubicación">
+                      className="rounded p-0.5 hover:bg-destructive/20 focus-visible:bg-destructive/20 focus-visible:ring-1 focus-visible:ring-destructive/50 focus-visible:outline-none text-destructive/60 hover:text-destructive transition-colors" aria-label="Eliminar sub-ubicación">
                       <Trash2 className="size-2.5" />
                     </button>
                   </GuardRol>

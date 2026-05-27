@@ -1,4 +1,4 @@
-import { useNavigate } from "react-router-dom";
+import { useNavigate, Link } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
@@ -42,9 +42,10 @@ function inputCls(tieneError: boolean) {
 
 function TogglePassword({ show, onToggle }: { show: boolean; onToggle: () => void }) {
   return (
-    <button type="button" tabIndex={-1}
-      className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground transition-colors"
+    <button type="button"
+      className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground transition-colors rounded-md p-1 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2"
       onClick={onToggle}
+      aria-label={show ? "Ocultar contraseña" : "Mostrar contraseña"}
     >
       {show
         ? <svg viewBox="0 0 24 24" fill="none" className="w-4 h-4" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M17.94 17.94A10.07 10.07 0 0 1 12 20c-7 0-11-8-11-8a18.45 18.45 0 0 1 5.06-5.94" /><path d="M9.9 4.24A9.12 9.12 0 0 1 12 4c7 0 11 8 11 8a18.5 18.5 0 0 1-2.16 3.19" /><line x1="1" y1="1" x2="23" y2="23" /></svg>
@@ -320,13 +321,12 @@ export function VistaLogin({ onNavegar, oAuthProviders }: { onNavegar: (ruta: st
           <div className="space-y-1.5">
             <div className="flex items-center justify-between">
               <Label htmlFor="password-rapido" className="text-sm font-medium">Contraseña</Label>
-              <button
-                type="button"
-                className="min-h-[36px] px-1 text-xs text-primary underline-offset-4 hover:underline"
-                onClick={() => onNavegar("/login/recuperar")}
+              <Link
+                to="/login/recuperar"
+                className="min-h-[36px] px-1 text-xs text-primary underline-offset-4 hover:underline flex items-center"
               >
                 ¿Olvidaste tu contraseña?
-              </button>
+              </Link>
             </div>
             <div className="relative">
               <Input id="password-rapido" type={showPassword ? "text" : "password"} value={password}
@@ -365,13 +365,12 @@ export function VistaLogin({ onNavegar, oAuthProviders }: { onNavegar: (ruta: st
         <div className="space-y-1.5">
           <div className="flex items-center justify-between">
             <Label htmlFor="password" className="text-sm font-medium">Contraseña</Label>
-            <button
-              type="button"
-              className="min-h-[36px] px-1 text-xs text-primary underline-offset-4 hover:underline"
-              onClick={() => onNavegar("/login/recuperar")}
+            <Link
+              to="/login/recuperar"
+              className="min-h-[36px] px-1 text-xs text-primary underline-offset-4 hover:underline flex items-center"
             >
               ¿Olvidaste tu contraseña?
-            </button>
+            </Link>
           </div>
           <div className="relative">
             <Input id="password" type={showPassword ? "text" : "password"} value={password}
@@ -384,8 +383,8 @@ export function VistaLogin({ onNavegar, oAuthProviders }: { onNavegar: (ruta: st
         </div>
         {errores.general && <AlertaError mensaje={errores.general} />}
         <Button type="submit" className="w-full h-11 rounded-xl font-normal" disabled={submitting}>{submitting ? "Entrando..." : "Entrar"}</Button>
-        <Button type="button" variant="outline" className="w-full h-11 rounded-xl font-normal" onClick={() => onNavegar("/login/registro")}>
-          Crear una cuenta nueva
+        <Button asChild type="button" variant="outline" className="w-full h-11 rounded-xl font-normal">
+          <Link to="/login/registro">Crear una cuenta nueva</Link>
         </Button>
       </form>
     </AuthCard>
@@ -471,7 +470,9 @@ export function VistaRegistro({ onNavegar, oAuthProviders }: { onNavegar: (ruta:
         </div>
         {errores.general && <AlertaError mensaje={errores.general} />}
         <Button type="submit" className="w-full h-11 rounded-xl font-normal" disabled={submitting}>{submitting ? "Creando cuenta..." : "Crear cuenta"}</Button>
-        <Button type="button" variant="ghost" className="w-full h-10 text-sm font-normal rounded-xl" onClick={() => onNavegar("/login")}>Ya tengo cuenta</Button>
+        <Button asChild type="button" variant="ghost" className="w-full h-10 text-sm font-normal rounded-xl">
+          <Link to="/login">Ya tengo cuenta</Link>
+        </Button>
       </form>
     </AuthCard>
   );
@@ -546,7 +547,9 @@ export function VistaVerificarEmail({ email, onNavegar }: { email: string; onNav
           <span className="text-muted-foreground">¿No llegó el código?</span>
           <button type="button" className="text-primary font-medium underline-offset-4 hover:underline disabled:cursor-not-allowed disabled:opacity-50 transition-opacity" onClick={onReenviar} disabled={reenvioContador > 0}>{reenvioContador > 0 ? `Reenviar en ${reenvioContador}s` : "Reenviar"}</button>
         </div>
-        <Button type="button" variant="ghost" className="w-full h-10 text-sm font-normal rounded-xl" onClick={() => onNavegar("/login")}>Volver al inicio de sesión</Button>
+        <Button asChild type="button" variant="ghost" className="w-full h-10 text-sm font-normal rounded-xl">
+          <Link to="/login">Volver al inicio de sesión</Link>
+        </Button>
       </form>
     </AuthCard>
   );
@@ -590,7 +593,9 @@ export function VistaRecuperar({ onNavegar }: { onNavegar: (ruta: string) => voi
           {error && <AlertaError mensaje={error} />}
         </div>
         <Button type="submit" className="w-full h-11 rounded-xl font-normal" disabled={submitting}>{submitting ? "Enviando..." : "Enviar código"}</Button>
-        <Button type="button" variant="ghost" className="w-full h-10 text-sm font-normal rounded-xl" onClick={() => onNavegar("/login")}>Volver al inicio de sesión</Button>
+        <Button asChild type="button" variant="ghost" className="w-full h-10 text-sm font-normal rounded-xl">
+          <Link to="/login">Volver al inicio de sesión</Link>
+        </Button>
       </form>
     </AuthCard>
   );
@@ -658,7 +663,9 @@ export function VistaRestablecer({ email, onNavegar }: { email: string; onNavega
             </InputOTP>
           </div>
           <Button type="submit" className="w-full h-11 rounded-xl font-normal" disabled={submitting || codigo.length < 6}>{submitting ? "Verificando..." : "Verificar código"}</Button>
-          <Button type="button" variant="ghost" className="w-full h-10 text-sm font-normal rounded-xl" onClick={() => onNavegar("/login/recuperar")}>Volver</Button>
+          <Button asChild type="button" variant="ghost" className="w-full h-10 text-sm font-normal rounded-xl">
+            <Link to="/login/recuperar">Volver</Link>
+          </Button>
         </form>
       ) : (
         <form className="space-y-4" onSubmit={onRestablecer}>
