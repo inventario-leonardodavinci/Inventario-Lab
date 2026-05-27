@@ -48,8 +48,8 @@ function TogglePassword({ show, onToggle }: { show: boolean; onToggle: () => voi
       aria-label={show ? "Ocultar contraseña" : "Mostrar contraseña"}
     >
       {show
-        ? <svg viewBox="0 0 24 24" fill="none" className="w-4 h-4" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M17.94 17.94A10.07 10.07 0 0 1 12 20c-7 0-11-8-11-8a18.45 18.45 0 0 1 5.06-5.94" /><path d="M9.9 4.24A9.12 9.12 0 0 1 12 4c7 0 11 8 11 8a18.5 18.5 0 0 1-2.16 3.19" /><line x1="1" y1="1" x2="23" y2="23" /></svg>
-        : <svg viewBox="0 0 24 24" fill="none" className="w-4 h-4" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z" /><circle cx="12" cy="12" r="3" /></svg>
+        ? <svg viewBox="0 0 24 24" fill="none" className="w-4 h-4" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true"><path d="M17.94 17.94A10.07 10.07 0 0 1 12 20c-7 0-11-8-11-8a18.45 18.45 0 0 1 5.06-5.94" /><path d="M9.9 4.24A9.12 9.12 0 0 1 12 4c7 0 11 8 11 8a18.5 18.5 0 0 1-2.16 3.19" /><line x1="1" y1="1" x2="23" y2="23" /></svg>
+        : <svg viewBox="0 0 24 24" fill="none" className="w-4 h-4" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z" /><circle cx="12" cy="12" r="3" /></svg>
       }
     </button>
   );
@@ -76,7 +76,7 @@ interface AuthLayoutProps {
 
 export function AuthLayout({ children }: AuthLayoutProps) {
   return (
-    <div className="flex min-h-screen bg-background">
+    <main className="flex min-h-screen bg-background">
       <div className="hidden lg:flex lg:w-1/2 relative overflow-hidden flex-col justify-between p-12 rounded-r-2xl"
         style={{ background: "linear-gradient(135deg, hsl(212 85% 45%) 0%, hsl(212 85% 35%) 50%, hsl(222 47% 25%) 100%)" }}
       >
@@ -86,7 +86,7 @@ export function AuthLayout({ children }: AuthLayoutProps) {
         <div className="relative z-10">
           <div className="flex items-center gap-3 mb-8">
             <div className="w-10 h-10 rounded-xl bg-white/15 flex items-center justify-center">
-              <svg viewBox="0 0 48 48" fill="none" className="w-6 h-6 text-white" stroke="currentColor" strokeWidth="1.5">
+              <svg viewBox="0 0 48 48" fill="none" className="w-6 h-6 text-white" stroke="currentColor" strokeWidth="1.5" aria-hidden="true">
                 <circle cx="24" cy="24" r="22" opacity="0.3" />
                 <path d="M24 10v28M17 18c0 0 3-4 7-4s7 4 7 4M14 28c0 0 5-5 10-5s10 5 10 5" strokeLinecap="round" strokeLinejoin="round" />
               </svg>
@@ -116,7 +116,7 @@ export function AuthLayout({ children }: AuthLayoutProps) {
           {/* Branding visible en móvil (el panel izquierdo está oculto) */}
           <div className="flex items-center justify-center gap-2.5 mb-6 lg:hidden">
             <div className="w-8 h-8 rounded-lg bg-primary/10 flex items-center justify-center">
-              <svg viewBox="0 0 48 48" fill="none" className="w-5 h-5 text-primary" stroke="currentColor" strokeWidth="1.5">
+              <svg viewBox="0 0 48 48" fill="none" className="w-5 h-5 text-primary" stroke="currentColor" strokeWidth="1.5" aria-hidden="true">
                 <circle cx="24" cy="24" r="22" opacity="0.3" />
                 <path d="M24 10v28M17 18c0 0 3-4 7-4s7 4 7 4M14 28c0 0 5-5 10-5s10 5 10 5" strokeLinecap="round" strokeLinejoin="round" />
               </svg>
@@ -129,7 +129,7 @@ export function AuthLayout({ children }: AuthLayoutProps) {
           {children}
         </div>
       </div>
-    </div>
+    </main>
   );
 }
 
@@ -298,7 +298,7 @@ export function VistaLogin({ oAuthProviders }: { oAuthProviders: string[] }) {
     return (
       <AuthCard titulo="Bienvenido de nuevo" descripcion="Última sesión iniciada con esta cuenta."
         icono={
-          <svg viewBox="0 0 48 48" fill="none" className="w-7 h-7" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
+          <svg viewBox="0 0 48 48" fill="none" className="w-7 h-7" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
             <circle cx="24" cy="24" r="22" opacity="0.3" />
             <path d="M24 10v28M17 18c0 0 3-4 7-4s7 4 7 4M14 28c0 0 5-5 10-5s10 5 10 5" />
           </svg>
@@ -307,8 +307,8 @@ export function VistaLogin({ oAuthProviders }: { oAuthProviders: string[] }) {
         <div className="mb-5 flex flex-col items-center gap-3 rounded-2xl border bg-muted/30 px-6 py-5">
           <div className="relative">
             {ultimoUsuario.avatarUrl
-              ? <img src={ultimoUsuario.avatarUrl} alt={ultimoUsuario.nombre} className="size-16 rounded-full object-cover ring-4 ring-background shadow-md" />
-              : <div className="size-16 rounded-full bg-primary/15 ring-4 ring-background shadow-md flex items-center justify-center text-xl font-bold text-primary">{formatearIniciales(ultimoUsuario.nombre)}</div>
+              ? <img src={ultimoUsuario.avatarUrl} alt="" role="presentation" className="size-16 rounded-full object-cover ring-4 ring-background shadow-md" />
+              : <div className="size-16 rounded-full bg-primary/15 ring-4 ring-background shadow-md flex items-center justify-center text-xl font-bold text-primary" aria-hidden="true">{formatearIniciales(ultimoUsuario.nombre)}</div>
             }
             <div className="absolute -bottom-1 -right-1 size-5 rounded-full bg-green-500 ring-2 ring-background" />
           </div>
@@ -347,7 +347,7 @@ export function VistaLogin({ oAuthProviders }: { oAuthProviders: string[] }) {
   return (
     <AuthCard titulo="Acceso al sistema" descripcion="Inicia sesión para ver inventario y notificaciones."
       icono={
-        <svg viewBox="0 0 48 48" fill="none" className="w-7 h-7" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
+        <svg viewBox="0 0 48 48" fill="none" className="w-7 h-7" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
           <circle cx="24" cy="24" r="22" opacity="0.3" />
           <path d="M24 10v28M17 18c0 0 3-4 7-4s7 4 7 4M14 28c0 0 5-5 10-5s10 5 10 5" />
         </svg>
@@ -443,7 +443,7 @@ export function VistaRegistro({ oAuthProviders }: { oAuthProviders: string[] }) 
 
   return (
     <AuthCard titulo="Crear cuenta" descripcion="Regístrate para acceder al sistema de inventario."
-      icono={<svg viewBox="0 0 24 24" fill="none" className="w-7 h-7" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"><path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2" /><circle cx="9" cy="7" r="4" /><line x1="19" y1="8" x2="19" y2="14" /><line x1="22" y1="11" x2="16" y2="11" /></svg>}
+      icono={<svg viewBox="0 0 24 24" fill="none" className="w-7 h-7" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true"><path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2" /><circle cx="9" cy="7" r="4" /><line x1="19" y1="8" x2="19" y2="14" /><line x1="22" y1="11" x2="16" y2="11" /></svg>}
     >
       <BotonesOAuth onOAuth={onOAuth} oAuthProviders={oAuthProviders} providerEnCurso={oauthProviderEnCurso} />
       <form className="space-y-4" onSubmit={onSubmit}>
@@ -524,7 +524,7 @@ export function VistaVerificarEmail({ email }: { email: string }) {
       titulo="Verifica tu correo"
       descripcion={`Hemos enviado un código de 6 dígitos a ${email}`}
       icono={
-        <svg viewBox="0 0 24 24" fill="none" className="w-7 h-7" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
+        <svg viewBox="0 0 24 24" fill="none" className="w-7 h-7" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
           <rect x="2" y="4" width="20" height="16" rx="3" /><path d="M22 7l-10 6L2 7" />
         </svg>
       }
@@ -581,7 +581,7 @@ export function VistaRecuperar({ onNavegar }: { onNavegar: (ruta: string) => voi
       titulo="Recuperar contraseña"
       descripcion="Introduce tu correo y te enviaremos un código para restablecer tu contraseña."
       icono={
-        <svg viewBox="0 0 24 24" fill="none" className="w-7 h-7" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
+        <svg viewBox="0 0 24 24" fill="none" className="w-7 h-7" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
           <rect x="3" y="11" width="18" height="11" rx="2" /><path d="M7 11V7a5 5 0 0 1 10 0v4" />
         </svg>
       }
@@ -643,7 +643,7 @@ export function VistaRestablecer({ email, onNavegar }: { email: string; onNavega
       titulo={token ? "Nueva contraseña" : "Introduce el código"}
       descripcion={token ? "Elige una nueva contraseña para tu cuenta." : `Introduce el código de 6 dígitos enviado a ${email}.`}
       icono={
-        <svg viewBox="0 0 24 24" fill="none" className="w-7 h-7" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
+        <svg viewBox="0 0 24 24" fill="none" className="w-7 h-7" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
           <path d="M12 2v4M12 18v4M4.93 4.93l2.83 2.83M16.24 16.24l2.83 2.83M2 12h4M18 12h4M4.93 19.07l2.83-2.83M16.24 7.76l2.83-2.83" />
         </svg>
       }
