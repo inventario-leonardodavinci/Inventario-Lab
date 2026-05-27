@@ -6,7 +6,7 @@ Route::get('/', function () {
     return view('welcome');
 });
 
-// Healthcheck para Railway
+// Healthcheck para Render
 Route::get('/up', function () {
     return response()->json(['status' => 'ok'], 200);
 });

@@ -42,7 +42,7 @@ echo "=========================================="
 echo "Starting services..."
 echo "=========================================="
 
-# Generar nginx.conf con el PORT correcto de Railway
+# Generar nginx.conf con el PORT correcto del hosting (Render, etc.)
 echo "Setting up nginx with PORT=${PORT:-80}..."
 export PORT=${PORT:-80}
 envsubst '${PORT}' < /etc/nginx/nginx.conf > /tmp/nginx.conf && mv /tmp/nginx.conf /etc/nginx/nginx.conf

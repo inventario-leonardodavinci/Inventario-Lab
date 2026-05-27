@@ -10,7 +10,7 @@ Aplicación web para la gestión del inventario del laboratorio de química del 
 | Backend | Laravel (API REST) |
 | Base de datos | PostgreSQL (Insforge) |
 | Autenticación | Insforge Auth |
-| Despliegue | Railway |
+| Despliegue | Vercel (Frontend) y Render (Backend) |
 
 ## Estructura del proyecto
 
