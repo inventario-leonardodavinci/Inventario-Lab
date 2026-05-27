@@ -37,12 +37,12 @@ export default function InicioSesion() {
   const pathname = window.location.pathname;
 
   if (pathname === "/login/registro") {
-    return <AuthLayout><VistaRegistro onNavegar={(r) => navigate(r)} oAuthProviders={oAuthProviders} /></AuthLayout>;
+    return <AuthLayout><VistaRegistro oAuthProviders={oAuthProviders} /></AuthLayout>;
   }
 
   if (pathname === "/login/verificar") {
     if (!emailParam) { navigate("/login", { replace: true }); return null; }
-    return <AuthLayout><VistaVerificarEmail email={emailParam} onNavegar={(r) => navigate(r)} /></AuthLayout>;
+    return <AuthLayout><VistaVerificarEmail email={emailParam} /></AuthLayout>;
   }
 
   if (pathname === "/login/recuperar") {
@@ -54,5 +54,5 @@ export default function InicioSesion() {
     return <AuthLayout><VistaRestablecer email={emailParam} onNavegar={(r) => navigate(r)} /></AuthLayout>;
   }
 
-  return <AuthLayout><VistaLogin onNavegar={(r) => navigate(r)} oAuthProviders={oAuthProviders} /></AuthLayout>;
+  return <AuthLayout><VistaLogin oAuthProviders={oAuthProviders} /></AuthLayout>;
 }

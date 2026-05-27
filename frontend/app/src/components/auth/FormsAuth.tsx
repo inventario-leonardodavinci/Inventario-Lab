@@ -223,7 +223,7 @@ export function BotonesOAuth({
   );
 }
 
-export function VistaLogin({ onNavegar, oAuthProviders }: { onNavegar: (ruta: string) => void; oAuthProviders: string[] }) {
+export function VistaLogin({ oAuthProviders }: { oAuthProviders: string[] }) {
   const navigate = useNavigate();
   const { login, loginConOAuth } = useAuth();
   const [ultimoUsuario, setUltimoUsuario] = useState<{ nombre: string; email: string; avatarUrl: string } | null>(() => {
@@ -390,7 +390,7 @@ export function VistaLogin({ onNavegar, oAuthProviders }: { onNavegar: (ruta: st
     </AuthCard>
   );
 }
-export function VistaRegistro({ onNavegar, oAuthProviders }: { onNavegar: (ruta: string) => void; oAuthProviders: string[] }) {
+export function VistaRegistro({ oAuthProviders }: { oAuthProviders: string[] }) {
   const navigate = useNavigate();
   const { registro, loginConOAuth } = useAuth();
   const [nombre, setNombre] = useState("");
@@ -478,7 +478,7 @@ export function VistaRegistro({ onNavegar, oAuthProviders }: { onNavegar: (ruta:
   );
 }
 
-export function VistaVerificarEmail({ email, onNavegar }: { email: string; onNavegar: (ruta: string) => void }) {
+export function VistaVerificarEmail({ email }: { email: string }) {
   const navigate = useNavigate();
   const { verificarEmail, reenviarCodigo } = useAuth();
   const [otp, setOtp] = useState("");
