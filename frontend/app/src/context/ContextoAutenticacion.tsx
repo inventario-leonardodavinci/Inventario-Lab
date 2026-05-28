@@ -253,6 +253,13 @@ export function ProveedorAutenticacion({ children }: { children: React.ReactNode
 
   const logout = useCallback(async () => {
     logoutPendiente.current = true;
+    if (user?.authUserId) {
+      try {
+        await enviarEventoLogin(user.authUserId, 'logout');
+      } catch (e) {
+        console.warn('[Auth] Error registrando evento de cierre de sesión:', e);
+      }
+    }
     await logoutDeInsforge();
     queryClient.clear();
     setUser(null);
@@ -261,7 +268,7 @@ export function ProveedorAutenticacion({ children }: { children: React.ReactNode
     // Resetear flags para que el próximo login verifique la sesión correctamente
     verificacionGlobalCompletada = false;
     verificacionGlobalEnProgreso = false;
-  }, [limpiar, queryClient]);
+  }, [user, limpiar, queryClient]);
 
   const actualizarUsuario = useCallback((cambios: Partial<SesionUsuario>) => {
     setUser((prev) => prev ? { ...prev, ...cambios } : prev);

@@ -2,7 +2,7 @@ import { apiClient } from "./clienteApi";
 
 export function enviarEventoLogin(
   authUserId: string,
-  tipoEvento: 'login' | 'oauth' = 'login',
+  tipoEvento: 'login' | 'oauth' | 'logout' | 'refresh' = 'login',
 ) {
   return apiClient<{ message: string }>(
     "/notificaciones/evento-login",

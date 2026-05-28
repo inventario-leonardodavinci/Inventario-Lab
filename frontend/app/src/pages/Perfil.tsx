@@ -21,6 +21,7 @@ import {
   logoutDeInsforge,
 } from "@/services/authApi";
 import { formatearRol, formatearIniciales } from "@/utils/formatters";
+import { enviarEventoLogin } from "@/services/notificacionesApi";
 import type { Rol } from "@/types";
 import {
   Camera,
@@ -323,6 +324,16 @@ export default function Perfil() {
         email: email ?? "",
         avatarUrl: avatarParaGuardar,
       }));
+
+      // Registrar evento de cierre de sesión antes de limpiar el estado del cliente
+      if (user?.authUserId) {
+        try {
+          await enviarEventoLogin(user.authUserId, 'logout');
+        } catch (e) {
+          console.warn('[Auth] Error al registrar evento de cierre de sesión:', e);
+        }
+      }
+
       await logoutDeInsforge();
       window.location.href = "/login";
     } catch {
