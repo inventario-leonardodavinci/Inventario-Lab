@@ -101,3 +101,20 @@ createRoot(document.getElementById('root')!).render(
     </ProveedorTema>
   </StrictMode>,
 )
+
+// ── Service Worker Registration ──────────────────────────────────────────────
+if ('serviceWorker' in navigator) {
+  window.addEventListener('load', () => {
+    navigator.serviceWorker.register('/sw.js', { scope: '/' })
+      .then((registration) => {
+        if (import.meta.env.DEV) {
+          console.log('Service Worker registrado con éxito:', registration)
+        }
+      })
+      .catch((error) => {
+        // Capturar silenciosamente los errores de registro para evitar excepciones no manejadas
+        // (común en navegación privada o webviews restrictivas de iOS).
+        console.warn('El Service Worker no pudo registrarse:', error)
+      })
+  })
+}

@@ -30,6 +30,7 @@ export default defineConfig({
     // ── PWA ───────────────────────────────────────────────────────────────────
     VitePWA({
       registerType: 'autoUpdate',
+      injectRegister: false,
       workbox: {
         globPatterns: ['**/*.{js,css,html,ico,png,svg,woff2}'],
         runtimeCaching: [
