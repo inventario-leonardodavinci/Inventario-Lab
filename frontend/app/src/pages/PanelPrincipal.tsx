@@ -94,7 +94,7 @@ export default function PanelPrincipal() {
   const maxCatTotal = Math.max(...porCategoria.map(c => c.total), 1)
 
   return (
-    <main className="animate-page-enter flex flex-1 flex-col gap-6 bg-muted/20 p-4 lg:p-6">
+    <main className="animate-page-enter flex flex-1 flex-col gap-6 bg-muted/20 p-4 lg:p-6" arial-label="Panel de control">
 
       {/* ── Cabecera Premium ── */}
       <PageHeader
@@ -173,7 +173,7 @@ export default function PanelPrincipal() {
           {/* Distribución por categoría — barras CSS */}
           <CardPremium variant="elevated" delay={0}>
             <div className="p-4 border-b">
-              <h3 className="font-semibold text-base">Por categoría</h3>
+              <h2 className="font-semibold text-base">Por categoría</h2>
               <p className="text-sm text-muted-foreground">Artículos totales y críticos por categoría</p>
             </div>
             <div className="p-4 space-y-4">
@@ -219,7 +219,7 @@ export default function PanelPrincipal() {
           <CardPremium variant="elevated" delay={0.05} className="xl:col-span-2 overflow-hidden">
             <div className="p-4 border-b flex items-center justify-between">
               <div>
-                <h3 className="font-semibold text-base">Stock crítico</h3>
+                <h2 className="font-semibold text-base">Stock crítico</h2>
                 <p className="text-sm text-muted-foreground">Artículos bajo el mínimo definido</p>
               </div>
               {totalCriticos > 10 && (
@@ -267,7 +267,7 @@ export default function PanelPrincipal() {
                           )}
                         </TableCellPremium>
                         <TableCellPremium align="right">
-                          <span className="text-sm font-mono font-semibold text-destructive tabular-nums">
+                          <span className="text-sm font-mono font-semibold text-destructive tabular-nums" style={{ color: '#b91c1c' }}>
                             {art.stock_total}
                           </span>
                         </TableCellPremium>
@@ -292,7 +292,7 @@ export default function PanelPrincipal() {
         <CardPremium variant="elevated" delay={0} className="overflow-hidden">
           <div className="p-4 border-b flex items-center justify-between">
             <div>
-              <h3 className="font-semibold text-base">Actividad reciente</h3>
+              <h2 className="font-semibold text-base">Actividad reciente</h2>
               <p className="text-sm text-muted-foreground">Últimos movimientos en el inventario</p>
             </div>
             {movimientos.length > 0 && (
